@@ -236,7 +236,8 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="controls">
       <div class="control-row">
         <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-filter active" onclick="filterPeriod('today',this)">今日</button>
+          <button class="btn btn-filter active" onclick="filterPeriod('all',this)">所有紀錄</button>
+          <button class="btn btn-filter" onclick="filterPeriod('today',this)">今日</button>
           <button class="btn btn-filter" onclick="filterPeriod('week',this)">本週</button>
           <button class="btn btn-filter" onclick="filterPeriod('month',this)">本月</button>
           <button class="btn btn-filter" onclick="filterPeriod('year',this)">年度</button>
@@ -275,7 +276,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 
       <div class="records-table">
         <div class="table-header">
-          <span id="periodTitle">本週維修紀錄</span>
+          <span id="periodTitle">所有維修紀錄</span>
           <span style="font-size:12px;font-weight:normal;color:#6c757d" id="recordCount"></span>
         </div>
         <div id="recordsList"><div class="loading"><div class="spinner"></div><p>載入資料中...</p></div></div>
@@ -375,7 +376,13 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
           <label class="form-label">維修項目 *</label>
           <select class="form-select" id="f_item_sel" onchange="handleItemSelect()" required>
             <option value="">-- 請選擇維修項目 --</option>
-            <option value="逆變器故障">逆變器故障</option>
+            <option value="台達逆變器故障">台達逆變器故障</option>
+            <option value="新望逆變器故障">新望逆變器故障</option>
+            <option value="古瑞瓦特逆變器故障">古瑞瓦特逆變器故障</option>
+            <option value="亞力逆變器故障">亞力逆變器故障</option>
+            <option value="盈正逆變器故障">盈正逆變器故障</option>
+            <option value="科風逆變器故障">科風逆變器故障</option>
+            <option value="華為逆變器故障">華為逆變器故障</option>
             <option value="太陽能板破損">太陽能板破損</option>
             <option value="電路檢修">電路檢修</option>
             <option value="系統清潔保養">系統清潔保養</option>
@@ -474,7 +481,7 @@ const storage = getStorage(app);
 let allRecords = [];
 let ws = '', user = '';
 let dbRef = null;
-let currentFilter = 'week';
+let currentFilter = 'all';
 let statusFilter = 'all';
 let currentPage = 1;
 let editKey = null;
@@ -667,7 +674,7 @@ window.filterPeriod = function(p, btn) {
   currentFilter = p; currentPage = 1;
   document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const titles = { today:'今日維修紀錄', week:'本週維修紀錄', month:'本月維修紀錄', year:'年度維修紀錄', custom:'自訂區間' };
+  const titles = { all:'所有維修紀錄', today:'今日維修紀錄', week:'本週維修紀錄', month:'本月維修紀錄', year:'年度維修紀錄', custom:'自訂區間' };
   document.getElementById('periodTitle').textContent = titles[p];
   document.getElementById('dateRangeRow').style.display = p === 'custom' ? 'flex' : 'none';
   if (p === 'custom') {
@@ -692,6 +699,7 @@ function getFiltered() {
   const todayD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let list = allRecords.filter(r => {
     const rd = new Date(r.repairDate);
+    if (currentFilter === 'all') return true; // 顯示所有紀錄
     if (currentFilter === 'today') return rd >= todayD;
     if (currentFilter === 'week') { const w = new Date(todayD); w.setDate(w.getDate()-7); return rd >= w; }
     if (currentFilter === 'month') { const m = new Date(todayD); m.setMonth(m.getMonth()-1); return rd >= m; }
@@ -848,7 +856,7 @@ window.openEditModal = function(key) {
   document.getElementById('f_notes').value = r.notes || '';
   
   // 處理維修項目
-  const predefined = ['逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','配電箱維修','支架結構檢查','接地系統檢測','線路老化更換'];
+  const predefined = ['台達逆變器故障','新望逆變器故障','古瑞瓦特逆變器故障','亞力逆變器故障','盈正逆變器故障','科風逆變器故障','華為逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','配電箱維修','支架結構檢查','接地系統檢測','線路老化更換'];
   if(predefined.includes(r.repairItem)) {
     document.getElementById('f_item_sel').value = r.repairItem;
     document.getElementById('f_item_custom').style.display = 'none';
