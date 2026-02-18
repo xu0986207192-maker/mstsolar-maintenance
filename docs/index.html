@@ -6,151 +6,175 @@
 <meta name="theme-color" content="#667eea">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="光電維修">
-<title>太陽光電維修管理系統 v3</title>
+<title>太陽光電維修管理系統 v2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
-.page{max-width:1200px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.header h1{font-size:22px;margin-bottom:4px;}.header p{opacity:.85;font-size:12px;}
+.container{max-width:1200px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:25px 30px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.header-left h1{font-size:24px;margin-bottom:5px;}
+.header-left p{opacity:.9;font-size:13px;}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;}
-.badge-admin{background:#ffc107;color:#212529;}.badge-member{background:rgba(255,255,255,.2);color:white;}
-.sync-pill{background:rgba(255,255,255,.2);padding:6px 13px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;}
-.dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
-.dot.sync{background:#fbbf24;}.dot.off{background:#ef4444;animation:none;}
+.sync-status{background:rgba(255,255,255,.2);padding:7px 14px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:7px;}
+.sync-dot{width:9px;height:9px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+.sync-dot.syncing{background:#fbbf24;}
+.sync-dot.offline{background:#ef4444;animation:none;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
-.btn{padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .25s;font-family:inherit;}
-.btn:hover{transform:translateY(-1px);}
-.btn-primary{background:#667eea;color:white;}.btn-primary:hover{background:#5568d3;box-shadow:0 4px 12px rgba(102,126,234,.4);}
-.btn-success{background:#28a745;color:white;}.btn-success:hover{background:#218838;}
-.btn-danger{background:#dc3545;color:white;}.btn-danger:hover{background:#c82333;}
+
+/* NAV TABS */
+.nav-tabs{display:flex;background:#f8f9fa;border-bottom:2px solid #e9ecef;overflow-x:auto;}
+.nav-tab{padding:14px 22px;cursor:pointer;font-weight:600;font-size:14px;color:#6c757d;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
+.nav-tab:hover{color:#667eea;}
+.nav-tab.active{color:#667eea;border-bottom-color:#667eea;background:white;}
+
+/* BUTTONS */
+.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .3s;font-family:inherit;}
+.btn-primary{background:#667eea;color:white;}
+.btn-primary:hover{background:#5568d3;transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,.4);}
+.btn-success{background:#28a745;color:white;}
+.btn-success:hover{background:#218838;}
+.btn-danger{background:#dc3545;color:white;}
+.btn-danger:hover{background:#c82333;}
 .btn-warning{background:#ffc107;color:#212529;}
 .btn-info{background:#17a2b8;color:white;}
-.btn-gray{background:#6c757d;color:white;}
-.btn-ghost{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);}.btn-ghost:hover{background:rgba(255,255,255,.25);}
-.btn-sm{padding:5px 11px;font-size:12px;}.btn-lg{padding:13px 24px;font-size:15px;width:100%;}
-.nav{display:flex;background:#f8f9fa;border-bottom:2px solid #e9ecef;overflow-x:auto;}
-.nav-item{padding:13px 20px;cursor:pointer;font-weight:600;font-size:13px;color:#6c757d;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
-.nav-item:hover{color:#667eea;}.nav-item.on{color:#667eea;border-bottom-color:#667eea;background:white;}
-.content{padding:24px;}
-.form-group{margin-bottom:16px;}
-.lbl{display:block;margin-bottom:6px;color:#495057;font-weight:600;font-size:13px;}
-.inp,.sel,.ta{width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:13px;font-family:inherit;transition:border-color .2s;}
-.inp:focus,.sel:focus,.ta:focus{outline:none;border-color:#667eea;}
-.ta{resize:vertical;min-height:75px;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.controls{padding:18px 24px;background:#f8f9fa;border-bottom:2px solid #e9ecef;}
-.ctrl-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
-.ctrl-row:last-child{margin-bottom:0;}
-.btn-filter{background:white;color:#495057;border:2px solid #dee2e6;padding:8px 15px;font-size:13px;}
-.btn-filter.on{background:#667eea;color:white;border-color:#667eea;}
-.search-wrap{flex:1;min-width:200px;}
-.search-wrap input{width:100%;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:13px;font-family:inherit;}
-.search-wrap input:focus{outline:none;border-color:#667eea;}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
-.stat{padding:16px;border-radius:12px;text-align:center;cursor:pointer;transition:all .2s;}
-.stat:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12);}
-.stat.on{outline:3px solid #667eea;}
-.stat.s-all{background:linear-gradient(135deg,#f5f7fa,#c3cfe2);}
-.stat.s-wait{background:linear-gradient(135deg,#ffecd2,#fcb69f);}
-.stat.s-wip{background:linear-gradient(135deg,#cce5ff,#99caff);}
-.stat.s-done{background:linear-gradient(135deg,#a8edea,#fed6e3);}
-.stat-n{font-size:26px;font-weight:bold;color:#2d3748;margin-bottom:3px;}
-.stat-l{font-size:12px;color:#4a5568;}
-.tbl{border-radius:12px;overflow:hidden;border:1px solid #e9ecef;}
-.tbl-head{background:#f8f9fa;padding:13px 17px;border-bottom:2px solid #dee2e6;font-weight:600;color:#495057;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-.rec{padding:16px;border-bottom:1px solid #e9ecef;transition:background .15s;}
-.rec:hover{background:#f8f9fa;}.rec:last-child{border-bottom:none;}
-.rec-grid{display:grid;grid-template-columns:1.8fr 1.8fr 1.2fr 1.2fr 1fr auto;gap:11px;align-items:center;}
-.fl{font-size:13px;}.fl .fl-lbl{color:#6c757d;font-size:11px;margin-bottom:2px;}
-.fl .fl-val{color:#2d3748;font-weight:500;}
-.fl .fl-val.link{color:#667eea;cursor:pointer;text-decoration:underline;}
-.fl .fl-val.link:hover{color:#5568d3;}
-.actions{display:flex;gap:5px;flex-wrap:wrap;}
-.bs{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
-.bs-wait{background:#fff3cd;color:#856404;}
-.bs-wip{background:#cce5ff;color:#004085;}
-.bs-done{background:#d4edda;color:#155724;}
-.rec-meta{margin-top:7px;display:flex;gap:14px;font-size:11px;color:#6c757d;flex-wrap:wrap;}
-.rec-photos{margin-top:7px;display:flex;gap:7px;flex-wrap:wrap;}
-.rec-photo{width:55px;height:55px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e9ecef;}
-.pages{display:flex;justify-content:center;align-items:center;gap:7px;padding:16px;flex-wrap:wrap;}
-.pages button{padding:6px 13px;border:2px solid #667eea;background:white;color:#667eea;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;transition:all .2s;}
-.pages button:hover:not(:disabled){background:#667eea;color:white;}
-.pages button:disabled{opacity:.3;cursor:not-allowed;}
-.pages button.on{background:#667eea;color:white;}
-.pages-info{color:#6c757d;font-size:12px;}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:16px;}
-.modal.show{display:flex;}
-.modal-box{background:white;border-radius:16px;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
-.modal-head{padding:20px 24px;border-bottom:2px solid #e9ecef;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;z-index:5;}
-.modal-head h2{color:#2d3748;font-size:18px;}
-.x-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#6c757d;line-height:1;}
-.modal-body{padding:22px;}
-.form-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px;}
-.photo-drop{border:2px dashed #dee2e6;border-radius:8px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;}
-.photo-drop:hover{border-color:#667eea;background:#f0f2ff;}
-.photo-grid{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;}
-.photo-wrap{position:relative;width:75px;height:75px;}
-.photo-wrap img{width:100%;height:100%;object-fit:cover;border-radius:6px;}
-.rm-photo{position:absolute;top:-5px;right:-5px;background:#dc3545;color:white;border:none;border-radius:50%;width:19px;height:19px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.hist-head{display:flex;align-items:center;gap:11px;margin-bottom:18px;flex-wrap:wrap;}
-.back-btn{background:#f8f9fa;border:2px solid #dee2e6;color:#495057;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;}
+.btn-outline{background:white;color:#667eea;border:2px solid #667eea;}
+.btn-outline:hover{background:#667eea;color:white;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-logout{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3);font-size:13px;}
+.btn-logout:hover{background:rgba(255,255,255,.3);}
+
+/* FORMS */
+.form-group{margin-bottom:18px;}
+.form-label{display:block;margin-bottom:7px;color:#495057;font-weight:600;font-size:14px;}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#667eea;}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+
+/* CONTROLS */
+.controls{padding:20px 25px;background:#f8f9fa;border-bottom:2px solid #e9ecef;}
+.control-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.control-row:last-child{margin-bottom:0;}
+.btn-filter{background:white;color:#495057;border:2px solid #dee2e6;padding:9px 16px;}
+.btn-filter.active{background:#667eea;color:white;border-color:#667eea;}
+.search-box{flex:1;min-width:220px;position:relative;}
+.search-box input{width:100%;padding:10px 15px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;}
+.search-box input:focus{outline:none;border-color:#667eea;}
+
+/* CONTENT */
+.content{padding:25px;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:25px;}
+.stat-card{padding:18px;border-radius:12px;text-align:center;cursor:pointer;transition:all .2s;}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 5px 15px rgba(0,0,0,.15);}
+.stat-card.active{outline:3px solid #667eea;}
+.stat-card.total{background:linear-gradient(135deg,#f5f7fa,#c3cfe2);}
+.stat-card.pending{background:linear-gradient(135deg,#ffecd2,#fcb69f);}
+.stat-card.inprogress{background:linear-gradient(135deg,#cce5ff,#99caff);}
+.stat-card.completed{background:linear-gradient(135deg,#a8edea,#fed6e3);}
+.stat-number{font-size:28px;font-weight:bold;color:#2d3748;margin-bottom:4px;}
+.stat-label{font-size:13px;color:#4a5568;}
+
+/* TABLE */
+.records-table{border-radius:12px;overflow:hidden;border:1px solid #e9ecef;}
+.table-header{background:#f8f9fa;padding:14px 18px;border-bottom:2px solid #dee2e6;font-weight:600;color:#495057;display:flex;justify-content:space-between;align-items:center;font-size:14px;}
+.record-item{padding:18px;border-bottom:1px solid #e9ecef;transition:background .15s;}
+.record-item:hover{background:#f8f9fa;}
+.record-item:last-child{border-bottom:none;}
+.record-grid{display:grid;grid-template-columns:1.8fr 1.8fr 1.2fr 1.2fr 1fr auto;gap:12px;align-items:center;}
+.record-field .label{color:#6c757d;font-size:11px;margin-bottom:3px;}
+.record-field .value{color:#2d3748;font-weight:500;font-size:14px;}
+.record-field .value.link{color:#667eea;cursor:pointer;text-decoration:underline;}
+.record-field .value.link:hover{color:#5568d3;}
+.record-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.status-badge{display:inline-block;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+.badge-pending{background:#fff3cd;color:#856404;}
+.badge-inprogress{background:#cce5ff;color:#004085;}
+.badge-completed{background:#d4edda;color:#155724;}
+.record-meta{margin-top:8px;display:flex;gap:15px;font-size:12px;color:#6c757d;}
+.record-photos{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+.record-photo{width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e9ecef;}
+
+/* PAGINATION */
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;padding:18px;flex-wrap:wrap;}
+.pagination button{padding:7px 14px;border:2px solid #667eea;background:white;color:#667eea;border-radius:6px;cursor:pointer;font-weight:600;transition:all .2s;font-size:13px;}
+.pagination button:hover:not(:disabled){background:#667eea;color:white;}
+.pagination button:disabled{opacity:.3;cursor:not-allowed;}
+.pagination button.active{background:#667eea;color:white;}
+.pagination-info{color:#6c757d;font-size:13px;}
+
+/* MODAL */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal.active{display:flex;}
+.modal-content{background:white;border-radius:16px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-header{padding:22px 25px;border-bottom:2px solid #e9ecef;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;z-index:10;}
+.modal-header h2{color:#2d3748;font-size:20px;}
+.close-btn{background:none;border:none;font-size:26px;cursor:pointer;color:#6c757d;line-height:1;}
+.modal-body{padding:25px;}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+
+/* PHOTO UPLOAD */
+.photo-upload-area{border:2px dashed #dee2e6;border-radius:8px;padding:25px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px;}
+.photo-upload-area:hover{border-color:#667eea;background:#f0f2ff;}
+.photo-preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.photo-preview{position:relative;width:80px;height:80px;}
+.photo-preview img{width:100%;height:100%;object-fit:cover;border-radius:6px;}
+.photo-preview .remove-photo{position:absolute;top:-5px;right:-5px;background:#dc3545;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* HISTORY PAGE */
+.history-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.back-btn{background:#f8f9fa;border:2px solid #dee2e6;color:#495057;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}
 .back-btn:hover{background:#e9ecef;}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:22px;}
-.kpi-card{background:white;border-radius:12px;padding:18px;border:1px solid #e9ecef;box-shadow:0 2px 8px rgba(0,0,0,.05);}
-.kpi-card h3{font-size:12px;color:#6c757d;margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px;}
-.kpi-val{font-size:28px;font-weight:bold;color:#2d3748;margin-bottom:4px;}
-.kpi-sub{font-size:12px;color:#6c757d;}
-.kpi-bar{background:#e9ecef;border-radius:10px;height:7px;margin-top:7px;}
-.kpi-fill{background:#667eea;border-radius:10px;height:100%;transition:width .5s;}
-.chart-box{background:white;border-radius:12px;padding:18px;border:1px solid #e9ecef;margin-bottom:18px;}
-.chart-box h3{font-size:15px;font-weight:600;color:#2d3748;margin-bottom:13px;}
-.bar-chart{display:flex;align-items:flex-end;gap:9px;height:150px;padding-bottom:22px;border-bottom:2px solid #e9ecef;}
-.bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.bar{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:5px 5px 0 0;min-height:3px;position:relative;cursor:pointer;}
-.bar:hover::after{content:attr(data-v);position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#2d3748;color:white;padding:2px 7px;border-radius:4px;font-size:11px;white-space:nowrap;}
-.bar-lbl{font-size:10px;color:#6c757d;text-align:center;}
+.history-title{font-size:20px;font-weight:bold;color:#2d3748;}
+.history-subtitle{font-size:14px;color:#6c757d;margin-top:3px;}
+
+/* KPI PAGE */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:25px;}
+.kpi-card{background:white;border-radius:12px;padding:20px;border:1px solid #e9ecef;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.kpi-card h3{font-size:13px;color:#6c757d;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;}
+.kpi-value{font-size:30px;font-weight:bold;color:#2d3748;margin-bottom:5px;}
+.kpi-sub{font-size:13px;color:#6c757d;}
+.kpi-bar{background:#e9ecef;border-radius:10px;height:8px;margin-top:8px;}
+.kpi-bar-fill{background:#667eea;border-radius:10px;height:100%;transition:width .5s;}
+.chart-section{background:white;border-radius:12px;padding:20px;border:1px solid #e9ecef;margin-bottom:20px;}
+.chart-section h3{font-size:16px;font-weight:600;color:#2d3748;margin-bottom:15px;}
+.bar-chart{display:flex;align-items:flex-end;gap:10px;height:160px;padding-bottom:25px;border-bottom:2px solid #e9ecef;position:relative;}
+.bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.bar{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:6px 6px 0 0;transition:height .5s;min-height:4px;position:relative;}
+.bar:hover::after{content:attr(data-value);position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:#2d3748;color:white;padding:3px 8px;border-radius:4px;font-size:12px;white-space:nowrap;}
+.bar-label{font-size:11px;color:#6c757d;text-align:center;}
 .top-list{list-style:none;}
-.top-list li{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #e9ecef;font-size:13px;}
+.top-list li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e9ecef;font-size:14px;}
 .top-list li:last-child{border-bottom:none;}
-.rank{background:#667eea;color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;margin-right:9px;flex-shrink:0;}
-.top-name{flex:1;color:#2d3748;}.top-count{font-weight:bold;color:#667eea;}
-.card-section{border:1px solid #e9ecef;border-radius:12px;padding:22px;margin-bottom:18px;}
-.card-section > h3{font-size:15px;font-weight:700;color:#2d3748;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #e9ecef;}
-.user-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #e9ecef;font-size:13px;flex-wrap:wrap;gap:8px;}
-.user-row:last-child{border-bottom:none;}
-.user-info{display:flex;align-items:center;gap:9px;}
-.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;}
-.user-name{font-weight:600;color:#2d3748;}.user-meta{font-size:11px;color:#6c757d;}
-.ws-tag{display:inline-flex;align-items:center;gap:7px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:9px 14px;margin:5px;font-size:13px;cursor:pointer;transition:all .2s;}
-.ws-tag:hover{border-color:#667eea;color:#667eea;}
-.ws-count{background:#667eea;color:white;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;}
-.danger-zone{border:2px solid #dc3545;border-radius:12px;padding:22px;}
-.empty{text-align:center;padding:48px 20px;color:#6c757d;}
-.empty-icon{font-size:50px;margin-bottom:13px;opacity:.3;}
-.loading{text-align:center;padding:38px;}
-.spin{border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto 13px;}
-@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-.lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:2000;align-items:center;justify-content:center;}
-.lightbox.show{display:flex;}
-.lightbox img{max-width:90%;max-height:90%;border-radius:8px;}
-.lb-x{position:absolute;top:18px;right:22px;color:white;font-size:32px;cursor:pointer;}
-.login-wrap{padding:48px 28px;text-align:center;max-width:420px;margin:0 auto;}
-.login-wrap h2{color:#2d3748;margin-bottom:11px;font-size:21px;}
-.login-wrap p{color:#6c757d;margin-bottom:26px;line-height:1.6;font-size:14px;}
-.alert{padding:11px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;}
-.alert-ok{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
-.alert-warn{background:#fff3cd;color:#856404;border:1px solid #ffeaa7;}
+.top-list .rank{background:#667eea;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;margin-right:10px;}
+.top-list .name{flex:1;color:#2d3748;}
+.top-list .count{font-weight:bold;color:#667eea;}
+
+/* LOGIN */
+.login-screen{padding:50px 30px;text-align:center;max-width:440px;margin:0 auto;}
+.login-screen h2{color:#2d3748;margin-bottom:12px;font-size:22px;}
+.login-screen p{color:#6c757d;margin-bottom:28px;line-height:1.6;}
+.alert{padding:12px 18px;border-radius:8px;margin-bottom:18px;font-size:14px;}
+.alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+.alert-warning{background:#fff3cd;color:#856404;border:1px solid #ffeaa7;}
 .alert-info{background:#cce5ff;color:#004085;border:1px solid #b8daff;}
-.tab-switch{display:flex;margin-bottom:22px;border:2px solid #667eea;border-radius:10px;overflow:hidden;}
-.tsw{flex:1;padding:10px;border:none;background:white;color:#667eea;cursor:pointer;font-weight:600;font-size:13px;font-family:inherit;transition:all .2s;}
-.tsw.on{background:#667eea;color:white;}
+.empty-state{text-align:center;padding:50px 20px;color:#6c757d;}
+.empty-icon{font-size:56px;margin-bottom:15px;opacity:.3;}
+.loading{text-align:center;padding:40px;}
+.spinner{border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;width:38px;height:38px;animation:spin 1s linear infinite;margin:0 auto 15px;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+/* LIGHTBOX */
+.lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:2000;align-items:center;justify-content:center;}
+.lightbox.active{display:flex;}
+.lightbox img{max-width:90%;max-height:90%;border-radius:8px;}
+.lightbox-close{position:absolute;top:20px;right:25px;color:white;font-size:35px;cursor:pointer;}
+
 @media(max-width:768px){
-  .rec-grid{grid-template-columns:1fr;gap:7px;}
-  .row2{grid-template-columns:1fr;}
+  .record-grid{grid-template-columns:1fr;gap:8px;}
+  .form-row{grid-template-columns:1fr;}
   .header{flex-direction:column;}
   .kpi-grid{grid-template-columns:1fr 1fr;}
 }
@@ -158,716 +182,1087 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 </head>
 <body>
 
-<!-- 登入頁 -->
-<div id="loginPage" class="page">
-  <div class="header"><div><h1>☀️ 太陽光電維修管理系統</h1><p>雲端即時同步 v3.0</p></div></div>
-  <div class="login-wrap">
-    <h2>🔐 登入系統</h2>
-    <p>請選擇登入方式</p>
-    <div class="tab-switch">
-      <button class="tsw on" onclick="swLogin('member')">👤 成員登入</button>
-      <button class="tsw" onclick="swLogin('admin')">👑 管理員登入</button>
-    </div>
-    <div id="memberForm">
-      <div class="alert alert-info">輸入管理員給你的帳號和密碼</div>
-      <form onsubmit="doMemberLogin(event)">
-        <div class="form-group" style="text-align:left"><label class="lbl">帳號</label><input type="text" class="inp" id="m_acc" required placeholder="例如：zhang001"></div>
-        <div class="form-group" style="text-align:left"><label class="lbl">密碼</label><input type="password" class="inp" id="m_pw" required placeholder="輸入密碼"></div>
-        <button type="submit" class="btn btn-primary btn-lg">登入</button>
-      </form>
-    </div>
-    <div id="adminForm" style="display:none">
-      <div class="alert alert-warn">⚠️ 管理員專用登入，請妥善保管密碼</div>
-      <form onsubmit="doAdminLogin(event)">
-        <div class="form-group" style="text-align:left"><label class="lbl">管理員密碼</label><input type="password" class="inp" id="a_pw" required placeholder="輸入管理員密碼"></div>
-        <button type="submit" class="btn btn-primary btn-lg">管理員登入</button>
-      </form>
-      <p style="margin-top:12px;font-size:12px;color:#6c757d">預設密碼：<strong>admin1234</strong>（登入後請立即更改）</p>
-    </div>
+<!-- 登入畫面 -->
+<div id="loginScreen" class="container">
+  <div class="header"><div class="header-left"><h1>☀️ 太陽光電維修管理系統</h1><p>Firebase 雲端即時同步版 v2.0</p></div></div>
+  <div class="login-screen">
+    <h2>🔐 設定您的工作區</h2>
+    <p>請設定工作區代碼，所有裝置使用相同代碼即可即時同步。</p>
+    <div class="alert alert-success">✅ 已連接 Firebase 雲端 — 手機電腦即時同步！</div>
+    <form onsubmit="login(event)">
+      <div class="form-group" style="text-align:left">
+        <label class="form-label">工作區代碼 *</label>
+        <input type="text" class="form-input" id="workspaceId" required placeholder="例如：陽光工程" minlength="3">
+        <small style="color:#6c757d;font-size:12px">所有裝置使用相同代碼即可同步</small>
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label class="form-label">您的姓名（選填）</label>
+        <input type="text" class="form-input" id="userName" placeholder="例如：張志明">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label class="form-label">管理員密碼（選填）</label>
+        <input type="password" class="form-input" id="adminPass" placeholder="留空為一般成員，輸入密碼為管理員">
+        <small style="color:#6c757d;font-size:12px">管理員可刪除紀錄、匯出報告、查看KPI</small>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:16px">進入工作區</button>
+    </form>
+    <div class="alert alert-warning" style="margin-top:18px">⚠️ 請記住工作區代碼，其他裝置需要相同代碼才能同步</div>
   </div>
 </div>
 
-<!-- 主頁面 -->
-<div id="mainPage" class="page" style="display:none">
+<!-- 主應用程式 -->
+<div id="mainApp" class="container" style="display:none">
   <div class="header">
-    <div><h1>☀️ 太陽光電維修管理系統</h1><p>工作區：<span id="wsLbl"></span> | <span id="meLbl"></span></p></div>
+    <div class="header-left">
+      <h1>☀️ 太陽光電維修管理系統</h1>
+      <p>工作區：<span id="wsDisplay"></span> | 使用者：<span id="userDisplay"></span></p>
+    </div>
     <div class="header-right">
-      <div class="sync-pill"><div class="dot" id="syncDot"></div><span id="syncTxt">連線中...</span></div>
-      <span id="roleBadge" class="badge"></span>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">登出</button>
+      <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncText">連線中...</span></div>
+      <span id="adminBadge" style="display:none;background:#ffc107;color:#212529;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">👑 管理員</span>
+      <button class="btn btn-logout" onclick="logout()">登出</button>
     </div>
   </div>
-  <div class="nav">
-    <div class="nav-item on" onclick="goTab('records')">📋 維修紀錄</div>
-    <div class="nav-item" id="nav-kpi" onclick="goTab('kpi')">📊 KPI 統計</div>
-    <div class="nav-item" id="nav-admin" style="display:none" onclick="goTab('admin')">⚙️ 管理後台</div>
+
+  <!-- 導覽列 -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('main')">📋 維修紀錄</div>
+    <div class="nav-tab" id="kpiTab" onclick="showTab('kpi')">📊 KPI 統計</div>
+    <div class="nav-tab" id="adminTab" style="display:none" onclick="showTab('admin')">⚙️ 管理設定</div>
   </div>
 
-  <!-- 維修紀錄 tab -->
-  <div id="tab-records">
+  <!-- 主頁面 -->
+  <div id="tabMain">
     <div class="controls">
-      <div class="ctrl-row">
-        <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <button class="btn btn-filter on" onclick="setPeriod('today',this)">今日</button>
-          <button class="btn btn-filter" onclick="setPeriod('week',this)">本週</button>
-          <button class="btn btn-filter" onclick="setPeriod('month',this)">本月</button>
-          <button class="btn btn-filter" onclick="setPeriod('year',this)">年度</button>
-          <button class="btn btn-filter" onclick="setPeriod('custom',this)">自訂</button>
+      <div class="control-row">
+        <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-filter active" onclick="filterPeriod('today',this)">今日</button>
+          <button class="btn btn-filter" onclick="filterPeriod('week',this)">本週</button>
+          <button class="btn btn-filter" onclick="filterPeriod('month',this)">本月</button>
+          <button class="btn btn-filter" onclick="filterPeriod('year',this)">年度</button>
+          <button class="btn btn-filter" onclick="filterPeriod('custom',this)">自訂區間</button>
         </div>
-        <div class="search-wrap"><input type="text" id="searchQ" placeholder="🔍 搜尋關鍵字（客戶/項目/人員/狀態/備註）..." oninput="doSearch()"></div>
-        <button class="btn btn-info admin-btn" style="display:none" onclick="doExportCSV()">📥 匯出</button>
-        <button class="btn btn-primary" onclick="openAdd()">➕ 新增記錄</button>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="🔍 搜尋任何關鍵字..." oninput="onSearch()">
+        </div>
+        <button class="btn btn-info" onclick="exportCSV()">📥 匯出</button>
+        <button class="btn btn-warning admin-only" style="display:none" onclick="openImportModal()">📤 匯入</button>
+        <button class="btn btn-primary" onclick="openAddModal()">➕ 新增記錄</button>
       </div>
-      <div id="customRow" style="display:none" class="ctrl-row">
-        <label style="font-weight:600;color:#495057;font-size:13px">日期區間：</label>
-        <input type="date" id="d_s" class="inp" style="width:auto;padding:8px" onchange="doRender()">
+      <div id="dateRangeRow" style="display:none" class="control-row">
+        <label style="font-weight:600;color:#495057">日期區間：</label>
+        <input type="date" id="startDate" class="form-input" style="width:auto;padding:8px" onchange="renderRecords()">
         <span style="color:#6c757d">至</span>
-        <input type="date" id="d_e" class="inp" style="width:auto;padding:8px" onchange="doRender()">
+        <input type="date" id="endDate" class="form-input" style="width:auto;padding:8px" onchange="renderRecords()">
       </div>
     </div>
+
     <div class="content">
-      <div class="stats">
-        <div class="stat s-all on" onclick="setSF('all',this)"><div class="stat-n" id="s_all">0</div><div class="stat-l">總維修紀錄</div></div>
-        <div class="stat s-wait" onclick="setSF('待處理',this)"><div class="stat-n" id="s_wait">0</div><div class="stat-l">待處理</div></div>
-        <div class="stat s-wip" onclick="setSF('進行中',this)"><div class="stat-n" id="s_wip">0</div><div class="stat-l">進行中</div></div>
-        <div class="stat s-done" onclick="setSF('已完成',this)"><div class="stat-n" id="s_done">0</div><div class="stat-l">已完成</div></div>
+      <div class="stats" id="statsRow">
+        <div class="stat-card total active" onclick="filterStatus('all',this)">
+          <div class="stat-number" id="sTotal">0</div><div class="stat-label">總維修紀錄</div>
+        </div>
+        <div class="stat-card pending" onclick="filterStatus('待處理',this)">
+          <div class="stat-number" id="sPending">0</div><div class="stat-label">待處理</div>
+        </div>
+        <div class="stat-card inprogress" onclick="filterStatus('進行中',this)">
+          <div class="stat-number" id="sInProgress">0</div><div class="stat-label">進行中</div>
+        </div>
+        <div class="stat-card completed" onclick="filterStatus('已完成',this)">
+          <div class="stat-number" id="sCompleted">0</div><div class="stat-label">已完成</div>
+        </div>
       </div>
-      <div class="tbl">
-        <div class="tbl-head"><span id="periodLbl">本週維修紀錄</span><span id="recCount" style="font-size:11px;font-weight:normal;color:#6c757d"></span></div>
-        <div id="recList"><div class="loading"><div class="spin"></div><p>載入資料中...</p></div></div>
-        <div class="pages" id="pageEl" style="display:none"></div>
+
+      <div class="records-table">
+        <div class="table-header">
+          <span id="periodTitle">本週維修紀錄</span>
+          <span style="font-size:12px;font-weight:normal;color:#6c757d" id="recordCount"></span>
+        </div>
+        <div id="recordsList"><div class="loading"><div class="spinner"></div><p>載入資料中...</p></div></div>
+        <div class="pagination" id="paginationEl" style="display:none"></div>
       </div>
     </div>
   </div>
 
-  <!-- KPI tab -->
-  <div id="tab-kpi" style="display:none">
+  <!-- KPI 頁面 -->
+  <div id="tabKpi" style="display:none">
     <div class="content">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-        <h2 style="color:#2d3748;font-size:20px">📊 KPI 統計報表</h2>
-        <button class="btn btn-primary" onclick="exportKpiPDF()">📄 匯出 PDF</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <h2 style="color:#2d3748">📊 KPI 統計報表</h2>
+        <button class="btn btn-primary" onclick="exportKpiPDF()">📄 匯出 PDF 報告</button>
       </div>
       <div class="kpi-grid" id="kpiGrid"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" id="kpiCharts"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap" id="kpiCharts"></div>
     </div>
   </div>
 
-  <!-- 歷史 tab -->
-  <div id="tab-history" style="display:none">
+  <!-- 歷史頁面（客戶/項目） -->
+  <div id="tabHistory" style="display:none">
     <div class="content">
-      <div class="hist-head">
-        <button class="back-btn" onclick="goTab('records')">← 返回</button>
-        <div><div style="font-size:18px;font-weight:bold;color:#2d3748" id="histTitle"></div><div style="font-size:13px;color:#6c757d;margin-top:2px" id="histSub"></div></div>
-        <button class="btn btn-primary admin-btn" style="display:none;margin-left:auto" onclick="exportHistPDF()">📄 匯出 PDF</button>
+      <div class="history-header">
+        <button class="back-btn" onclick="showTab('main')">← 返回</button>
+        <div>
+          <div class="history-title" id="historyTitle"></div>
+          <div class="history-subtitle" id="historySubtitle"></div>
+        </div>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="exportHistoryPDF()">📄 匯出 PDF</button>
       </div>
-      <div class="tbl"><div class="tbl-head"><span id="histTblTitle">歷史紀錄</span></div><div id="histList"></div></div>
+      <div class="records-table">
+        <div class="table-header"><span id="historyTableTitle">歷史紀錄</span></div>
+        <div id="historyList"></div>
+      </div>
     </div>
   </div>
 
-  <!-- 管理後台 tab -->
-  <div id="tab-admin" style="display:none">
+  <!-- 管理設定頁面 -->
+  <div id="tabAdmin" style="display:none">
     <div class="content">
-      <h2 style="color:#2d3748;font-size:20px;margin-bottom:20px">⚙️ 管理後台</h2>
+      <h2 style="color:#2d3748;margin-bottom:20px">⚙️ 管理員設定</h2>
 
-      <div class="card-section">
-        <h3>🌐 所有工作區總覽</h3>
-        <div id="allWs"><div class="loading"><div class="spin"></div><p>載入中...</p></div></div>
-      </div>
-
-      <div class="card-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #e9ecef">
-          <h3 style="margin:0;padding:0;border:none">👥 帳號管理</h3>
-          <button class="btn btn-primary btn-sm" onclick="openAddUser()">➕ 新增帳號</button>
+      <!-- 設定管理員密碼 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🔑 更改管理員密碼</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">新密碼</label>
+            <input type="password" class="form-input" id="newAdminPass" placeholder="輸入新的管理員密碼">
+          </div>
+          <div class="form-group">
+            <label class="form-label">確認密碼</label>
+            <input type="password" class="form-input" id="confirmAdminPass" placeholder="再次輸入密碼">
+          </div>
         </div>
-        <div id="userList"><div class="loading"><div class="spin"></div><p>載入中...</p></div></div>
+        <button class="btn btn-primary" onclick="changeAdminPass()">更新密碼</button>
       </div>
 
-      <div class="card-section">
-        <h3>🔑 更改管理員密碼</h3>
-        <div class="row2">
-          <div class="form-group"><label class="lbl">新密碼（至少6碼）</label><input type="password" class="inp" id="new_pw" placeholder="輸入新密碼"></div>
-          <div class="form-group"><label class="lbl">確認密碼</label><input type="password" class="inp" id="cfm_pw" placeholder="再次確認"></div>
-        </div>
-        <button class="btn btn-primary" onclick="changeAdminPw()">更新密碼</button>
+      <!-- 成員管理 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">👥 工作區成員活動</h3>
+        <div id="memberList"><div class="loading"><div class="spinner"></div><p>載入中...</p></div></div>
       </div>
 
-      <div class="danger-zone">
-        <h3 style="color:#dc3545;margin-bottom:9px;font-size:15px">⚠️ 危險區域</h3>
-        <p style="color:#6c757d;font-size:13px;margin-bottom:14px">以下操作不可復原</p>
-        <button class="btn btn-danger" onclick="clearWs()">🗑️ 清除指定工作區所有紀錄</button>
+      <!-- 危險區域 -->
+      <div style="border:2px solid #dc3545;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#dc3545;margin-bottom:10px">⚠️ 危險區域</h3>
+        <p style="color:#6c757d;font-size:14px;margin-bottom:15px">以下操作不可復原，請謹慎使用</p>
+        <button class="btn btn-danger" onclick="clearAllRecords()">🗑️ 清除所有紀錄</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 記錄 Modal -->
-<div class="modal" id="recModal">
-  <div class="modal-box">
-    <div class="modal-head"><h2 id="recMTitle">新增維修記錄</h2><button class="x-btn" onclick="closeRec()">&times;</button></div>
+<!-- 新增/編輯模態框 -->
+<div class="modal" id="recordModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">新增維修記錄</h2>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
     <div class="modal-body">
-      <form onsubmit="saveRec(event)">
-        <div class="row2">
-          <div class="form-group"><label class="lbl">客戶名稱 *</label><input type="text" class="inp" id="f_cust" required list="custList"><datalist id="custList"></datalist></div>
-          <div class="form-group"><label class="lbl">維修人員 *</label><input type="text" class="inp" id="f_tech" required></div>
+      <form onsubmit="saveRecord(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">客戶名稱 *</label>
+            <input type="text" class="form-input" id="f_customer" required list="customerList">
+            <datalist id="customerList"></datalist>
+          </div>
+          <div class="form-group">
+            <label class="form-label">維修人員 *</label>
+            <input type="text" class="form-input" id="f_technician" required>
+          </div>
         </div>
-        <div class="form-group"><label class="lbl">維修項目 *</label><input type="text" class="inp" id="f_item" required list="itemList"><datalist id="itemList"></datalist></div>
-        <div class="row2">
-          <div class="form-group"><label class="lbl">維修日期 *</label><input type="date" class="inp" id="f_date" required></div>
-          <div class="form-group"><label class="lbl">狀態 *</label><select class="sel" id="f_stat"><option value="待處理">待處理</option><option value="進行中">進行中</option><option value="已完成">已完成</option></select></div>
-        </div>
-        <div class="form-group"><label class="lbl">備註</label><textarea class="ta" id="f_notes" placeholder="詳細說明、零件、費用..."></textarea></div>
         <div class="form-group">
-          <label class="lbl">📸 上傳照片</label>
-          <div class="photo-drop" onclick="document.getElementById('photoFile').click()"><div style="font-size:26px;margin-bottom:7px">📷</div><div style="color:#6c757d;font-size:13px">點擊選擇照片（可多張）</div></div>
-          <input type="file" id="photoFile" accept="image/*" multiple style="display:none" onchange="handlePics(this)">
-          <div class="photo-grid" id="photoGrid"></div>
+          <label class="form-label">維修項目 *</label>
+          <select class="form-select" id="f_item_sel" onchange="handleItemSelect()" required>
+            <option value="">-- 請選擇維修項目 --</option>
+            <option value="逆變器故障">逆變器故障</option>
+            <option value="太陽能板破損">太陽能板破損</option>
+            <option value="電路檢修">電路檢修</option>
+            <option value="系統清潔保養">系統清潔保養</option>
+            <option value="監控系統異常">監控系統異常</option>
+            <option value="配電箱維修">配電箱維修</option>
+            <option value="支架結構檢查">支架結構檢查</option>
+            <option value="接地系統檢測">接地系統檢測</option>
+            <option value="線路老化更換">線路老化更換</option>
+            <option value="其他">其他（自行輸入）</option>
+          </select>
+          <input type="text" class="form-input" id="f_item_custom" style="display:none;margin-top:10px" placeholder="請輸入維修項目">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">維修日期 *</label>
+            <input type="date" class="form-input" id="f_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">狀態 *</label>
+            <select class="form-select" id="f_status">
+              <option value="待處理">待處理</option>
+              <option value="進行中">進行中</option>
+              <option value="已完成">已完成</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">備註</label>
+          <textarea class="form-textarea" id="f_notes" placeholder="詳細說明、零件、費用等..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📸 上傳照片</label>
+          <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+            <div style="font-size:28px;margin-bottom:8px">📷</div>
+            <div style="color:#6c757d;font-size:14px">點擊選擇照片（可多張）</div>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
+          <div class="photo-preview-grid" id="photoPreview"></div>
         </div>
         <div class="form-actions">
-          <button type="button" class="btn btn-gray" onclick="closeRec()">取消</button>
-          <button type="submit" class="btn btn-primary" id="saveRecBtn">儲存</button>
+          <button type="button" class="btn" style="background:#6c757d;color:white" onclick="closeModal()">取消</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- 帳號 Modal -->
-<div class="modal" id="userModal">
-  <div class="modal-box" style="max-width:440px">
-    <div class="modal-head"><h2>新增成員帳號</h2><button class="x-btn" onclick="closeUser()">&times;</button></div>
+<!-- 匯入 CSV Modal -->
+<div class="modal" id="importModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📤 匯入 CSV 資料</h2>
+      <button class="close-btn" onclick="closeImportModal()">&times;</button>
+    </div>
     <div class="modal-body">
-      <div class="alert alert-info">建立後請將帳號密碼告知成員</div>
-      <form onsubmit="saveUser(event)">
-        <div class="form-group"><label class="lbl">帳號（工號）*</label><input type="text" class="inp" id="u_acc" required placeholder="例如：zhang001"></div>
-        <div class="form-group"><label class="lbl">顯示名稱 *</label><input type="text" class="inp" id="u_name" required placeholder="例如：張志明"></div>
-        <div class="form-group"><label class="lbl">密碼 *（至少6碼）</label><input type="password" class="inp" id="u_pw" required minlength="6" placeholder="至少6碼"></div>
-        <div class="form-group"><label class="lbl">指定工作區</label><input type="text" class="inp" id="u_ws" placeholder="留空則使用管理員目前工作區"><small style="color:#6c757d;font-size:12px">相同工作區的成員可以看到彼此的紀錄</small></div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-gray" onclick="closeUser()">取消</button>
-          <button type="submit" class="btn btn-primary">建立帳號</button>
-        </div>
-      </form>
+      <div class="alert alert-info">選擇之前匯出的 CSV 檔案進行匯入</div>
+      <div class="form-group">
+        <label class="form-label">選擇 CSV 檔案</label>
+        <input type="file" class="form-input" id="csvFile" accept=".csv" style="padding:8px">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" onclick="closeImportModal()">取消</button>
+        <button type="button" class="btn btn-primary" onclick="doImportCSV()">開始匯入</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- 燈箱 -->
-<div class="lightbox" id="lb" onclick="closeLb()"><span class="lb-x">&times;</span><img id="lbImg" src="" alt=""></div>
+<!-- 照片燈箱 -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightboxImg" src="" alt="">
+</div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getDatabase, ref, set, push, remove, onValue, get, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-import { getStorage, ref as sr, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+import { getDatabase, ref, set, push, remove, onValue, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { getStorage, ref as sRef, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
-const app = initializeApp({
-  apiKey:"AIzaSyCbz3jN6PBRcEGcuknZEs2Sp0VOIfPWhr8",
-  authDomain:"mstsolar-maintenance.firebaseapp.com",
-  databaseURL:"https://mstsolar-maintenance-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:"mstsolar-maintenance",
-  storageBucket:"mstsolar-maintenance.firebasestorage.app",
-  messagingSenderId:"1061682843376",
-  appId:"1:1061682843376:web:8c9255f9e390bfc64efc35"
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyCbz3jN6PBRcEGcuknZEs2Sp0VOIfPWhr8",
+  authDomain: "mstsolar-maintenance.firebaseapp.com",
+  databaseURL: "https://mstsolar-maintenance-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "mstsolar-maintenance",
+  storageBucket: "mstsolar-maintenance.firebasestorage.app",
+  messagingSenderId: "1061682843376",
+  appId: "1:1061682843376:web:8c9255f9e390bfc64efc35"
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const stg = getStorage(app);
-const ADMIN_KEY = '__admin__';
+const storage = getStorage(app);
 
-let recs=[], ws='', me='', role='member';
-let period='week', sf='all', page=1;
-let editKey=null, pics=[], histMode=null;
-const PER=10;
+// STATE
+let allRecords = [];
+let ws = '', user = '';
+let dbRef = null;
+let currentFilter = 'week';
+let statusFilter = 'all';
+let currentPage = 1;
+let editKey = null;
+let pendingPhotos = [];
+let historyMode = null;
+let isAdmin = false;
 
-// ─── SYNC UI ───
-function ss(s,t){
-  const d=document.getElementById('syncDot'),tx=document.getElementById('syncTxt');
-  if(!d||!tx)return;
-  d.className='dot'+(s==='sync'?' sync':s==='off'?' off':'');
-  tx.textContent=t||(s==='sync'?'同步中...':s==='off'?'離線':'已同步');
+const PER_PAGE = 10;
+const DEFAULT_ADMIN_PASS = 'admin1234'; // 預設管理員密碼
+
+function syncStatus(s, t) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  if (!dot || !txt) return;
+  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : s === 'offline' ? ' offline' : '');
+  txt.textContent = t || (s === 'syncing' ? '同步中...' : s === 'offline' ? '離線' : '已同步');
 }
 
-// ─── LOGIN SWITCH ───
-window.swLogin = function(mode){
-  document.querySelectorAll('.tsw').forEach((b,i)=>b.classList.toggle('on',(i===0&&mode==='member')||(i===1&&mode==='admin')));
-  document.getElementById('memberForm').style.display=mode==='member'?'block':'none';
-  document.getElementById('adminForm').style.display=mode==='admin'?'block':'none';
-};
-
-window.doAdminLogin = async function(e){
+// ---- LOGIN ----
+window.login = async function(e) {
   e.preventDefault();
-  const pw=document.getElementById('a_pw').value;
-  try{
-    const snap=await get(ref(db,`${ADMIN_KEY}/adminPass`));
-    const saved=snap.val()||'admin1234';
-    if(pw!==saved){alert('管理員密碼錯誤');return;}
-    role='admin'; me='管理員'; ws='__all__';
-    saveSess(); startApp();
-  }catch(err){alert('登入失敗：'+err.message);}
-};
+  ws = document.getElementById('workspaceId').value.trim();
+  user = document.getElementById('userName').value.trim() || '匿名';
+  const adminPassInput = document.getElementById('adminPass').value;
 
-window.doMemberLogin = async function(e){
-  e.preventDefault();
-  const acc=document.getElementById('m_acc').value.trim();
-  const pw=document.getElementById('m_pw').value;
-  try{
-    const snap=await get(ref(db,`${ADMIN_KEY}/users/${acc}`));
-    const u=snap.val();
-    if(!u){alert('帳號不存在，請聯絡管理員新增帳號');return;}
-    if(u.password!==pw){alert('密碼錯誤');return;}
-    role='member'; me=u.name||acc; ws=u.workspace||acc;
-    saveSess(); startApp();
-  }catch(err){alert('登入失敗：'+err.message);}
-};
+  if (ws.length < 3) { alert('工作區代碼至少需要 3 個字元'); return; }
 
-function saveSess(){localStorage.setItem('v3',JSON.stringify({ws,me,role}));}
-function loadSess(){try{const s=JSON.parse(localStorage.getItem('v3'));if(s&&s.ws){ws=s.ws;me=s.me;role=s.role;return true;}}catch{}return false;}
-
-window.doLogout = function(){
-  if(!confirm('確定要登出嗎？'))return;
-  localStorage.removeItem('v3'); location.reload();
-};
-
-// ─── START APP ───
-function startApp(){
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('mainPage').style.display='block';
-  document.getElementById('wsLbl').textContent=role==='admin'?'全部工作區':ws;
-  document.getElementById('meLbl').textContent=me;
-  const rb=document.getElementById('roleBadge');
-  rb.className='badge '+(role==='admin'?'badge-admin':'badge-member');
-  rb.textContent=role==='admin'?'👑 管理員':'👤 '+me;
-  if(role==='admin'){
-    document.getElementById('nav-admin').style.display='block';
-    document.querySelectorAll('.admin-btn').forEach(b=>b.style.display='inline-flex');
+  // 檢查管理員密碼
+  if (adminPassInput) {
+    // 從 Firebase 取得儲存的管理員密碼
+    const savedPass = await getAdminPass();
+    const validPass = savedPass || DEFAULT_ADMIN_PASS;
+    if (adminPassInput === validPass) {
+      isAdmin = true;
+    } else {
+      alert('管理員密碼錯誤！\n請留空進入一般成員模式，或輸入正確密碼。');
+      return;
+    }
+  } else {
+    isAdmin = false;
   }
-  document.getElementById('f_date').value=tod();
-  initData();
+
+  localStorage.setItem('ws', ws);
+  localStorage.setItem('user', user);
+  localStorage.setItem('isAdmin', isAdmin ? '1' : '0');
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('wsDisplay').textContent = ws;
+  document.getElementById('userDisplay').textContent = user;
+
+  applyAdminUI();
+  initDB();
+};
+
+window.logout = function() {
+  if (confirm('確定要登出嗎？')) {
+    localStorage.removeItem('ws'); localStorage.removeItem('user');
+    localStorage.removeItem('isAdmin'); location.reload();
+  }
+};
+
+function checkSavedLogin() {
+  const sw = localStorage.getItem('ws');
+  if (sw) { document.getElementById('workspaceId').value = sw; }
+  const su = localStorage.getItem('user');
+  if (su) { document.getElementById('userName').value = su; }
 }
 
-// ─── DATA INIT ───
-function initData(){
-  ss('sync');
-  if(role==='admin'){
-    onValue(ref(db,'workspaces'),snap=>{
-      recs=[];
-      const d=snap.val()||{};
-      Object.keys(d).forEach(w=>{
-        const wr=d[w].records||{};
-        Object.keys(wr).forEach(k=>recs.push({_key:k,_ws:w,...wr[k]}));
-      });
-      ss('online','已同步'); updateAC(); doRender();
-      if(document.getElementById('tab-kpi').style.display!=='none') renderKPI();
-      if(document.getElementById('tab-admin').style.display!=='none') renderAdmin();
-    },err=>{ss('off','連線失敗');console.error(err);});
-  }else{
-    onValue(ref(db,`workspaces/${ws}/records`),snap=>{
-      const d=snap.val()||{};
-      recs=Object.keys(d).map(k=>({_key:k,_ws:ws,...d[k]}));
-      ss('online','已同步'); updateAC(); doRender();
-    },err=>{ss('off','連線失敗');console.error(err);});
+// ---- ADMIN UI ----
+function applyAdminUI() {
+  if (isAdmin) {
+    document.getElementById('adminBadge').style.display = 'inline-flex';
+    document.getElementById('adminTab').style.display = 'block';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-flex');
+  } else {
+    document.getElementById('adminBadge').style.display = 'none';
+    document.getElementById('adminTab').style.display = 'none';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
   }
 }
 
-// ─── TABS ───
-window.goTab = function(tab){
-  ['records','kpi','history','admin'].forEach(t=>{
-    const el=document.getElementById('tab-'+t);
-    if(el)el.style.display='none';
+async function getAdminPass() {
+  try {
+    const snap = await new Promise((res, rej) => {
+      const r = ref(db, `workspaces/${ws}/settings/adminPass`);
+      onValue(r, res, { onlyOnce: true });
+    });
+    return snap.val();
+  } catch { return null; }
+}
+
+window.changeAdminPass = async function() {
+  const np = document.getElementById('newAdminPass').value;
+  const cp = document.getElementById('confirmAdminPass').value;
+  if (!np) { alert('請輸入新密碼'); return; }
+  if (np.length < 6) { alert('密碼至少需要 6 個字元'); return; }
+  if (np !== cp) { alert('兩次密碼不一致'); return; }
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/adminPass`), np);
+    alert('✅ 管理員密碼已更新！\n下次登入請使用新密碼。');
+    document.getElementById('newAdminPass').value = '';
+    document.getElementById('confirmAdminPass').value = '';
+  } catch (err) {
+    alert('更新失敗：' + err.message);
+  }
+};
+
+window.clearAllRecords = async function() {
+  const count = allRecords.length;
+  if (!confirm(`⚠️ 確定要刪除全部 ${count} 筆紀錄嗎？\n此操作無法復原！`)) return;
+  if (!confirm('再次確認：真的要清除所有紀錄嗎？')) return;
+  try {
+    await remove(ref(db, `workspaces/${ws}/records`));
+    alert('已清除所有紀錄');
+  } catch (err) {
+    alert('清除失敗：' + err.message);
+  }
+};
+
+// ---- DATABASE ----
+function initDB() {
+  syncStatus('syncing');
+  dbRef = ref(db, 'workspaces/' + ws + '/records');
+  onValue(dbRef, snap => {
+    const data = snap.val();
+    allRecords = data ? Object.keys(data).map(k => ({ _key: k, ...data[k] })) : [];
+    syncStatus('online', '已同步');
+    updateAutocomplete();
+    renderRecords();
+    if (document.getElementById('tabKpi').style.display !== 'none') renderKPI();
+    if (document.getElementById('tabAdmin')?.style.display !== 'none') renderMemberList();
+  }, err => {
+    syncStatus('offline', '連線失敗');
+    console.error(err);
   });
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-  document.getElementById('tab-'+tab).style.display='block';
-  if(tab==='records') document.querySelectorAll('.nav-item')[0].classList.add('on');
-  else if(tab==='kpi'){
-    if(role!=='admin'){alert('此功能僅限管理員');goTab('records');return;}
-    document.getElementById('nav-kpi').classList.add('on'); renderKPI();
-  }else if(tab==='admin'){
-    if(role!=='admin'){alert('此功能僅限管理員');goTab('records');return;}
-    document.getElementById('nav-admin').classList.add('on'); renderAdmin();
+  document.getElementById('f_date').value = today();
+}
+
+// ---- TABS ----
+window.showTab = function(tab) {
+  ['tabMain','tabKpi','tabHistory','tabAdmin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'main') {
+    document.getElementById('tabMain').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  } else if (tab === 'kpi') {
+    if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
+    document.getElementById('tabKpi').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[1].classList.add('active');
+    renderKPI();
+  } else if (tab === 'history') {
+    document.getElementById('tabHistory').style.display = 'block';
+    renderHistory();
+  } else if (tab === 'admin') {
+    if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
+    document.getElementById('tabAdmin').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[2].classList.add('active');
+    renderMemberList();
   }
 };
 
-// ─── FILTERS ───
-window.setPeriod = function(p,btn){
-  period=p; page=1;
-  document.querySelectorAll('.btn-filter').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  const t={today:'今日',week:'本週',month:'本月',year:'年度',custom:'自訂區間'};
-  document.getElementById('periodLbl').textContent=t[p]+'維修紀錄';
-  document.getElementById('customRow').style.display=p==='custom'?'flex':'none';
-  if(p==='custom'){const n=new Date();document.getElementById('d_s').value=`${n.getFullYear()}-${pad(n.getMonth()+1)}-01`;document.getElementById('d_e').value=tod();}
-  doRender();
-};
-window.setSF = function(s,card){sf=s;page=1;document.querySelectorAll('.stat').forEach(c=>c.classList.remove('on'));card.classList.add('on');doRender();};
-window.doSearch = function(){page=1;doRender();};
+function renderMemberList() {
+  const creators = [...new Set(allRecords.map(r => r.createdBy).filter(Boolean))];
+  const el = document.getElementById('memberList');
+  if (!creators.length) { el.innerHTML = '<p style="color:#6c757d;font-size:14px">目前沒有成員活動記錄</p>'; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="background:#f8f9fa">
+      <th style="padding:10px;text-align:left;border-bottom:2px solid #e9ecef">成員姓名</th>
+      <th style="padding:10px;text-align:center;border-bottom:2px solid #e9ecef">新增件數</th>
+      <th style="padding:10px;text-align:center;border-bottom:2px solid #e9ecef">最近活動</th>
+    </tr></thead>
+    <tbody>${creators.map(c => {
+      const recs = allRecords.filter(r => r.createdBy === c);
+      const latest = recs.sort((a,b) => new Date(b.repairDate)-new Date(a.repairDate))[0];
+      return `<tr style="border-bottom:1px solid #e9ecef">
+        <td style="padding:10px;font-weight:600">👤 ${c}</td>
+        <td style="padding:10px;text-align:center;color:#667eea;font-weight:700">${recs.length} 件</td>
+        <td style="padding:10px;text-align:center;color:#6c757d">${latest?.repairDate || '-'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
 
-function getFiltered(){
-  const now=new Date(),td=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  let list=recs.filter(r=>{
-    const d=new Date(r.repairDate);
-    if(period==='today')return d>=td;
-    if(period==='week'){const w=new Date(td);w.setDate(w.getDate()-7);return d>=w;}
-    if(period==='month'){const m=new Date(td);m.setMonth(m.getMonth()-1);return d>=m;}
-    if(period==='year'){const y=new Date(td);y.setFullYear(y.getFullYear()-1);return d>=y;}
-    if(period==='custom'){
-      const s=document.getElementById('d_s').value,e=document.getElementById('d_e').value;
-      if(s&&e){const en=new Date(e);en.setHours(23,59,59);return d>=new Date(s)&&d<=en;}
+// ---- FILTER ----
+window.filterPeriod = function(p, btn) {
+  currentFilter = p; currentPage = 1;
+  document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const titles = { today:'今日維修紀錄', week:'本週維修紀錄', month:'本月維修紀錄', year:'年度維修紀錄', custom:'自訂區間' };
+  document.getElementById('periodTitle').textContent = titles[p];
+  document.getElementById('dateRangeRow').style.display = p === 'custom' ? 'flex' : 'none';
+  if (p === 'custom') {
+    const now = new Date();
+    document.getElementById('startDate').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`;
+    document.getElementById('endDate').value = today();
+  }
+  renderRecords();
+};
+
+window.filterStatus = function(s, card) {
+  statusFilter = s; currentPage = 1;
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  renderRecords();
+};
+
+window.onSearch = function() { currentPage = 1; renderRecords(); };
+
+function getFiltered() {
+  const now = new Date();
+  const todayD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let list = allRecords.filter(r => {
+    const rd = new Date(r.repairDate);
+    if (currentFilter === 'today') return rd >= todayD;
+    if (currentFilter === 'week') { const w = new Date(todayD); w.setDate(w.getDate()-7); return rd >= w; }
+    if (currentFilter === 'month') { const m = new Date(todayD); m.setMonth(m.getMonth()-1); return rd >= m; }
+    if (currentFilter === 'year') { const y = new Date(todayD); y.setFullYear(y.getFullYear()-1); return rd >= y; }
+    if (currentFilter === 'custom') {
+      const s = document.getElementById('startDate').value;
+      const e = document.getElementById('endDate').value;
+      if (s && e) { const end = new Date(e); end.setHours(23,59,59); return rd >= new Date(s) && rd <= end; }
     }
     return true;
   });
-  if(sf!=='all')list=list.filter(r=>r.status===sf);
-  const q=(document.getElementById('searchQ')?.value||'').toLowerCase();
-  if(q)list=list.filter(r=>['customerName','repairItem','technician','status','notes'].some(k=>(r[k]||'').toLowerCase().includes(q)));
-  return list.sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
+  if (statusFilter !== 'all') list = list.filter(r => r.status === statusFilter);
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  if (q) list = list.filter(r =>
+    (r.customerName||'').toLowerCase().includes(q) ||
+    (r.repairItem||'').toLowerCase().includes(q) ||
+    (r.technician||'').toLowerCase().includes(q) ||
+    (r.status||'').toLowerCase().includes(q) ||
+    (r.notes||'').toLowerCase().includes(q)
+  );
+  return list.sort((a,b) => new Date(b.repairDate) - new Date(a.repairDate));
 }
 
-// ─── RENDER ───
-function doRender(){
-  const list=getFiltered();
-  document.getElementById('s_all').textContent=recs.length;
-  document.getElementById('s_wait').textContent=recs.filter(r=>r.status==='待處理').length;
-  document.getElementById('s_wip').textContent=recs.filter(r=>r.status==='進行中').length;
-  document.getElementById('s_done').textContent=recs.filter(r=>r.status==='已完成').length;
-  const total=list.length,pages=Math.ceil(total/PER);
-  if(page>pages)page=1;
-  const sl=list.slice((page-1)*PER,page*PER);
-  document.getElementById('recCount').textContent=`共 ${total} 筆`;
-  const el=document.getElementById('recList');
-  el.innerHTML=sl.length?sl.map(rHTML).join(''):'<div class="empty"><div class="empty-icon">📋</div><p>目前沒有維修紀錄</p></div>';
-  renderPg(pages,total);
+// ---- RENDER RECORDS ----
+function renderRecords() {
+  const list = getFiltered();
+  updateStats(list);
+  const total = list.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  if (currentPage > pages) currentPage = 1;
+  const slice = list.slice((currentPage-1)*PER_PAGE, currentPage*PER_PAGE);
+  document.getElementById('recordCount').textContent = `共 ${total} 筆`;
+  const el = document.getElementById('recordsList');
+  if (!slice.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有維修紀錄</p></div>';
+  } else {
+    el.innerHTML = slice.map(r => recordHTML(r)).join('');
+  }
+  renderPagination(pages, total);
 }
-window.doRender=doRender;
 
-function rHTML(r){
-  const photos=r.photos?Object.values(r.photos).map(p=>`<img class="rec-photo" src="${p}" onclick="openLb('${p}')" alt="">`).join(''):'';
-  const wsBadge=role==='admin'?`<span style="background:#e9ecef;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:8px">${r._ws||''}</span>`:'';
-  return `<div class="rec">
-    <div class="rec-grid">
-      <div class="fl"><div class="fl-lbl">客戶名稱</div><div class="fl-val link" onclick="showHist('customer','${esc(r.customerName)}')">${r.customerName}${wsBadge}</div></div>
-      <div class="fl"><div class="fl-lbl">維修項目</div><div class="fl-val link" onclick="showHist('item','${esc(r.repairItem)}')">${r.repairItem}</div></div>
-      <div class="fl"><div class="fl-lbl">維修人員</div><div class="fl-val">${r.technician}</div></div>
-      <div class="fl"><div class="fl-lbl">維修日期</div><div class="fl-val">${fmtD(r.repairDate)}</div></div>
-      <div class="fl"><div class="fl-lbl">狀態</div><div class="fl-val"><span class="bs ${bc(r.status)}">${r.status}</span></div></div>
-      <div class="actions">
-        <button class="btn btn-success btn-sm" onclick="openEdit('${r._key}','${r._ws||ws}')">✏️</button>
-        ${role==='admin'?`<button class="btn btn-danger btn-sm" onclick="delRec('${r._key}','${r._ws||ws}')">🗑️</button>
-        <button class="btn btn-info btn-sm" onclick="exportOnePDF('${r._key}')">📄</button>`:''}
+function recordHTML(r) {
+  const photos = r.photos ? Object.values(r.photos).map(p =>
+    `<img class="record-photo" src="${p}" onclick="openLightbox('${p}')" alt="維修照片">`
+  ).join('') : '';
+  return `
+  <div class="record-item">
+    <div class="record-grid">
+      <div class="record-field">
+        <div class="label">客戶名稱</div>
+        <div class="value link" onclick="showHistory('customer','${esc(r.customerName)}')">${r.customerName}</div>
+      </div>
+      <div class="record-field">
+        <div class="label">維修項目</div>
+        <div class="value link" onclick="showHistory('item','${esc(r.repairItem)}')">${r.repairItem}</div>
+      </div>
+      <div class="record-field">
+        <div class="label">維修人員</div>
+        <div class="value">${r.technician}</div>
+      </div>
+      <div class="record-field">
+        <div class="label">維修日期</div>
+        <div class="value">${fmtDate(r.repairDate)}</div>
+      </div>
+      <div class="record-field">
+        <div class="label">狀態</div>
+        <div class="value"><span class="status-badge ${badgeClass(r.status)}">${r.status}</span></div>
+      </div>
+      <div class="record-actions">
+        <button class="btn btn-success btn-sm" onclick="openEditModal('${r._key}')">✏️</button>
+        ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord('${r._key}')">🗑️</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF('${r._key}')">📄</button>` : ''}
       </div>
     </div>
-    ${r.notes?`<div class="rec-meta">📝 ${r.notes}</div>`:''}
-    ${photos?`<div class="rec-photos">${photos}</div>`:''}
-    <div class="rec-meta"><span>建立：${r.createdBy||'-'}</span>${r.updatedBy?`<span>更新：${r.updatedBy}</span>`:''}</div>
+    ${r.notes ? `<div class="record-meta">📝 ${r.notes}</div>` : ''}
+    ${photos ? `<div class="record-photos">${photos}</div>` : ''}
+    <div class="record-meta" style="margin-top:6px">
+      <span>建立：${r.createdBy||'-'}</span>
+      ${r.updatedBy ? `<span>更新：${r.updatedBy}</span>` : ''}
+    </div>
   </div>`;
 }
 
-function renderPg(pages,total){
-  const el=document.getElementById('pageEl');
-  if(pages<=1){el.style.display='none';return;}
-  el.style.display='flex';
-  let h=`<button ${page===1?'disabled':''} onclick="goPg(${page-1})">上一頁</button>`;
-  const s=Math.max(1,page-2),e=Math.min(pages,s+4);
-  if(s>1){h+=`<button onclick="goPg(1)">1</button>`;if(s>2)h+='<span>...</span>';}
-  for(let i=s;i<=e;i++)h+=`<button class="${i===page?'on':''}" onclick="goPg(${i})">${i}</button>`;
-  if(e<pages){if(e<pages-1)h+='<span>...</span>';h+=`<button onclick="goPg(${pages})">${pages}</button>`;}
-  h+=`<button ${page===pages?'disabled':''} onclick="goPg(${page+1})">下一頁</button>`;
-  h+=`<span class="pages-info">共 ${total} 筆</span>`;
-  el.innerHTML=h;
+function updateStats(list) {
+  document.getElementById('sTotal').textContent = allRecords.length;
+  document.getElementById('sPending').textContent = allRecords.filter(r=>r.status==='待處理').length;
+  document.getElementById('sInProgress').textContent = allRecords.filter(r=>r.status==='進行中').length;
+  document.getElementById('sCompleted').textContent = allRecords.filter(r=>r.status==='已完成').length;
 }
-window.goPg=function(p){page=p;doRender();window.scrollTo({top:0,behavior:'smooth'});};
 
-// ─── HISTORY ───
-window.showHist=function(type,value){
-  histMode={type,value};
-  document.getElementById('histTitle').textContent=value;
-  document.getElementById('histSub').textContent=(type==='customer'?'客戶':'維修項目')+'歷史紀錄';
-  document.getElementById('histTblTitle').textContent=`${value} — 所有紀錄`;
-  ['records','kpi','admin'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display='none';});
-  document.getElementById('tab-history').style.display='block';
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-  const list=recs.filter(r=>type==='customer'?r.customerName===value:r.repairItem===value).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
-  document.getElementById('histList').innerHTML=list.length?list.map(rHTML).join(''):'<div class="empty"><div class="empty-icon">📋</div><p>目前沒有紀錄</p></div>';
+function renderPagination(pages, total) {
+  const el = document.getElementById('paginationEl');
+  if (pages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  let h = `<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">上一頁</button>`;
+  const maxV = 5, start = Math.max(1, currentPage - 2), end = Math.min(pages, start + maxV - 1);
+  if (start > 1) { h += `<button onclick="goPage(1)">1</button>`; if (start > 2) h += '<span>...</span>'; }
+  for (let i = start; i <= end; i++) h += `<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  if (end < pages) { if (end < pages-1) h += '<span>...</span>'; h += `<button onclick="goPage(${pages})">${pages}</button>`; }
+  h += `<button ${currentPage===pages?'disabled':''} onclick="goPage(${currentPage+1})">下一頁</button>`;
+  h += `<span class="pagination-info">共 ${total} 筆</span>`;
+  el.innerHTML = h;
+}
+
+window.goPage = function(p) { currentPage = p; renderRecords(); window.scrollTo({top:0,behavior:'smooth'}); };
+
+// ---- HISTORY VIEW ----
+window.showHistory = function(type, value) {
+  historyMode = { type, value };
+  const label = type === 'customer' ? '客戶' : '維修項目';
+  document.getElementById('historyTitle').textContent = value;
+  document.getElementById('historySubtitle').textContent = `${label}歷史維修紀錄`;
+  document.getElementById('historyTableTitle').textContent = `${value} — 所有紀錄`;
+  showTab('history');
 };
 
-// ─── RECORD MODAL ───
-window.openAdd=function(){
-  editKey=null;pics=[];
-  document.getElementById('recMTitle').textContent='新增維修記錄';
-  document.getElementById('saveRecBtn').textContent='儲存';
-  document.querySelector('#recModal form').reset();
-  document.getElementById('f_date').value=tod();
-  document.getElementById('photoGrid').innerHTML='';
-  document.getElementById('recModal').classList.add('show');
-};
-window.openEdit=function(key,rws){
-  const r=recs.find(x=>x._key===key);if(!r)return;
-  editKey=key;pics=[];
-  document.getElementById('recMTitle').textContent='編輯維修記錄';
-  document.getElementById('saveRecBtn').textContent='更新';
-  document.getElementById('f_cust').value=r.customerName;
-  document.getElementById('f_item').value=r.repairItem;
-  document.getElementById('f_tech').value=r.technician;
-  document.getElementById('f_date').value=r.repairDate;
-  document.getElementById('f_stat').value=r.status;
-  document.getElementById('f_notes').value=r.notes||'';
-  document.getElementById('photoGrid').innerHTML=r.photos?Object.values(r.photos).map(p=>`<div class="photo-wrap"><img src="${p}"><button class="rm-photo" type="button" onclick="this.parentElement.remove()">×</button></div>`).join(''):'';
-  document.getElementById('recModal').classList.add('show');
-};
-window.closeRec=function(){document.getElementById('recModal').classList.remove('show');editKey=null;pics=[];};
+function renderHistory() {
+  if (!historyMode) return;
+  const { type, value } = historyMode;
+  const list = allRecords
+    .filter(r => type === 'customer' ? r.customerName === value : r.repairItem === value)
+    .sort((a,b) => new Date(b.repairDate) - new Date(a.repairDate));
+  const el = document.getElementById('historyList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有紀錄</p></div>';
+  } else {
+    el.innerHTML = list.map(r => recordHTML(r)).join('');
+  }
+}
 
-// ─── PHOTOS ───
-window.handlePics=function(inp){
-  Array.from(inp.files).forEach(f=>{
-    const fr=new FileReader();
-    fr.onload=ev=>{
-      pics.push(ev.target.result);
-      const div=document.createElement('div');div.className='photo-wrap';
-      const idx=pics.length-1;
-      div.innerHTML=`<img src="${ev.target.result}"><button class="rm-photo" type="button" onclick="pics.splice(${idx},1);this.parentElement.remove()">×</button>`;
-      document.getElementById('photoGrid').appendChild(div);
-    };fr.readAsDataURL(f);
+// ---- MODAL ----
+window.openAddModal = function() {
+  editKey = null; pendingPhotos = [];
+  document.getElementById('modalTitle').textContent = '新增維修記錄';
+  document.getElementById('saveBtn').textContent = '儲存';
+  document.querySelector('#recordModal form').reset();
+  document.getElementById('f_date').value = today();
+  document.getElementById('photoPreview').innerHTML = '';
+  document.getElementById('f_item_sel').value = '';
+  document.getElementById('f_item_custom').style.display = 'none';
+  document.getElementById('recordModal').classList.add('active');
+};
+
+window.openEditModal = function(key) {
+  const r = allRecords.find(x => x._key === key);
+  if (!r) return;
+  editKey = key; pendingPhotos = [];
+  document.getElementById('modalTitle').textContent = '編輯維修記錄';
+  document.getElementById('saveBtn').textContent = '更新';
+  document.getElementById('f_customer').value = r.customerName;
+  document.getElementById('f_technician').value = r.technician;
+  document.getElementById('f_date').value = r.repairDate;
+  document.getElementById('f_status').value = r.status;
+  document.getElementById('f_notes').value = r.notes || '';
+  
+  // 處理維修項目
+  const predefined = ['逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','配電箱維修','支架結構檢查','接地系統檢測','線路老化更換'];
+  if(predefined.includes(r.repairItem)) {
+    document.getElementById('f_item_sel').value = r.repairItem;
+    document.getElementById('f_item_custom').style.display = 'none';
+  } else {
+    document.getElementById('f_item_sel').value = '其他';
+    document.getElementById('f_item_custom').style.display = 'block';
+    document.getElementById('f_item_custom').value = r.repairItem;
+  }
+  
+  document.getElementById('photoPreview').innerHTML = r.photos
+    ? Object.values(r.photos).map(p => `<div class="photo-preview"><img src="${p}"><button class="remove-photo" type="button">×</button></div>`).join('') : '';
+  document.getElementById('recordModal').classList.add('active');
+};
+
+window.closeModal = function() {
+  document.getElementById('recordModal').classList.remove('active');
+  editKey = null; pendingPhotos = [];
+};
+
+// 處理維修項目選擇
+window.handleItemSelect = function() {
+  const sel = document.getElementById('f_item_sel');
+  const custom = document.getElementById('f_item_custom');
+  if(sel.value === '其他') {
+    custom.style.display = 'block';
+    custom.required = true;
+  } else {
+    custom.style.display = 'none';
+    custom.required = false;
+    custom.value = '';
+  }
+};
+
+// ---- PHOTOS ----
+window.handlePhotos = function(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingPhotos.push(e.target.result);
+      const grid = document.getElementById('photoPreview');
+      const div = document.createElement('div');
+      div.className = 'photo-preview';
+      const idx = pendingPhotos.length - 1;
+      div.innerHTML = `<img src="${e.target.result}"><button class="remove-photo" type="button" onclick="removePhoto(${idx},this)">×</button>`;
+      grid.appendChild(div);
+    };
+    reader.readAsDataURL(file);
   });
 };
-async function upPics(key,wsT){
-  if(!pics.length)return{};
-  const urls={};
-  for(let i=0;i<pics.length;i++){
-    const r=sr(stg,`workspaces/${wsT}/photos/${key}/${Date.now()}_${i}.jpg`);
-    await uploadString(r,pics[i],'data_url');
-    urls[`p${i}`]=await getDownloadURL(r);
+
+window.removePhoto = function(idx, btn) {
+  pendingPhotos.splice(idx, 1);
+  btn.parentElement.remove();
+};
+
+async function uploadPhotos(recordKey) {
+  if (!pendingPhotos.length) return {};
+  const urls = {};
+  for (let i = 0; i < pendingPhotos.length; i++) {
+    const photoRef = sRef(storage, `workspaces/${ws}/photos/${recordKey}/${Date.now()}_${i}.jpg`);
+    await uploadString(photoRef, pendingPhotos[i], 'data_url');
+    urls[`p${i}`] = await getDownloadURL(photoRef);
   }
   return urls;
 }
 
-// ─── SAVE RECORD ───
-window.saveRec=async function(e){
-  e.preventDefault();ss('sync');
-  try{
-    const wsT=editKey?(recs.find(x=>x._key===editKey)?._ws||ws):ws==='__all__'?prompt('請輸入工作區名稱：')||'general':ws;
-    const data={
-      customerName:document.getElementById('f_cust').value,
-      repairItem:document.getElementById('f_item').value,
-      technician:document.getElementById('f_tech').value,
-      repairDate:document.getElementById('f_date').value,
-      status:document.getElementById('f_stat').value,
-      notes:document.getElementById('f_notes').value,
-      updatedBy:me,updatedAt:serverTimestamp()
-    };
-    const key=editKey||push(ref(db,`workspaces/${wsT}/records`)).key;
-    const pu=await upPics(key,wsT);
-    if(Object.keys(pu).length)data.photos=pu;
-    if(editKey){const ex=recs.find(r=>r._key===editKey);if(ex?.photos)data.photos={...ex.photos,...data.photos};}
-    else{data.createdBy=me;data.createdAt=serverTimestamp();}
-    await set(ref(db,`workspaces/${wsT}/records/${key}`),data);
-    ss('online');closeRec();
-  }catch(err){ss('off','儲存失敗');alert('儲存失敗：'+err.message);}
-};
-
-// ─── DELETE ───
-window.delRec=async function(key,rws){
-  if(role!=='admin'){alert('僅管理員可刪除');return;}
-  if(!confirm('確定要刪除此紀錄？'))return;
-  ss('sync');
-  try{await remove(ref(db,`workspaces/${rws}/records/${key}`));ss('online');}
-  catch(err){ss('off','刪除失敗');alert('刪除失敗：'+err.message);}
-};
-
-// ─── ADMIN PANEL ───
-function renderAdmin(){renderAllWs();renderUserList();}
-
-async function renderAllWs(){
-  const el=document.getElementById('allWs');
-  el.innerHTML='<div class="loading"><div class="spin"></div><p>載入中...</p></div>';
-  try{
-    const snap=await get(ref(db,'workspaces'));
-    const data=snap.val()||{};
-    const keys=Object.keys(data);
-    if(!keys.length){el.innerHTML='<p style="color:#6c757d;font-size:13px">目前沒有工作區</p>';return;}
-    el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${keys.map(w=>{
-        const cnt=Object.keys(data[w].records||{}).length;
-        return `<div class="ws-tag" onclick="quickFilter('${w}')">🗂️ ${w} <span class="ws-count">${cnt}筆</span></div>`;
-      }).join('')}
-    </div><p style="font-size:12px;color:#6c757d;margin-top:10px">點擊可快速篩選該工作區</p>`;
-  }catch(err){el.innerHTML='<p style="color:#dc3545">載入失敗</p>';}
-}
-window.quickFilter=function(wsName){goTab('records');document.getElementById('searchQ').value=wsName;doSearch();};
-
-async function renderUserList(){
-  const el=document.getElementById('userList');
-  el.innerHTML='<div class="loading"><div class="spin"></div><p>載入中...</p></div>';
-  try{
-    const snap=await get(ref(db,`${ADMIN_KEY}/users`));
-    const data=snap.val()||{};
-    const users=Object.keys(data);
-    if(!users.length){el.innerHTML='<p style="color:#6c757d;font-size:13px">目前沒有成員帳號，請點「新增帳號」</p>';return;}
-    el.innerHTML=users.map(acc=>{
-      const u=data[acc];
-      return `<div class="user-row">
-        <div class="user-info">
-          <div class="user-avatar">${(u.name||acc)[0].toUpperCase()}</div>
-          <div><div class="user-name">${u.name||acc}</div><div class="user-meta">帳號：${acc} | 工作區：${u.workspace||'-'}</div></div>
-        </div>
-        <div style="display:flex;gap:7px">
-          <button class="btn btn-warning btn-sm" onclick="resetPw('${acc}')">🔑 重設密碼</button>
-          <button class="btn btn-danger btn-sm" onclick="delUser('${acc}')">🗑️ 刪除</button>
-        </div>
-      </div>`;
-    }).join('');
-  }catch(err){el.innerHTML='<p style="color:#dc3545">載入失敗</p>';}
-}
-
-window.openAddUser=function(){document.querySelector('#userModal form').reset();document.getElementById('userModal').classList.add('show');};
-window.closeUser=function(){document.getElementById('userModal').classList.remove('show');};
-
-window.saveUser=async function(e){
+// ---- SAVE RECORD ----
+window.saveRecord = async function(e) {
   e.preventDefault();
-  const acc=document.getElementById('u_acc').value.trim();
-  const name=document.getElementById('u_name').value.trim();
-  const pw=document.getElementById('u_pw').value;
-  const uws=document.getElementById('u_ws').value.trim()||acc;
-  try{
-    const ex=await get(ref(db,`${ADMIN_KEY}/users/${acc}`));
-    if(ex.val()){alert('此帳號已存在，請換一個');return;}
-    await set(ref(db,`${ADMIN_KEY}/users/${acc}`),{name,password:pw,workspace:uws,createdAt:serverTimestamp()});
-    alert(`✅ 帳號「${acc}」已建立！\n\n帳號：${acc}\n密碼：${pw}\n工作區：${uws}\n\n請將此資訊告知成員。`);
-    closeUser();renderUserList();
-  }catch(err){alert('建立失敗：'+err.message);}
+  syncStatus('syncing');
+  try {
+    // 取得維修項目值
+    const itemSel = document.getElementById('f_item_sel').value;
+    const itemValue = itemSel === '其他' 
+        ? document.getElementById('f_item_custom').value 
+        : itemSel;
+    
+    const data = {
+      customerName: document.getElementById('f_customer').value,
+      repairItem: itemValue,
+      technician: document.getElementById('f_technician').value,
+      repairDate: document.getElementById('f_date').value,
+      status: document.getElementById('f_status').value,
+      notes: document.getElementById('f_notes').value,
+      updatedBy: user,
+      updatedAt: serverTimestamp()
+    };
+    const key = editKey || push(dbRef).key;
+    const photoUrls = await uploadPhotos(key);
+    if (Object.keys(photoUrls).length) data.photos = photoUrls;
+
+    if (editKey) {
+      const existing = allRecords.find(r => r._key === editKey);
+      if (existing?.photos) data.photos = { ...existing.photos, ...data.photos };
+    } else {
+      data.createdBy = user;
+      data.createdAt = serverTimestamp();
+    }
+    await set(ref(db, `workspaces/${ws}/records/${key}`), data);
+    syncStatus('online');
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    syncStatus('offline', '儲存失敗');
+    alert('儲存失敗：' + err.message);
+  }
 };
 
-window.resetPw=async function(acc){
-  const np=prompt(`請輸入「${acc}」的新密碼（至少6碼）：`);
-  if(!np)return;
-  if(np.length<6){alert('密碼至少需要6碼');return;}
-  try{await set(ref(db,`${ADMIN_KEY}/users/${acc}/password`),np);alert('✅ 密碼已重設！');}
-  catch(err){alert('失敗：'+err.message);}
+// ---- DELETE ----
+window.deleteRecord = async function(key) {
+  if (!isAdmin) { alert('僅管理員可以刪除紀錄'); return; }
+  if (!confirm('確定要刪除此紀錄？')) return;
+  syncStatus('syncing');
+  try {
+    await remove(ref(db, `workspaces/${ws}/records/${key}`));
+    syncStatus('online');
+  } catch (err) {
+    syncStatus('offline', '刪除失敗');
+    alert('刪除失敗：' + err.message);
+  }
 };
 
-window.delUser=async function(acc){
-  if(!confirm(`確定要刪除帳號「${acc}」嗎？\n（不會刪除該成員的維修紀錄）`))return;
-  try{await remove(ref(db,`${ADMIN_KEY}/users/${acc}`));alert('帳號已刪除');renderUserList();}
-  catch(err){alert('失敗：'+err.message);}
-};
+// ---- KPI ----
+function renderKPI() {
+  const total = allRecords.length;
+  const completed = allRecords.filter(r => r.status === '已完成').length;
+  const pending = allRecords.filter(r => r.status === '待處理').length;
+  const inprogress = allRecords.filter(r => r.status === '進行中').length;
+  const rate = total ? Math.round(completed / total * 100) : 0;
 
-window.changeAdminPw=async function(){
-  const np=document.getElementById('new_pw').value;
-  const cp=document.getElementById('cfm_pw').value;
-  if(!np){alert('請輸入新密碼');return;}
-  if(np.length<6){alert('密碼至少需要6碼');return;}
-  if(np!==cp){alert('兩次密碼不一致');return;}
-  try{
-    await set(ref(db,`${ADMIN_KEY}/adminPass`),np);
-    alert('✅ 管理員密碼已更新！');
-    document.getElementById('new_pw').value='';
-    document.getElementById('cfm_pw').value='';
-  }catch(err){alert('失敗：'+err.message);}
-};
+  // 月份分佈
+  const monthly = {};
+  allRecords.forEach(r => {
+    const m = r.repairDate?.substring(0,7) || '未知';
+    monthly[m] = (monthly[m] || 0) + 1;
+  });
+  const months = Object.keys(monthly).sort().slice(-6);
+  const maxM = Math.max(...months.map(m => monthly[m]), 1);
 
-window.clearWs=async function(){
-  const wsT=prompt('請輸入要清除的工作區名稱：');
-  if(!wsT)return;
-  const cnt=recs.filter(r=>r._ws===wsT).length;
-  if(!confirm(`⚠️ 確定要清除工作區「${wsT}」的全部 ${cnt} 筆紀錄嗎？`))return;
-  if(!confirm('再次確認：此操作無法復原！'))return;
-  try{await remove(ref(db,`workspaces/${wsT}/records`));alert('✅ 已清除');}
-  catch(err){alert('失敗：'+err.message);}
-};
+  // 技師排行
+  const techMap = {};
+  allRecords.forEach(r => { techMap[r.technician] = (techMap[r.technician]||0)+1; });
+  const topTechs = Object.entries(techMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-// ─── KPI ───
-function renderKPI(){
-  const total=recs.length,done=recs.filter(r=>r.status==='已完成').length;
-  const wait=recs.filter(r=>r.status==='待處理').length,wip=recs.filter(r=>r.status==='進行中').length;
-  const rate=total?Math.round(done/total*100):0;
-  const monthly={};recs.forEach(r=>{const m=r.repairDate?.substring(0,7)||'?';monthly[m]=(monthly[m]||0)+1;});
-  const months=Object.keys(monthly).sort().slice(-6);
-  const maxM=Math.max(...months.map(m=>monthly[m]),1);
-  const tM={},iM={},cM={};
-  recs.forEach(r=>{tM[r.technician]=(tM[r.technician]||0)+1;iM[r.repairItem]=(iM[r.repairItem]||0)+1;cM[r.customerName]=(cM[r.customerName]||0)+1;});
-  const topT=Object.entries(tM).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topI=Object.entries(iM).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topC=Object.entries(cM).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  document.getElementById('kpiGrid').innerHTML=`
-    <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-val">${total}</div><div class="kpi-sub">全部紀錄</div></div>
-    <div class="kpi-card"><h3>完成率</h3><div class="kpi-val">${rate}%</div><div class="kpi-sub">已完成 ${done} 件</div><div class="kpi-bar"><div class="kpi-fill" style="width:${rate}%"></div></div></div>
-    <div class="kpi-card"><h3>待處理</h3><div class="kpi-val" style="color:#856404">${wait}</div><div class="kpi-sub">需要跟進</div></div>
-    <div class="kpi-card"><h3>進行中</h3><div class="kpi-val" style="color:#004085">${wip}</div><div class="kpi-sub">施工中</div></div>`;
-  document.getElementById('kpiCharts').innerHTML=`
-    <div class="chart-box"><h3>📅 近 6 個月趨勢</h3><div class="bar-chart">${months.map(m=>`<div class="bar-item"><div class="bar" style="height:${monthly[m]/maxM*130}px" data-v="${monthly[m]}件"></div><div class="bar-lbl">${m.substring(5)}月</div></div>`).join('')}</div></div>
-    <div class="chart-box"><h3>🔧 技師件數 TOP 5</h3><ul class="top-list">${topT.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="top-name">${n}</span><span class="top-count">${c}件</span></li>`).join('')}</ul></div>
-    <div class="chart-box"><h3>⚡ 常見故障 TOP 5</h3><ul class="top-list">${topI.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="top-name">${n}</span><span class="top-count">${c}件</span></li>`).join('')}</ul></div>
-    <div class="chart-box"><h3>🏢 客戶件數 TOP 5</h3><ul class="top-list">${topC.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="top-name">${n}</span><span class="top-count">${c}件</span></li>`).join('')}</ul></div>`;
+  // 常見故障
+  const itemMap = {};
+  allRecords.forEach(r => { itemMap[r.repairItem] = (itemMap[r.repairItem]||0)+1; });
+  const topItems = Object.entries(itemMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // 客戶排行
+  const custMap = {};
+  allRecords.forEach(r => { custMap[r.customerName] = (custMap[r.customerName]||0)+1; });
+  const topCusts = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-value">${total}</div><div class="kpi-sub">全部紀錄</div></div>
+    <div class="kpi-card"><h3>完成率</h3><div class="kpi-value">${rate}%</div><div class="kpi-sub">已完成 ${completed} 件</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${rate}%"></div></div></div>
+    <div class="kpi-card"><h3>待處理</h3><div class="kpi-value" style="color:#856404">${pending}</div><div class="kpi-sub">需要跟進</div></div>
+    <div class="kpi-card"><h3>進行中</h3><div class="kpi-value" style="color:#004085">${inprogress}</div><div class="kpi-sub">施工中</div></div>
+  `;
+
+  document.getElementById('kpiCharts').innerHTML = `
+    <div class="chart-section">
+      <h3>📅 近 6 個月維修趨勢</h3>
+      <div class="bar-chart">
+        ${months.map(m => `
+          <div class="bar-item">
+            <div class="bar" style="height:${monthly[m]/maxM*120}px" data-value="${monthly[m]}件"></div>
+            <div class="bar-label">${m.substring(5)}月</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="chart-section">
+      <h3>🔧 技師維修件數 TOP 5</h3>
+      <ul class="top-list">
+        ${topTechs.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
+      </ul>
+    </div>
+    <div class="chart-section">
+      <h3>⚡ 常見故障 TOP 5</h3>
+      <ul class="top-list">
+        ${topItems.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
+      </ul>
+    </div>
+    <div class="chart-section">
+      <h3>🏢 維修次數最多客戶 TOP 5</h3>
+      <ul class="top-list">
+        ${topCusts.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
+      </ul>
+    </div>
+  `;
 }
 
-// ─── PDF ───
-window.exportOnePDF=function(key){
-  const r=recs.find(x=>x._key===key);if(!r)return;
-  const {jsPDF}=window.jspdf;const doc=new jsPDF();
-  doc.setFontSize(18);doc.text('維修報告',105,20,{align:'center'});
+// ---- PDF ----
+window.exportSinglePDF = function(key) {
+  const r = allRecords.find(x => x._key === key);
+  if (!r) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(18); doc.text('維修報告', 105, 20, { align:'center' });
   doc.setFontSize(11);
-  [['客戶名稱',r.customerName],['維修項目',r.repairItem],['維修人員',r.technician],['維修日期',r.repairDate],['狀態',r.status],['備註',r.notes||'-'],['工作區',r._ws||ws],['建立者',r.createdBy||'-']].forEach(([l,v],i)=>{
-    doc.setFont(undefined,'bold');doc.text(l+'：',20,40+i*10);
-    doc.setFont(undefined,'normal');doc.text(String(v),65,40+i*10);
+  const lines = [
+    ['客戶名稱', r.customerName],
+    ['維修項目', r.repairItem],
+    ['維修人員', r.technician],
+    ['維修日期', r.repairDate],
+    ['狀態', r.status],
+    ['備註', r.notes || '-'],
+    ['建立者', r.createdBy || '-'],
+    ['建立時間', new Date().toLocaleDateString('zh-TW')],
+  ];
+  let y = 40;
+  lines.forEach(([label, val]) => {
+    doc.setFont(undefined, 'bold'); doc.text(label + '：', 20, y);
+    doc.setFont(undefined, 'normal'); doc.text(String(val), 60, y);
+    y += 10;
   });
   doc.save(`維修報告_${r.customerName}_${r.repairDate}.pdf`);
 };
-window.exportKpiPDF=function(){
-  const {jsPDF}=window.jspdf;const doc=new jsPDF();
-  const now=new Date().toLocaleDateString('zh-TW');
-  const total=recs.length,done=recs.filter(r=>r.status==='已完成').length;
-  const rate=total?Math.round(done/total*100):0;
-  doc.setFontSize(18);doc.text('KPI 統計報告',105,20,{align:'center'});
-  doc.setFontSize(11);doc.text(`產生日期：${now}  |  總件數：${total}  |  完成率：${rate}%`,105,30,{align:'center'});
-  doc.line(20,35,190,35);
-  let y=45;
-  const tM={},iM={};recs.forEach(r=>{tM[r.technician]=(tM[r.technician]||0)+1;iM[r.repairItem]=(iM[r.repairItem]||0)+1;});
-  doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('技師件數 TOP 5',20,y);y+=8;
-  doc.setFontSize(11);doc.setFont(undefined,'normal');
-  Object.entries(tM).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([n,c],i)=>{doc.text(`${i+1}. ${n}：${c} 件`,25,y);y+=7;});
-  y+=5;doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('常見故障 TOP 5',20,y);y+=8;
-  doc.setFontSize(11);doc.setFont(undefined,'normal');
-  Object.entries(iM).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([n,c],i)=>{doc.text(`${i+1}. ${n}：${c} 件`,25,y);y+=7;});
-  doc.save(`KPI報告_${now}.pdf`);
+
+window.exportKpiPDF = function() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const now = new Date().toLocaleDateString('zh-TW');
+  const total = allRecords.length;
+  const completed = allRecords.filter(r=>r.status==='已完成').length;
+  const pending = allRecords.filter(r=>r.status==='待處理').length;
+  const rate = total ? Math.round(completed/total*100) : 0;
+
+  doc.setFontSize(18); doc.text('KPI 統計報告', 105, 20, { align:'center' });
+  doc.setFontSize(11); doc.text(`工作區：${ws}  |  產生日期：${now}`, 105, 30, { align:'center' });
+  doc.line(20, 35, 190, 35);
+
+  let y = 45;
+  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('整體統計', 20, y); y += 8;
+  doc.setFontSize(11); doc.setFont(undefined,'normal');
+  [['總維修件數', total], ['完成率', rate+'%'], ['已完成', completed], ['待處理', pending]].forEach(([l,v]) => {
+    doc.text(`${l}：${v}`, 25, y); y += 7;
+  });
+
+  y += 5;
+  const techMap = {};
+  allRecords.forEach(r => { techMap[r.technician] = (techMap[r.technician]||0)+1; });
+  const topTechs = Object.entries(techMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('技師維修件數 TOP 5', 20, y); y += 8;
+  doc.setFontSize(11); doc.setFont(undefined,'normal');
+  topTechs.forEach(([n,c],i) => { doc.text(`${i+1}. ${n}：${c} 件`, 25, y); y += 7; });
+
+  y += 5;
+  const itemMap = {};
+  allRecords.forEach(r => { itemMap[r.repairItem] = (itemMap[r.repairItem]||0)+1; });
+  const topItems = Object.entries(itemMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('常見故障 TOP 5', 20, y); y += 8;
+  doc.setFontSize(11); doc.setFont(undefined,'normal');
+  topItems.forEach(([n,c],i) => { doc.text(`${i+1}. ${n}：${c} 件`, 25, y); y += 7; });
+
+  doc.save(`KPI報告_${ws}_${now}.pdf`);
 };
-window.exportHistPDF=function(){
-  if(!histMode)return;
-  const {type,value}=histMode;
-  const list=recs.filter(r=>type==='customer'?r.customerName===value:r.repairItem===value).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
-  const {jsPDF}=window.jspdf;const doc=new jsPDF();
-  doc.setFontSize(16);doc.text(`${value} — 歷史紀錄`,105,20,{align:'center'});
-  let y=35;
-  list.forEach((r,i)=>{
-    if(y>260){doc.addPage();y=20;}
-    doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text(`${i+1}. ${r.repairDate}  ${r.repairItem}  [${r.status}]`,15,y);y+=7;
-    doc.setFont(undefined,'normal');doc.setFontSize(10);doc.text(`   技師：${r.technician}  備註：${r.notes||'-'}`,15,y);y+=9;
+
+window.exportHistoryPDF = function() {
+  if (!historyMode) return;
+  const { type, value } = historyMode;
+  const list = allRecords.filter(r => type === 'customer' ? r.customerName === value : r.repairItem === value)
+    .sort((a,b) => new Date(b.repairDate) - new Date(a.repairDate));
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16); doc.text(`${value} — 歷史維修紀錄`, 105, 20, { align:'center' });
+  doc.setFontSize(10); doc.text(`共 ${list.length} 筆`, 105, 28, { align:'center' });
+  let y = 38;
+  list.forEach((r, i) => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setFontSize(11); doc.setFont(undefined,'bold');
+    doc.text(`${i+1}. ${r.repairDate}  ${r.repairItem}  [${r.status}]`, 15, y); y += 7;
+    doc.setFont(undefined,'normal'); doc.setFontSize(10);
+    doc.text(`   技師：${r.technician}  備註：${r.notes||'-'}`, 15, y); y += 9;
   });
   doc.save(`歷史紀錄_${value}.pdf`);
 };
-window.doExportCSV=function(){
-  if(!recs.length){alert('沒有資料');return;}
-  const h=['工作區','客戶名稱','維修項目','維修人員','維修日期','狀態','備註','建立者'];
-  const rows=recs.map(r=>[r._ws||ws,r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.notes||'',r.createdBy||''].map(v=>`"${v}"`).join(','));
-  const csv='\uFEFF'+[h.join(','),...rows].join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  a.download=`維修紀錄_${tod()}.csv`;a.click();
+
+// ---- CSV EXPORT ----
+window.exportCSV = function() {
+  if (!allRecords.length) { alert('沒有資料'); return; }
+  const headers = ['客戶名稱','維修項目','維修人員','維修日期','狀態','備註','建立者'];
+  const rows = allRecords.map(r => [r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.notes||'',r.createdBy||''].map(v=>`"${v}"`).join(','));
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = `維修紀錄_${ws}_${today()}.csv`;
+  a.click();
 };
 
-// ─── LIGHTBOX ───
-window.openLb=function(src){document.getElementById('lbImg').src=src;document.getElementById('lb').classList.add('show');};
-window.closeLb=function(){document.getElementById('lb').classList.remove('show');};
+// ---- LIGHTBOX ----
+window.openLightbox = function(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('active');
+};
+window.closeLightbox = function() { document.getElementById('lightbox').classList.remove('active'); };
 
-// ─── AUTOCOMPLETE ───
-function updateAC(){
-  document.getElementById('custList').innerHTML=[...new Set(recs.map(r=>r.customerName))].map(c=>`<option value="${c}">`).join('');
-  document.getElementById('itemList').innerHTML=[...new Set(recs.map(r=>r.repairItem))].map(i=>`<option value="${i}">`).join('');
+// ---- AUTOCOMPLETE ----
+function updateAutocomplete() {
+  const customers = [...new Set(allRecords.map(r=>r.customerName))];
+  const items = [...new Set(allRecords.map(r=>r.repairItem))];
+  document.getElementById('customerList').innerHTML = customers.map(c=>`<option value="${c}">`).join('');
+  document.getElementById('itemList').innerHTML = items.map(i=>`<option value="${i}">`).join('');
 }
 
-// ─── UTILS ───
-function tod(){return new Date().toISOString().split('T')[0];}
-function pad(n){return String(n).padStart(2,'0');}
-function fmtD(d){if(!d)return'-';const dt=new Date(d);return`${dt.getFullYear()}/${pad(dt.getMonth()+1)}/${pad(dt.getDate())}`;}
-function esc(s){return(s||'').replace(/'/g,"\\'");}
-function bc(s){return s==='已完成'?'bs-done':s==='進行中'?'bs-wip':'bs-wait';}
+// ---- UTILS ----
+function today() { return new Date().toISOString().split('T')[0]; }
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtDate(d) { if (!d) return '-'; const dt = new Date(d); return `${dt.getFullYear()}/${pad(dt.getMonth()+1)}/${pad(dt.getDate())}`; }
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+function badgeClass(s) { return s==='已完成'?'badge-completed':s==='進行中'?'badge-inprogress':'badge-pending'; }
 
-// ─── AUTO RESTORE ───
-if(loadSess())startApp();
+// ── 匯入 CSV ──
+window.openImportModal = function() {
+  document.getElementById('importModal').classList.add('active');
+};
+
+window.closeImportModal = function() {
+  document.getElementById('importModal').classList.remove('active');
+  document.getElementById('csvFile').value = '';
+};
+
+window.doImportCSV = async function() {
+  const fileInput = document.getElementById('csvFile');
+  if (!fileInput.files.length) {
+    alert('請選擇 CSV 檔案');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = async function(e) {
+    try {
+      syncStatus('syncing', '匯入中...');
+      const csv = e.target.result;
+      const lines = csv.trim().split('\n');
+      
+      if (lines.length < 2) {
+        alert('CSV 檔案格式錯誤');
+        syncStatus('offline', '匯入失敗');
+        return;
+      }
+      
+      // 跳過標題列
+      const dataLines = lines.slice(1);
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const line of dataLines) {
+        try {
+          // 處理 CSV 欄位（考慮引號包裹的情況）
+          const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+          const fields = parts.map(p => p.replace(/^"|"$/g, '').trim());
+          
+          if (fields.length < 5) {
+            failCount++;
+            continue;
+          }
+          
+          const newRecordRef = push(dbRef);
+          await set(newRecordRef, {
+            id: Date.now() + successCount,
+            customerName: fields[0] || '',
+            repairItem: fields[1] || '',
+            technician: fields[2] || '',
+            repairDate: fields[3] || '',
+            status: fields[4] || '待處理',
+            notes: fields[5] || '',
+            createdBy: user + ' (匯入)',
+            createdAt: serverTimestamp()
+          });
+          
+          successCount++;
+          // 加入小延遲避免 Firebase 限制
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (err) {
+          console.error('匯入單筆失敗:', err);
+          failCount++;
+        }
+      }
+      
+      syncStatus('online', '已同步');
+      closeImportModal();
+      alert(`✅ 匯入完成！\n\n成功：${successCount} 筆\n失敗：${failCount} 筆`);
+      
+    } catch (err) {
+      syncStatus('offline', '匯入失敗');
+      alert('匯入失敗：' + err.message);
+    }
+  };
+  
+  reader.readAsText(file, 'UTF-8');
+};
+
+// ---- INIT ----
+checkSavedLogin();
+
+function checkSavedLoginAndRestore() {
+  const sw = localStorage.getItem('ws');
+  const su = localStorage.getItem('user');
+  const sa = localStorage.getItem('isAdmin');
+  if (sw && su) {
+    ws = sw; user = su; isAdmin = sa === '1';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('wsDisplay').textContent = ws;
+    document.getElementById('userDisplay').textContent = user;
+    applyAdminUI();
+    initDB();
+  }
+}
 </script>
 </body>
 </html>
