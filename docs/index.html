@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#667eea">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="光電維修">
-<title>太陽光電維修管理系統 v2</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>太陽光電維修管理系統 v2-Fixed</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
@@ -1055,89 +1055,124 @@ function renderKPI() {
 window.exportSinglePDF = function(key) {
   const r = allRecords.find(x => x._key === key);
   if (!r) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(18); doc.text('維修報告', 105, 20, { align:'center' });
-  doc.setFontSize(11);
-  const lines = [
-    ['客戶名稱', r.customerName],
-    ['維修項目', r.repairItem],
-    ['維修人員', r.technician],
-    ['維修日期', r.repairDate],
-    ['狀態', r.status],
-    ['備註', r.notes || '-'],
-    ['建立者', r.createdBy || '-'],
-    ['建立時間', new Date().toLocaleDateString('zh-TW')],
-  ];
-  let y = 40;
-  lines.forEach(([label, val]) => {
-    doc.setFont(undefined, 'bold'); doc.text(label + '：', 20, y);
-    doc.setFont(undefined, 'normal'); doc.text(String(val), 60, y);
-    y += 10;
+  
+  const html = `
+    <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
+      <h1 style="text-align: center; color: #667eea; margin-bottom: 30px;">維修報告</h1>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold; width: 150px;">客戶名稱</td><td style="padding: 12px;">${r.customerName}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">維修項目</td><td style="padding: 12px;">${r.repairItem}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">維修人員</td><td style="padding: 12px;">${r.technician}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">維修日期</td><td style="padding: 12px;">${r.repairDate}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">狀態</td><td style="padding: 12px;">${r.status}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">備註</td><td style="padding: 12px;">${r.notes || '-'}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">建立者</td><td style="padding: 12px;">${r.createdBy || '-'}</td></tr>
+        <tr><td style="padding: 12px; font-weight: bold;">建立時間</td><td style="padding: 12px;">${new Date().toLocaleDateString('zh-TW')}</td></tr>
+      </table>
+    </div>
+  `;
+  
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  
+  html2pdf().from(el).set({
+    margin: 10,
+    filename: `維修報告_${r.customerName}_${r.repairDate}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save().then(() => {
+    document.body.removeChild(el);
   });
-  doc.save(`維修報告_${r.customerName}_${r.repairDate}.pdf`);
 };
 
 window.exportKpiPDF = function() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
   const now = new Date().toLocaleDateString('zh-TW');
   const total = allRecords.length;
-  const completed = allRecords.filter(r=>r.status==='已完成').length;
-  const pending = allRecords.filter(r=>r.status==='待處理').length;
-  const rate = total ? Math.round(completed/total*100) : 0;
+  const done = allRecords.filter(r => r.status === '已完成').length;
+  const wait = allRecords.filter(r => r.status === '待處理').length;
+  const rate = total ? Math.round(done / total * 100) : 0;
 
-  doc.setFontSize(18); doc.text('KPI 統計報告', 105, 20, { align:'center' });
-  doc.setFontSize(11); doc.text(`工作區：${ws}  |  產生日期：${now}`, 105, 30, { align:'center' });
-  doc.line(20, 35, 190, 35);
+  const tM = {};
+  allRecords.forEach(r => { tM[r.technician] = (tM[r.technician] || 0) + 1; });
+  const topT = Object.entries(tM).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  let y = 45;
-  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('整體統計', 20, y); y += 8;
-  doc.setFontSize(11); doc.setFont(undefined,'normal');
-  [['總維修件數', total], ['完成率', rate+'%'], ['已完成', completed], ['待處理', pending]].forEach(([l,v]) => {
-    doc.text(`${l}：${v}`, 25, y); y += 7;
+  const iM = {};
+  allRecords.forEach(r => { iM[r.repairItem] = (iM[r.repairItem] || 0) + 1; });
+  const topI = Object.entries(iM).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const html = `
+    <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
+      <h1 style="text-align: center; color: #667eea; margin-bottom: 10px;">KPI 統計報告</h1>
+      <p style="text-align: center; color: #666; margin-bottom: 30px;">工作區：${ws} | 產生日期：${now}</p>
+      
+      <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">整體統計</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">總維修件數</td><td style="padding: 10px; font-weight: bold;">${total}</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">完成率</td><td style="padding: 10px; font-weight: bold;">${rate}%</td></tr>
+        <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">已完成</td><td style="padding: 10px; font-weight: bold;">${done}</td></tr>
+        <tr><td style="padding: 10px;">待處理</td><td style="padding: 10px; font-weight: bold;">${wait}</td></tr>
+      </table>
+      
+      <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">技師維修件數 TOP 5</h2>
+      <ol style="line-height: 2;">
+        ${topT.map(([n, c]) => `<li>${n}：${c} 件</li>`).join('')}
+      </ol>
+      
+      <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">常見故障 TOP 5</h2>
+      <ol style="line-height: 2;">
+        ${topI.map(([n, c]) => `<li>${n}：${c} 件</li>`).join('')}
+      </ol>
+    </div>
+  `;
+  
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  
+  html2pdf().from(el).set({
+    margin: 10,
+    filename: `KPI報告_${ws}_${now}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save().then(() => {
+    document.body.removeChild(el);
   });
-
-  y += 5;
-  const techMap = {};
-  allRecords.forEach(r => { techMap[r.technician] = (techMap[r.technician]||0)+1; });
-  const topTechs = Object.entries(techMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('技師維修件數 TOP 5', 20, y); y += 8;
-  doc.setFontSize(11); doc.setFont(undefined,'normal');
-  topTechs.forEach(([n,c],i) => { doc.text(`${i+1}. ${n}：${c} 件`, 25, y); y += 7; });
-
-  y += 5;
-  const itemMap = {};
-  allRecords.forEach(r => { itemMap[r.repairItem] = (itemMap[r.repairItem]||0)+1; });
-  const topItems = Object.entries(itemMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('常見故障 TOP 5', 20, y); y += 8;
-  doc.setFontSize(11); doc.setFont(undefined,'normal');
-  topItems.forEach(([n,c],i) => { doc.text(`${i+1}. ${n}：${c} 件`, 25, y); y += 7; });
-
-  doc.save(`KPI報告_${ws}_${now}.pdf`);
 };
 
 window.exportHistoryPDF = function() {
   if (!historyMode) return;
   const { type, value } = historyMode;
   const list = allRecords.filter(r => type === 'customer' ? r.customerName === value : r.repairItem === value)
-    .sort((a,b) => new Date(b.repairDate) - new Date(a.repairDate));
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(16); doc.text(`${value} — 歷史維修紀錄`, 105, 20, { align:'center' });
-  doc.setFontSize(10); doc.text(`共 ${list.length} 筆`, 105, 28, { align:'center' });
-  let y = 38;
-  list.forEach((r, i) => {
-    if (y > 260) { doc.addPage(); y = 20; }
-    doc.setFontSize(11); doc.setFont(undefined,'bold');
-    doc.text(`${i+1}. ${r.repairDate}  ${r.repairItem}  [${r.status}]`, 15, y); y += 7;
-    doc.setFont(undefined,'normal'); doc.setFontSize(10);
-    doc.text(`   技師：${r.technician}  備註：${r.notes||'-'}`, 15, y); y += 9;
+    .sort((a, b) => new Date(b.repairDate) - new Date(a.repairDate));
+  
+  const html = `
+    <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
+      <h1 style="text-align: center; color: #667eea; margin-bottom: 10px;">${value}</h1>
+      <p style="text-align: center; color: #666; margin-bottom: 30px;">歷史維修紀錄 — 共 ${list.length} 筆</p>
+      
+      ${list.map((r, i) => `
+        <div style="border-bottom: 1px solid #ddd; padding: 15px 0;">
+          <p style="margin: 5px 0;"><strong>${i+1}. ${r.repairDate}</strong> - ${r.repairItem} [${r.status}]</p>
+          <p style="margin: 5px 0; color: #666;">技師：${r.technician} | 備註：${r.notes||'-'}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  
+  html2pdf().from(el).set({
+    margin: 10,
+    filename: `歷史紀錄_${value}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save().then(() => {
+    document.body.removeChild(el);
   });
-  doc.save(`歷史紀錄_${value}.pdf`);
 };
-
-// ---- CSV EXPORT ----
 window.exportCSV = function() {
   if (!allRecords.length) { alert('沒有資料'); return; }
   const headers = ['客戶名稱','維修項目','維修人員','維修日期','狀態','備註','建立者'];
