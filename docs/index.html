@@ -606,7 +606,22 @@ window.clearAllRecords = async function() {
 function initDB() {
   syncStatus('syncing');
   dbRef = ref(db, 'workspaces/' + ws + '/records');
+  
+  // 設定超時處理，避免卡在載入中
+  let hasData = false;
+  const timeout = setTimeout(() => {
+    if (!hasData) {
+      // 如果 3 秒後還沒資料，顯示空狀態
+      allRecords = [];
+      syncStatus('online', '已同步');
+      updateAutocomplete();
+      renderRecords();
+    }
+  }, 3000);
+  
   onValue(dbRef, snap => {
+    hasData = true;
+    clearTimeout(timeout);
     const data = snap.val();
     allRecords = data ? Object.keys(data).map(k => ({ _key: k, ...data[k] })) : [];
     syncStatus('online', '已同步');
@@ -615,9 +630,16 @@ function initDB() {
     if (document.getElementById('tabKpi').style.display !== 'none') renderKPI();
     if (document.getElementById('tabAdmin')?.style.display !== 'none') renderMemberList();
   }, err => {
+    hasData = true;
+    clearTimeout(timeout);
     syncStatus('offline', '連線失敗');
     console.error(err);
+    // 即使連線失敗也要顯示介面
+    allRecords = [];
+    renderRecords();
+    alert('Firebase 連線失敗，請檢查網路連線或 Firebase 設定');
   });
+  
   document.getElementById('f_date').value = today();
 }
 
@@ -729,12 +751,14 @@ function renderRecords() {
   updateStats(list);
   const total = list.length;
   const pages = Math.ceil(total / PER_PAGE);
-  if (currentPage > pages) currentPage = 1;
+  if (currentPage > pages && pages > 0) currentPage = 1;
   const slice = list.slice((currentPage-1)*PER_PAGE, currentPage*PER_PAGE);
   document.getElementById('recordCount').textContent = `共 ${total} 筆`;
   const el = document.getElementById('recordsList');
+  
+  // 移除載入狀態，顯示實際內容
   if (!slice.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有維修紀錄</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有維修紀錄</p><p style="color:#6c757d;font-size:13px;margin-top:8px">點擊右上方「➕ 新增記錄」開始使用</p></div>';
   } else {
     el.innerHTML = slice.map(r => recordHTML(r)).join('');
   }
