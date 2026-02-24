@@ -228,6 +228,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="showTab('main')">📋 維修紀錄</div>
     <div class="nav-tab" id="kpiTab" onclick="showTab('kpi')">📊 KPI 統計</div>
+    <div class="nav-tab" onclick="showTab('calculator')">🔢 PR/RA 計算</div>
     <div class="nav-tab" id="adminTab" style="display:none" onclick="showTab('admin')">⚙️ 管理設定</div>
   </div>
 
@@ -311,6 +312,87 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       <div class="records-table">
         <div class="table-header"><span id="historyTableTitle">歷史紀錄</span></div>
         <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PR/RA 計算器頁面 -->
+  <div id="tabCalculator" style="display:none">
+    <div class="content">
+      <h2 style="color:#2d3748;font-size:20px;margin-bottom:20px">🔢 PR 值與 RA% 計算器</h2>
+      
+      <!-- PR 值計算 -->
+      <div class="card-section">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">📊 PR 值（Performance Ratio）計算</h3>
+        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">PR 值 = 實際發電量 ÷ (日照量 × 系統容量) × 100%</p>
+        
+        <div class="row2">
+          <div class="form-group">
+            <label class="form-label">實際發電量（kWh）</label>
+            <input type="number" class="form-input" id="pr_actual" step="0.01" placeholder="例如：850">
+          </div>
+          <div class="form-group">
+            <label class="form-label">日照量（kWh/m²）</label>
+            <input type="number" class="form-input" id="pr_irradiation" step="0.01" placeholder="例如：5.2">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">系統容量（kWp）</label>
+          <input type="number" class="form-input" id="pr_capacity" step="0.01" placeholder="例如：200">
+        </div>
+        <button class="btn btn-primary" onclick="calculatePR()">計算 PR 值</button>
+        
+        <div id="prResult" style="display:none;margin-top:20px;padding:20px;background:#f0f2ff;border-radius:12px;border-left:4px solid #667eea">
+          <div style="font-size:14px;color:#2d3748;margin-bottom:8px">
+            <strong>計算結果：</strong>
+          </div>
+          <div style="font-size:32px;font-weight:bold;color:#667eea;margin-bottom:8px" id="prValue"></div>
+          <div style="font-size:13px;color:#6c757d" id="prStatus"></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dee2e6;font-size:12px;color:#6c757d">
+            <strong>評價標準：</strong><br>
+            優良：PR ≥ 80% | 良好：70% ≤ PR < 80% | 普通：60% ≤ PR < 70% | 需改善：PR < 60%
+          </div>
+        </div>
+      </div>
+
+      <!-- RA% 計算 -->
+      <div class="card-section" style="margin-top:20px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">⚡ RA%（可用率）計算</h3>
+        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">RA% = (總時間 - 停機時間) ÷ 總時間 × 100%</p>
+        
+        <div class="row2">
+          <div class="form-group">
+            <label class="form-label">統計期間（天）</label>
+            <input type="number" class="form-input" id="ra_period" placeholder="例如：30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">停機時間（小時）</label>
+            <input type="number" class="form-input" id="ra_downtime" step="0.01" placeholder="例如：5.5">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="calculateRA()">計算 RA%</button>
+        
+        <div id="raResult" style="display:none;margin-top:20px;padding:20px;background:#f0fff4;border-radius:12px;border-left:4px solid #28a745">
+          <div style="font-size:14px;color:#2d3748;margin-bottom:8px">
+            <strong>計算結果：</strong>
+          </div>
+          <div style="font-size:32px;font-weight:bold;color:#28a745;margin-bottom:8px" id="raValue"></div>
+          <div style="font-size:13px;color:#6c757d">
+            總時間：<span id="raTotalHours"></span> 小時 | 可用時間：<span id="raUptime"></span> 小時
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dee2e6;font-size:12px;color:#6c757d">
+            <strong>評價標準：</strong><br>
+            優良：RA ≥ 98% | 良好：95% ≤ RA < 98% | 普通：90% ≤ RA < 95% | 需改善：RA < 90%
+          </div>
+        </div>
+      </div>
+
+      <!-- 歷史紀錄 -->
+      <div class="card-section" style="margin-top:20px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">📋 計算歷史</h3>
+        <div id="calcHistory">
+          <p style="color:#6c757d;font-size:13px">尚無計算紀錄</p>
+        </div>
       </div>
     </div>
   </div>
@@ -645,7 +727,7 @@ function initDB() {
 
 // ---- TABS ----
 window.showTab = function(tab) {
-  ['tabMain','tabKpi','tabHistory','tabAdmin'].forEach(id => {
+  ['tabMain','tabKpi','tabHistory','tabAdmin','tabCalculator'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -654,17 +736,19 @@ window.showTab = function(tab) {
     document.getElementById('tabMain').style.display = 'block';
     document.querySelectorAll('.nav-tab')[0].classList.add('active');
   } else if (tab === 'kpi') {
-    if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
     document.getElementById('tabKpi').style.display = 'block';
     document.querySelectorAll('.nav-tab')[1].classList.add('active');
     renderKPI();
+  } else if (tab === 'calculator') {
+    document.getElementById('tabCalculator').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[2].classList.add('active');
   } else if (tab === 'history') {
     document.getElementById('tabHistory').style.display = 'block';
     renderHistory();
   } else if (tab === 'admin') {
     if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
     document.getElementById('tabAdmin').style.display = 'block';
-    document.querySelectorAll('.nav-tab')[2].classList.add('active');
+    document.querySelectorAll('.nav-tab')[3].classList.add('active');
     renderMemberList();
   }
 };
@@ -1312,6 +1396,131 @@ window.doImportCSV = async function() {
   
   reader.readAsText(file, 'UTF-8');
 };
+
+// ── 計算歷史記錄 ──
+let calcHistory = [];
+
+// ── PR 值計算 ──
+window.calculatePR = function() {
+  const actual = parseFloat(document.getElementById('pr_actual').value);
+  const irradiation = parseFloat(document.getElementById('pr_irradiation').value);
+  const capacity = parseFloat(document.getElementById('pr_capacity').value);
+  
+  if (!actual || !irradiation || !capacity) {
+    alert('請填寫所有欄位');
+    return;
+  }
+  
+  const pr = (actual / (irradiation * capacity)) * 100;
+  const prRounded = Math.round(pr * 100) / 100;
+  
+  document.getElementById('prValue').textContent = prRounded + '%';
+  
+  let status = '', color = '';
+  if (pr >= 80) {
+    status = '✅ 優良 - 系統運作良好';
+    color = '#28a745';
+  } else if (pr >= 70) {
+    status = '👍 良好 - 運作正常';
+    color = '#17a2b8';
+  } else if (pr >= 60) {
+    status = '⚠️ 普通 - 建議檢查';
+    color = '#ffc107';
+  } else {
+    status = '❌ 需改善 - 請盡快檢修';
+    color = '#dc3545';
+  }
+  
+  document.getElementById('prStatus').textContent = status;
+  document.getElementById('prValue').style.color = color;
+  document.getElementById('prResult').style.display = 'block';
+  
+  // 記錄到歷史
+  addCalcHistory('PR值', `${prRounded}%`, {
+    實際發電量: actual + ' kWh',
+    日照量: irradiation + ' kWh/m²',
+    系統容量: capacity + ' kWp'
+  });
+};
+
+// ── RA% 計算 ──
+window.calculateRA = function() {
+  const period = parseFloat(document.getElementById('ra_period').value);
+  const downtime = parseFloat(document.getElementById('ra_downtime').value);
+  
+  if (!period || downtime === null || downtime === undefined) {
+    alert('請填寫所有欄位');
+    return;
+  }
+  
+  const totalHours = period * 24;
+  const uptime = totalHours - downtime;
+  const ra = (uptime / totalHours) * 100;
+  const raRounded = Math.round(ra * 100) / 100;
+  
+  document.getElementById('raValue').textContent = raRounded + '%';
+  document.getElementById('raTotalHours').textContent = totalHours;
+  document.getElementById('raUptime').textContent = uptime;
+  
+  let color = '';
+  if (ra >= 98) {
+    color = '#28a745';
+  } else if (ra >= 95) {
+    color = '#17a2b8';
+  } else if (ra >= 90) {
+    color = '#ffc107';
+  } else {
+    color = '#dc3545';
+  }
+  
+  document.getElementById('raValue').style.color = color;
+  document.getElementById('raResult').style.display = 'block';
+  
+  // 記錄到歷史
+  addCalcHistory('RA%', `${raRounded}%`, {
+    統計期間: period + ' 天',
+    停機時間: downtime + ' 小時',
+    可用時間: uptime + ' 小時'
+  });
+};
+
+function addCalcHistory(type, result, details) {
+  const now = new Date();
+  const timeStr = `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  
+  calcHistory.unshift({
+    type,
+    result,
+    details,
+    time: timeStr
+  });
+  
+  // 只保留最近 10 筆
+  if (calcHistory.length > 10) calcHistory = calcHistory.slice(0, 10);
+  
+  // 更新顯示
+  renderCalcHistory();
+}
+
+function renderCalcHistory() {
+  const el = document.getElementById('calcHistory');
+  if (!calcHistory.length) {
+    el.innerHTML = '<p style="color:#6c757d;font-size:13px">尚無計算紀錄</p>';
+    return;
+  }
+  
+  el.innerHTML = calcHistory.map((h, i) => `
+    <div style="padding:12px;border-bottom:1px solid #e9ecef;${i===0?'background:#f8f9fa;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <strong style="color:#667eea">${h.type}: ${h.result}</strong>
+        <span style="font-size:11px;color:#6c757d">${h.time}</span>
+      </div>
+      <div style="font-size:12px;color:#6c757d">
+        ${Object.entries(h.details).map(([k,v])=>`${k}: ${v}`).join(' | ')}
+      </div>
+    </div>
+  `).join('');
+}
 
 // ---- INIT ----
 checkSavedLogin();
