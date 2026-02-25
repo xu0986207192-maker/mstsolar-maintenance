@@ -966,19 +966,24 @@ function renderRecords() {
 }
 
 function recordHTML(r) {
+  const key = r._key;
+  const custName = esc(r.customerName);
+  const itemName = esc(r.repairItem);
+  
   const photos = r.photos ? Object.values(r.photos).map(p =>
-    `<img class="record-photo" src="${p}" ontouchstart="openLightbox(\\'${p}\\')" onclick="openLightbox(\\'${p}\\')" alt="維修照片">`
+    `<img class="record-photo" src="${p}" onclick="openLightbox('${p}')" alt="維修照片">`
   ).join('') : '';
+  
   return `
   <div class="record-item">
     <div class="record-grid">
       <div class="record-field">
         <div class="label">客戶名稱</div>
-        <div class="value link" ontouchstart="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')" onclick="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')">${r.customerName}</div>
+        <div class="value link" onclick="showHistory('customer','${custName}')">${r.customerName}</div>
       </div>
       <div class="record-field">
         <div class="label">維修項目</div>
-        <div class="value link" ontouchstart="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')" onclick="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')">${r.repairItem}</div>
+        <div class="value link" onclick="showHistory('item','${itemName}')">${r.repairItem}</div>
       </div>
       <div class="record-field">
         <div class="label">維修人員</div>
@@ -993,9 +998,9 @@ function recordHTML(r) {
         <div class="value"><span class="status-badge ${badgeClass(r.status)}">${r.status}</span></div>
       </div>
       <div class="record-actions">
-        <button class="btn btn-success btn-sm" ontouchstart="" onclick="openEditModal(\\'${r._key}\\')">✏️</button>
-        ${isAdmin ? `<button class="btn btn-danger btn-sm" ontouchstart="" onclick="deleteRecord(\\'${r._key}\\')">🗑️</button>` : ''}
-        ${isAdmin ? `<button class="btn btn-info btn-sm" ontouchstart="" onclick="exportSinglePDF(\\'${r._key}\\')">📄</button>` : ''}
+        <button class="btn btn-success btn-sm" onclick="openEditModal('${key}')">✏️</button>
+        ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord('${key}')">🗑️</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF('${key}')">📄</button>` : ''}
       </div>
     </div>
     ${r.notes ? `<div class="record-meta">📝 ${r.notes}</div>` : ''}
@@ -1032,12 +1037,15 @@ window.goPage = function(p) { currentPage = p; renderRecords(); window.scrollTo(
 
 // ---- HISTORY VIEW ----
 window.showHistory = function(type, value) {
+  console.log('=== showHistory 被呼叫 ===', type, value);
   historyMode = { type, value };
   const label = type === 'customer' ? '客戶' : '維修項目';
   document.getElementById('historyTitle').textContent = value;
   document.getElementById('historySubtitle').textContent = `${label}歷史維修紀錄`;
   document.getElementById('historyTableTitle').textContent = `${value} — 所有紀錄`;
+  console.log('切換到歷史頁面...');
   showTab('history');
+  console.log('=== 已切換到歷史頁面 ===');
 };
 
 function renderHistory() {
@@ -1073,8 +1081,14 @@ window.openAddModal = function() {
 };
 
 window.openEditModal = function(key) {
+  console.log('=== openEditModal 被呼叫 ===', key);
   const r = allRecords.find(x => x._key === key);
-  if (!r) return;
+  if (!r) {
+    console.error('找不到紀錄:', key);
+    alert('找不到紀錄！');
+    return;
+  }
+  console.log('找到紀錄:', r);
   editKey = key; pendingPhotos = [];
   document.getElementById('modalTitle').textContent = '編輯維修記錄';
   document.getElementById('saveBtn').textContent = '更新';
@@ -1109,7 +1123,10 @@ window.openEditModal = function(key) {
   
   document.getElementById('photoPreview').innerHTML = r.photos
     ? Object.values(r.photos).map(p => `<div class="photo-preview"><img src="${p}"><button class="remove-photo" type="button">×</button></div>`).join('') : '';
+  
+  console.log('開啟 Modal...');
   document.getElementById('recordModal').classList.add('active');
+  console.log('=== Modal 已開啟 ===');
 };
 
 window.closeModal = function() {
@@ -1210,13 +1227,24 @@ window.saveRecord = async function(e) {
 
 // ---- DELETE ----
 window.deleteRecord = async function(key) {
-  if (!isAdmin) { alert('僅管理員可以刪除紀錄'); return; }
-  if (!confirm('確定要刪除此紀錄？')) return;
+  console.log('=== deleteRecord 被呼叫 ===', key);
+  if (!isAdmin) { 
+    console.log('非管理員，無法刪除');
+    alert('僅管理員可以刪除紀錄'); 
+    return; 
+  }
+  if (!confirm('確定要刪除此紀錄？')) {
+    console.log('使用者取消刪除');
+    return;
+  }
+  console.log('開始刪除紀錄...');
   syncStatus('syncing');
   try {
     await remove(ref(db, `workspaces/${ws}/records/${key}`));
+    console.log('刪除成功');
     syncStatus('online');
   } catch (err) {
+    console.error('刪除失敗:', err);
     syncStatus('offline', '刪除失敗');
     alert('刪除失敗：' + err.message);
   }
