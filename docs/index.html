@@ -657,53 +657,83 @@ function syncStatus(s, t) {
 // ---- LOGIN ----
 window.login = async function(e) {
   e.preventDefault();
-  ws = document.getElementById('workspaceId').value.trim();
-  user = document.getElementById('userName').value.trim() || '匿名';
-  const adminPassInput = document.getElementById('adminPass').value;
+  
+  console.log('=== 開始登入流程 ===');
+  
+  try {
+    ws = document.getElementById('workspaceId').value.trim();
+    user = document.getElementById('userName').value.trim() || '匿名';
+    const adminPassInput = document.getElementById('adminPass').value;
 
-  if (ws.length < 3) { alert('工作區代碼至少需要 3 個字元'); return; }
+    console.log('工作區:', ws);
+    console.log('使用者:', user);
+    console.log('管理員密碼:', adminPassInput ? '已輸入' : '未輸入');
 
-  // 檢查管理員密碼
-  if (adminPassInput) {
-    // 從 Firebase 取得儲存的管理員密碼
-    const savedPass = await getAdminPass();
-    const validPass = savedPass || DEFAULT_ADMIN_PASS;
-    if (adminPassInput === validPass) {
-      isAdmin = true;
-    } else {
-      alert('管理員密碼錯誤！\n請留空進入一般成員模式，或輸入正確密碼。');
-      return;
+    if (ws.length < 3) { 
+      alert('工作區代碼至少需要 3 個字元'); 
+      return; 
     }
-  } else {
+
+    // 檢查管理員密碼
     isAdmin = false;
+    if (adminPassInput) {
+      console.log('檢查管理員密碼...');
+      try {
+        const savedPass = await getAdminPass();
+        const validPass = savedPass || DEFAULT_ADMIN_PASS;
+        console.log('預設密碼:', DEFAULT_ADMIN_PASS);
+        if (adminPassInput === validPass) {
+          isAdmin = true;
+          console.log('管理員驗證成功');
+        } else {
+          alert('管理員密碼錯誤！\n請留空進入一般成員模式，或輸入正確密碼。');
+          return;
+        }
+      } catch (err) {
+        console.error('取得管理員密碼失敗:', err);
+        // 如果無法取得密碼，使用預設密碼比對
+        if (adminPassInput === DEFAULT_ADMIN_PASS) {
+          isAdmin = true;
+          console.log('使用預設密碼登入');
+        } else {
+          alert('無法驗證管理員密碼，請確認 Firebase 連線正常');
+          return;
+        }
+      }
+    }
+
+    console.log('儲存登入資訊...');
+    localStorage.setItem('ws', ws);
+    localStorage.setItem('user', user);
+    localStorage.setItem('isAdmin', isAdmin ? '1' : '0');
+
+    console.log('切換畫面...');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('wsDisplay').textContent = ws;
+    document.getElementById('userDisplay').textContent = user;
+
+    console.log('套用管理員介面...');
+    applyAdminUI();
+    
+    console.log('初始化資料庫...');
+    initDB();
+    
+    console.log('=== 登入完成 ===');
+  } catch (err) {
+    console.error('登入錯誤:', err);
+    alert('登入時發生錯誤，請按 F12 查看 Console 錯誤訊息\n\n錯誤：' + err.message);
   }
-
-  localStorage.setItem('ws', ws);
-  localStorage.setItem('user', user);
-  localStorage.setItem('isAdmin', isAdmin ? '1' : '0');
-
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-  document.getElementById('wsDisplay').textContent = ws;
-  document.getElementById('userDisplay').textContent = user;
-
-  applyAdminUI();
-  initDB();
 };
 
 window.logout = function() {
   if (confirm('確定要登出嗎？')) {
-    localStorage.removeItem('ws'); localStorage.removeItem('user');
-    localStorage.removeItem('isAdmin'); location.reload();
+    localStorage.removeItem('ws'); 
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAdmin'); 
+    location.reload();
   }
 };
-
-function checkSavedLogin() {
-  const sw = localStorage.getItem('ws');
-  if (sw) { document.getElementById('workspaceId').value = sw; }
-  const su = localStorage.getItem('user');
-  if (su) { document.getElementById('userName').value = su; }
-}
 
 // ---- ADMIN UI ----
 function applyAdminUI() {
@@ -1750,21 +1780,28 @@ function renderCalcHistory() {
 }
 
 // ---- INIT ----
-checkSavedLogin();
+// 頁面載入時檢查是否有儲存的登入資訊
+const savedWs = localStorage.getItem('ws');
+const savedUser = localStorage.getItem('user');
+const savedAdmin = localStorage.getItem('isAdmin');
 
-function checkSavedLoginAndRestore() {
-  const sw = localStorage.getItem('ws');
-  const su = localStorage.getItem('user');
-  const sa = localStorage.getItem('isAdmin');
-  if (sw && su) {
-    ws = sw; user = su; isAdmin = sa === '1';
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('wsDisplay').textContent = ws;
-    document.getElementById('userDisplay').textContent = user;
-    applyAdminUI();
-    initDB();
-  }
+if (savedWs && savedUser) {
+  // 自動恢復登入狀態
+  ws = savedWs;
+  user = savedUser;
+  isAdmin = savedAdmin === '1';
+  
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('wsDisplay').textContent = ws;
+  document.getElementById('userDisplay').textContent = user;
+  
+  applyAdminUI();
+  initDB();
+} else {
+  // 填入之前的工作區和使用者名稱（如果有的話）
+  if (savedWs) document.getElementById('workspaceId').value = savedWs;
+  if (savedUser) document.getElementById('userName').value = savedUser;
 }
 </script>
 </body>
