@@ -319,12 +319,12 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <!-- PR/RA 計算器頁面 -->
   <div id="tabCalculator" style="display:none">
     <div class="content">
-      <h2 style="color:#2d3748;font-size:20px;margin-bottom:20px">🔢 PR 值與 RA% 計算器</h2>
+      <h2 style="color:#2d3748;font-size:20px;margin-bottom:20px">🔢 PR 值與 RA 值計算器</h2>
       
       <!-- PR 值計算 -->
       <div class="card-section">
         <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">📊 PR 值（Performance Ratio）計算</h3>
-        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">PR 值 = 實際發電量 ÷ (日照量 × 系統容量) × 100%</p>
+        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">PR 值 = 實際發電量 ÷ (日照強度 × 系統容量 × 時數) × 100%</p>
         
         <div class="row2">
           <div class="form-group">
@@ -332,21 +332,29 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             <input type="number" class="form-input" id="pr_actual" step="0.01" placeholder="例如：850">
           </div>
           <div class="form-group">
-            <label class="form-label">日照量（kWh/m²）</label>
-            <input type="number" class="form-input" id="pr_irradiation" step="0.01" placeholder="例如：5.2">
+            <label class="form-label">日照強度（W/m²）</label>
+            <input type="number" class="form-input" id="pr_irradiation" step="0.01" placeholder="例如：800">
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">系統容量（kWp）</label>
-          <input type="number" class="form-input" id="pr_capacity" step="0.01" placeholder="例如：200">
+        <div class="row2">
+          <div class="form-group">
+            <label class="form-label">系統容量（kWp）</label>
+            <input type="number" class="form-input" id="pr_capacity" step="0.01" placeholder="例如：200">
+          </div>
+          <div class="form-group">
+            <label class="form-label">日照時數（小時）</label>
+            <input type="number" class="form-input" id="pr_hours" step="0.1" placeholder="例如：5.5">
+          </div>
         </div>
         <button class="btn btn-primary" onclick="calculatePR()">計算 PR 值</button>
         
         <div id="prResult" style="display:none;margin-top:20px;padding:20px;background:#f0f2ff;border-radius:12px;border-left:4px solid #667eea">
-          <div style="font-size:14px;color:#2d3748;margin-bottom:8px">
-            <strong>計算結果：</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:14px;color:#2d3748"><strong>計算結果：</strong></div>
+            <button class="btn btn-sm" style="background:#667eea;color:white" onclick="exportCalcPDF('PR')">📄 匯出 PDF</button>
           </div>
           <div style="font-size:32px;font-weight:bold;color:#667eea;margin-bottom:8px" id="prValue"></div>
+          <div style="font-size:13px;color:#6c757d;margin-bottom:8px" id="prDetails"></div>
           <div style="font-size:13px;color:#6c757d" id="prStatus"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dee2e6;font-size:12px;color:#6c757d">
             <strong>評價標準：</strong><br>
@@ -355,34 +363,45 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         </div>
       </div>
 
-      <!-- RA% 計算 -->
+      <!-- RA 值計算 -->
       <div class="card-section" style="margin-top:20px">
-        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">⚡ RA%（可用率）計算</h3>
-        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">RA% = (總時間 - 停機時間) ÷ 總時間 × 100%</p>
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">⚡ RA 值（太陽能系統可用率）計算</h3>
+        <p style="color:#6c757d;font-size:13px;margin-bottom:15px">RA 值 = (實測串列功率 ÷ 額定裝置容量) × 100%</p>
         
         <div class="row2">
           <div class="form-group">
-            <label class="form-label">統計期間（天）</label>
-            <input type="number" class="form-input" id="ra_period" placeholder="例如：30">
+            <label class="form-label">實測串列功率（kW）</label>
+            <input type="number" class="form-input" id="ra_measured" step="0.01" placeholder="例如：180">
+            <small style="color:#6c757d;font-size:12px">於特定日照與溫度下量測的實際功率</small>
           </div>
           <div class="form-group">
-            <label class="form-label">停機時間（小時）</label>
-            <input type="number" class="form-input" id="ra_downtime" step="0.01" placeholder="例如：5.5">
+            <label class="form-label">額定裝置容量（kWp）</label>
+            <input type="number" class="form-input" id="ra_rated" step="0.01" placeholder="例如：200">
+            <small style="color:#6c757d;font-size:12px">標準測試條件(STC)下的額定功率</small>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="calculateRA()">計算 RA%</button>
+        <div class="row2">
+          <div class="form-group">
+            <label class="form-label">量測時日照強度（W/m²）</label>
+            <input type="number" class="form-input" id="ra_irradiance" step="0.01" placeholder="例如：850">
+          </div>
+          <div class="form-group">
+            <label class="form-label">量測時模組溫度（°C）</label>
+            <input type="number" class="form-input" id="ra_temperature" step="0.1" placeholder="例如：45">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="calculateRA()">計算 RA 值</button>
         
         <div id="raResult" style="display:none;margin-top:20px;padding:20px;background:#f0fff4;border-radius:12px;border-left:4px solid #28a745">
-          <div style="font-size:14px;color:#2d3748;margin-bottom:8px">
-            <strong>計算結果：</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:14px;color:#2d3748"><strong>計算結果：</strong></div>
+            <button class="btn btn-sm" style="background:#28a745;color:white" onclick="exportCalcPDF('RA')">📄 匯出 PDF</button>
           </div>
           <div style="font-size:32px;font-weight:bold;color:#28a745;margin-bottom:8px" id="raValue"></div>
-          <div style="font-size:13px;color:#6c757d">
-            總時間：<span id="raTotalHours"></span> 小時 | 可用時間：<span id="raUptime"></span> 小時
-          </div>
+          <div style="font-size:13px;color:#6c757d;margin-bottom:8px" id="raConditions"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dee2e6;font-size:12px;color:#6c757d">
             <strong>評價標準：</strong><br>
-            優良：RA ≥ 98% | 良好：95% ≤ RA < 98% | 普通：90% ≤ RA < 95% | 需改善：RA < 90%
+            優良：RA ≥ 90% | 良好：80% ≤ RA < 90% | 普通：70% ≤ RA < 80% | 需改善：RA < 70%
           </div>
         </div>
       </div>
@@ -455,28 +474,81 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">維修項目 *</label>
-          <select class="form-select" id="f_item_sel" onchange="handleItemSelect()" required>
-            <option value="">-- 請選擇維修項目 --</option>
-            <option value="台達逆變器故障">台達逆變器故障</option>
-            <option value="新望逆變器故障">新望逆變器故障</option>
-            <option value="古瑞瓦特逆變器故障">古瑞瓦特逆變器故障</option>
-            <option value="亞力逆變器故障">亞力逆變器故障</option>
-            <option value="盈正逆變器故障">盈正逆變器故障</option>
-            <option value="科風逆變器故障">科風逆變器故障</option>
-            <option value="華為逆變器故障">華為逆變器故障</option>
-            <option value="太陽能板破損">太陽能板破損</option>
-            <option value="電路檢修">電路檢修</option>
-            <option value="系統清潔保養">系統清潔保養</option>
-            <option value="監控系統異常">監控系統異常</option>
-            <option value="配電箱維修">配電箱維修</option>
-            <option value="支架結構檢查">支架結構檢查</option>
-            <option value="接地系統檢測">接地系統檢測</option>
-            <option value="線路老化更換">線路老化更換</option>
-            <option value="其他">其他（自行輸入）</option>
-          </select>
-          <input type="text" class="form-input" id="f_item_custom" style="display:none;margin-top:10px" placeholder="請輸入維修項目">
+          <label class="form-label">維修項目 *（可複選）</label>
+          <div style="border:2px solid #dee2e6;border-radius:8px;padding:15px;max-height:250px;overflow-y:auto">
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="台達逆變器故障" style="margin-right:10px;width:18px;height:18px"> 台達逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="新望逆變器故障" style="margin-right:10px;width:18px;height:18px"> 新望逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="古瑞瓦特逆變器故障" style="margin-right:10px;width:18px;height:18px"> 古瑞瓦特逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="亞力逆變器故障" style="margin-right:10px;width:18px;height:18px"> 亞力逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="盈正逆變器故障" style="margin-right:10px;width:18px;height:18px"> 盈正逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="科風逆變器故障" style="margin-right:10px;width:18px;height:18px"> 科風逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="華為逆變器故障" style="margin-right:10px;width:18px;height:18px"> 華為逆變器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="太陽能板破損" style="margin-right:10px;width:18px;height:18px"> 太陽能板破損
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="電路檢修" style="margin-right:10px;width:18px;height:18px"> 電路檢修
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="系統清潔保養" style="margin-right:10px;width:18px;height:18px"> 系統清潔保養
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="監控系統異常" style="margin-right:10px;width:18px;height:18px"> 監控系統異常
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="三惟監控數據機異常" style="margin-right:10px;width:18px;height:18px"> 三惟監控數據機異常
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="網路費未繳" style="margin-right:10px;width:18px;height:18px"> 網路費未繳
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="配電箱維修" style="margin-right:10px;width:18px;height:18px"> 配電箱維修
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="保險絲熔斷" style="margin-right:10px;width:18px;height:18px"> 保險絲熔斷
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="突波保護器故障" style="margin-right:10px;width:18px;height:18px"> 突波保護器故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="端子台故障" style="margin-right:10px;width:18px;height:18px"> 端子台故障
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="支架結構檢查" style="margin-right:10px;width:18px;height:18px"> 支架結構檢查
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="接地系統檢測" style="margin-right:10px;width:18px;height:18px"> 接地系統檢測
+            </label>
+            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+              <input type="checkbox" name="repairItems" value="線路老化更換" style="margin-right:10px;width:18px;height:18px"> 線路老化更換
+            </label>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="customItemCheck" style="width:18px;height:18px">
+            <label for="customItemCheck" style="font-weight:600">其他（自訂）</label>
+            <input type="text" class="form-input" id="customItem" style="flex:1;display:none" placeholder="輸入其他維修項目">
+          </div>
         </div>
+        <script>
+          document.getElementById('customItemCheck').addEventListener('change', function() {
+            document.getElementById('customItem').style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) document.getElementById('customItem').value = '';
+          });
+        </script>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">維修日期 *</label>
@@ -946,8 +1018,13 @@ window.openAddModal = function() {
   document.querySelector('#recordModal form').reset();
   document.getElementById('f_date').value = today();
   document.getElementById('photoPreview').innerHTML = '';
-  document.getElementById('f_item_sel').value = '';
-  document.getElementById('f_item_custom').style.display = 'none';
+  
+  // 取消所有勾選
+  document.querySelectorAll('input[name="repairItems"]').forEach(cb => cb.checked = false);
+  document.getElementById('customItemCheck').checked = false;
+  document.getElementById('customItem').style.display = 'none';
+  document.getElementById('customItem').value = '';
+  
   document.getElementById('recordModal').classList.add('active');
 };
 
@@ -963,16 +1040,28 @@ window.openEditModal = function(key) {
   document.getElementById('f_status').value = r.status;
   document.getElementById('f_notes').value = r.notes || '';
   
-  // 處理維修項目
-  const predefined = ['台達逆變器故障','新望逆變器故障','古瑞瓦特逆變器故障','亞力逆變器故障','盈正逆變器故障','科風逆變器故障','華為逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','配電箱維修','支架結構檢查','接地系統檢測','線路老化更換'];
-  if(predefined.includes(r.repairItem)) {
-    document.getElementById('f_item_sel').value = r.repairItem;
-    document.getElementById('f_item_custom').style.display = 'none';
-  } else {
-    document.getElementById('f_item_sel').value = '其他';
-    document.getElementById('f_item_custom').style.display = 'block';
-    document.getElementById('f_item_custom').value = r.repairItem;
-  }
+  // 處理維修項目（複選）
+  const items = r.repairItem.split('、');
+  const predefined = ['台達逆變器故障','新望逆變器故障','古瑞瓦特逆變器故障','亞力逆變器故障','盈正逆變器故障','科風逆變器故障','華為逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','三惟監控數據機異常','網路費未繳','配電箱維修','保險絲熔斷','突波保護器故障','端子台故障','支架結構檢查','接地系統檢測','線路老化更換'];
+  
+  // 先取消所有勾選
+  document.querySelectorAll('input[name="repairItems"]').forEach(cb => cb.checked = false);
+  document.getElementById('customItemCheck').checked = false;
+  document.getElementById('customItem').style.display = 'none';
+  document.getElementById('customItem').value = '';
+  
+  // 勾選對應項目
+  items.forEach(item => {
+    if (predefined.includes(item)) {
+      const cb = document.querySelector(`input[name="repairItems"][value="${item}"]`);
+      if (cb) cb.checked = true;
+    } else {
+      // 自訂項目
+      document.getElementById('customItemCheck').checked = true;
+      document.getElementById('customItem').style.display = 'block';
+      document.getElementById('customItem').value = item;
+    }
+  });
   
   document.getElementById('photoPreview').innerHTML = r.photos
     ? Object.values(r.photos).map(p => `<div class="photo-preview"><img src="${p}"><button class="remove-photo" type="button">×</button></div>`).join('') : '';
@@ -983,14 +1072,6 @@ window.closeModal = function() {
   document.getElementById('recordModal').classList.remove('active');
   editKey = null; pendingPhotos = [];
 };
-
-// 處理維修項目選擇
-window.handleItemSelect = function() {
-  const sel = document.getElementById('f_item_sel');
-  const custom = document.getElementById('f_item_custom');
-  if(sel.value === '其他') {
-    custom.style.display = 'block';
-    custom.required = true;
   } else {
     custom.style.display = 'none';
     custom.required = false;
@@ -1037,11 +1118,26 @@ window.saveRecord = async function(e) {
   e.preventDefault();
   syncStatus('syncing');
   try {
-    // 取得維修項目值
-    const itemSel = document.getElementById('f_item_sel').value;
-    const itemValue = itemSel === '其他' 
-        ? document.getElementById('f_item_custom').value 
-        : itemSel;
+    // 取得複選的維修項目
+    const checkedItems = Array.from(document.querySelectorAll('input[name="repairItems"]:checked'))
+      .map(cb => cb.value);
+    
+    // 如果有勾選「其他」
+    const customCheck = document.getElementById('customItemCheck');
+    if (customCheck.checked) {
+      const customValue = document.getElementById('customItem').value.trim();
+      if (customValue) {
+        checkedItems.push(customValue);
+      }
+    }
+    
+    if (checkedItems.length === 0) {
+      alert('請至少選擇一個維修項目');
+      syncStatus('online');
+      return;
+    }
+    
+    const itemValue = checkedItems.join('、');
     
     const data = {
       customerName: document.getElementById('f_customer').value,
@@ -1399,22 +1495,30 @@ window.doImportCSV = async function() {
 
 // ── 計算歷史記錄 ──
 let calcHistory = [];
+let lastPRCalc = null;
+let lastRACalc = null;
 
 // ── PR 值計算 ──
 window.calculatePR = function() {
   const actual = parseFloat(document.getElementById('pr_actual').value);
   const irradiation = parseFloat(document.getElementById('pr_irradiation').value);
   const capacity = parseFloat(document.getElementById('pr_capacity').value);
+  const hours = parseFloat(document.getElementById('pr_hours').value);
   
-  if (!actual || !irradiation || !capacity) {
+  if (!actual || !irradiation || !capacity || !hours) {
     alert('請填寫所有欄位');
     return;
   }
   
-  const pr = (actual / (irradiation * capacity)) * 100;
+  // PR = 實際發電量 ÷ (日照強度 × 系統容量 × 時數) × 100%
+  // 日照強度需要從 W/m² 轉換為 kW/m²
+  const irradiationKW = irradiation / 1000;
+  const theoreticalEnergy = irradiationKW * capacity * hours;
+  const pr = (actual / theoreticalEnergy) * 100;
   const prRounded = Math.round(pr * 100) / 100;
   
   document.getElementById('prValue').textContent = prRounded + '%';
+  document.getElementById('prDetails').textContent = `理論發電量：${theoreticalEnergy.toFixed(2)} kWh`;
   
   let status = '', color = '';
   if (pr >= 80) {
@@ -1435,39 +1539,61 @@ window.calculatePR = function() {
   document.getElementById('prValue').style.color = color;
   document.getElementById('prResult').style.display = 'block';
   
+  // 儲存計算結果
+  lastPRCalc = {
+    actual,
+    irradiation,
+    capacity,
+    hours,
+    theoretical: theoreticalEnergy,
+    pr: prRounded,
+    status
+  };
+  
   // 記錄到歷史
   addCalcHistory('PR值', `${prRounded}%`, {
     實際發電量: actual + ' kWh',
-    日照量: irradiation + ' kWh/m²',
-    系統容量: capacity + ' kWp'
+    日照強度: irradiation + ' W/m²',
+    系統容量: capacity + ' kWp',
+    日照時數: hours + ' 小時',
+    理論發電量: theoreticalEnergy.toFixed(2) + ' kWh'
   });
 };
 
-// ── RA% 計算 ──
+// ── RA 值計算 ──
 window.calculateRA = function() {
-  const period = parseFloat(document.getElementById('ra_period').value);
-  const downtime = parseFloat(document.getElementById('ra_downtime').value);
+  const measured = parseFloat(document.getElementById('ra_measured').value);
+  const rated = parseFloat(document.getElementById('ra_rated').value);
+  const irradiance = parseFloat(document.getElementById('ra_irradiance').value);
+  const temperature = parseFloat(document.getElementById('ra_temperature').value);
   
-  if (!period || downtime === null || downtime === undefined) {
-    alert('請填寫所有欄位');
+  if (!measured || !rated) {
+    alert('請至少填寫實測串列功率和額定裝置容量');
     return;
   }
   
-  const totalHours = period * 24;
-  const uptime = totalHours - downtime;
-  const ra = (uptime / totalHours) * 100;
+  // RA = (實測串列功率 ÷ 額定裝置容量) × 100%
+  const ra = (measured / rated) * 100;
   const raRounded = Math.round(ra * 100) / 100;
   
   document.getElementById('raValue').textContent = raRounded + '%';
-  document.getElementById('raTotalHours').textContent = totalHours;
-  document.getElementById('raUptime').textContent = uptime;
+  
+  // 顯示量測條件
+  let conditions = `量測條件：實測功率 ${measured} kW / 額定容量 ${rated} kWp`;
+  if (irradiance) {
+    conditions += ` | 日照 ${irradiance} W/m²`;
+  }
+  if (temperature) {
+    conditions += ` | 溫度 ${temperature}°C`;
+  }
+  document.getElementById('raConditions').textContent = conditions;
   
   let color = '';
-  if (ra >= 98) {
+  if (ra >= 90) {
     color = '#28a745';
-  } else if (ra >= 95) {
+  } else if (ra >= 80) {
     color = '#17a2b8';
-  } else if (ra >= 90) {
+  } else if (ra >= 70) {
     color = '#ffc107';
   } else {
     color = '#dc3545';
@@ -1476,11 +1602,112 @@ window.calculateRA = function() {
   document.getElementById('raValue').style.color = color;
   document.getElementById('raResult').style.display = 'block';
   
+  // 儲存計算結果
+  lastRACalc = {
+    measured,
+    rated,
+    irradiance: irradiance || null,
+    temperature: temperature || null,
+    ra: raRounded
+  };
+  
   // 記錄到歷史
-  addCalcHistory('RA%', `${raRounded}%`, {
-    統計期間: period + ' 天',
-    停機時間: downtime + ' 小時',
-    可用時間: uptime + ' 小時'
+  const details = {
+    實測串列功率: measured + ' kW',
+    額定裝置容量: rated + ' kWp'
+  };
+  if (irradiance) details['日照強度'] = irradiance + ' W/m²';
+  if (temperature) details['模組溫度'] = temperature + '°C';
+  
+  addCalcHistory('RA值', `${raRounded}%`, details);
+};
+
+// ── PDF 匯出 ──
+window.exportCalcPDF = function(type) {
+  const now = new Date().toLocaleDateString('zh-TW');
+  let html = '';
+  
+  if (type === 'PR' && lastPRCalc) {
+    const c = lastPRCalc;
+    html = `
+      <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
+        <h1 style="text-align: center; color: #667eea; margin-bottom: 10px;">PR 值計算報告</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">工作區：${ws} | 產生日期：${now}</p>
+        
+        <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算結果</h2>
+        <div style="background: #f0f2ff; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+          <div style="font-size: 36px; font-weight: bold; color: #667eea; margin-bottom: 10px;">PR 值：${c.pr}%</div>
+          <div style="font-size: 14px; color: #666;">${c.status}</div>
+        </div>
+        
+        <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算參數</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">實際發電量</td><td style="padding: 10px; font-weight: bold;">${c.actual} kWh</td></tr>
+          <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">日照強度</td><td style="padding: 10px; font-weight: bold;">${c.irradiation} W/m²</td></tr>
+          <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">系統容量</td><td style="padding: 10px; font-weight: bold;">${c.capacity} kWp</td></tr>
+          <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">日照時數</td><td style="padding: 10px; font-weight: bold;">${c.hours} 小時</td></tr>
+          <tr><td style="padding: 10px;">理論發電量</td><td style="padding: 10px; font-weight: bold;">${c.theoretical.toFixed(2)} kWh</td></tr>
+        </table>
+        
+        <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算公式</h2>
+        <p style="color: #666; font-size: 14px;">PR 值 = 實際發電量 ÷ (日照強度 × 系統容量 × 時數) × 100%</p>
+        <p style="color: #666; font-size: 14px;">PR 值 = ${c.actual} ÷ (${c.irradiation/1000} × ${c.capacity} × ${c.hours}) × 100% = ${c.pr}%</p>
+      </div>
+    `;
+  } else if (type === 'RA' && lastRACalc) {
+    const c = lastRACalc;
+    let conditionsHTML = `
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">實測串列功率</td><td style="padding: 10px; font-weight: bold;">${c.measured} kW</td></tr>
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">額定裝置容量</td><td style="padding: 10px; font-weight: bold;">${c.rated} kWp</td></tr>
+    `;
+    if (c.irradiance) {
+      conditionsHTML += `<tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">量測時日照強度</td><td style="padding: 10px; font-weight: bold;">${c.irradiance} W/m²</td></tr>`;
+    }
+    if (c.temperature) {
+      conditionsHTML += `<tr><td style="padding: 10px;">量測時模組溫度</td><td style="padding: 10px; font-weight: bold;">${c.temperature}°C</td></tr>`;
+    }
+    
+    html = `
+      <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
+        <h1 style="text-align: center; color: #28a745; margin-bottom: 10px;">RA 值計算報告</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">工作區：${ws} | 產生日期：${now}</p>
+        
+        <h2 style="color: #28a745; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算結果</h2>
+        <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 20px;">
+          <div style="font-size: 36px; font-weight: bold; color: #28a745; margin-bottom: 10px;">RA 值：${c.ra}%</div>
+          <div style="font-size: 14px; color: #666;">實測功率 ${c.measured} kW / 額定容量 ${c.rated} kWp</div>
+        </div>
+        
+        <h2 style="color: #28a745; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">量測條件與參數</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          ${conditionsHTML}
+        </table>
+        
+        <h2 style="color: #28a745; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算公式</h2>
+        <p style="color: #666; font-size: 14px;">RA 值 = (實測串列功率 ÷ 額定裝置容量) × 100%</p>
+        <p style="color: #666; font-size: 14px;">RA 值 = ${c.measured} ÷ ${c.rated} × 100% = ${c.ra}%</p>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <p style="font-size: 12px; color: #666; margin: 0;"><strong>註：</strong>RA 值反映太陽能系統在特定環境條件下的實際運作效能。標準測試條件(STC)為 25°C、1000 W/m²。</p>
+        </div>
+      </div>
+    `;
+  } else {
+    alert('沒有計算結果可以匯出');
+    return;
+  }
+  
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  
+  html2pdf().from(el).set({
+    margin: 10,
+    filename: `${type}值計算報告_${ws}_${now}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save().then(() => {
+    document.body.removeChild(el);
   });
 };
 
