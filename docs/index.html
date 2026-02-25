@@ -86,16 +86,18 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 .record-grid{display:grid;grid-template-columns:1.8fr 1.8fr 1.2fr 1.2fr 1fr auto;gap:12px;align-items:center;}
 .record-field .label{color:#6c757d;font-size:11px;margin-bottom:3px;}
 .record-field .value{color:#2d3748;font-weight:500;font-size:14px;}
-.record-field .value.link{color:#667eea;cursor:pointer;text-decoration:underline;}
+.record-field .value.link{color:#667eea;cursor:pointer;text-decoration:underline;touch-action:manipulation;-webkit-tap-highlight-color:rgba(102,126,234,0.2);}
 .record-field .value.link:hover{color:#5568d3;}
+.record-field .value.link:active{color:#4557c2;}
 .record-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.record-actions .btn{touch-action:manipulation;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
 .status-badge{display:inline-block;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;}
 .badge-pending{background:#fff3cd;color:#856404;}
 .badge-inprogress{background:#cce5ff;color:#004085;}
 .badge-completed{background:#d4edda;color:#155724;}
 .record-meta{margin-top:8px;display:flex;gap:15px;font-size:12px;color:#6c757d;}
 .record-photos{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
-.record-photo{width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e9ecef;}
+.record-photo{width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e9ecef;touch-action:manipulation;}
 
 /* PAGINATION */
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;padding:18px;flex-wrap:wrap;}
@@ -174,9 +176,27 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 
 @media(max-width:768px){
   .record-grid{grid-template-columns:1fr;gap:8px;}
+  .record-field .value.link{
+    display:block;
+    padding:10px 5px;
+    margin:-10px -5px;
+  }
+  .record-actions .btn{
+    min-width:48px;
+    min-height:48px;
+    font-size:16px;
+  }
   .form-row{grid-template-columns:1fr;}
   .header{flex-direction:column;}
   .kpi-grid{grid-template-columns:1fr 1fr;}
+  .nav-tab{
+    min-height:48px;
+    display:flex;
+    align-items:center;
+  }
+  .btn{
+    min-height:44px;
+  }
 }
 </style>
 </head>
@@ -947,18 +967,18 @@ function renderRecords() {
 
 function recordHTML(r) {
   const photos = r.photos ? Object.values(r.photos).map(p =>
-    `<img class="record-photo" src="${p}" onclick="openLightbox(\\'${p}\\')" alt="維修照片">`
+    `<img class="record-photo" src="${p}" ontouchstart="openLightbox(\\'${p}\\')" onclick="openLightbox(\\'${p}\\')" alt="維修照片">`
   ).join('') : '';
   return `
   <div class="record-item">
     <div class="record-grid">
       <div class="record-field">
         <div class="label">客戶名稱</div>
-        <div class="value link" onclick="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')">${r.customerName}</div>
+        <div class="value link" ontouchstart="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')" onclick="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')">${r.customerName}</div>
       </div>
       <div class="record-field">
         <div class="label">維修項目</div>
-        <div class="value link" onclick="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')">${r.repairItem}</div>
+        <div class="value link" ontouchstart="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')" onclick="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')">${r.repairItem}</div>
       </div>
       <div class="record-field">
         <div class="label">維修人員</div>
@@ -973,9 +993,9 @@ function recordHTML(r) {
         <div class="value"><span class="status-badge ${badgeClass(r.status)}">${r.status}</span></div>
       </div>
       <div class="record-actions">
-        <button class="btn btn-success btn-sm" onclick="openEditModal(\\'${r._key}\\')">✏️</button>
-        ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord(\\'${r._key}\\')">🗑️</button>` : ''}
-        ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF(\\'${r._key}\\')">📄</button>` : ''}
+        <button class="btn btn-success btn-sm" ontouchstart="" onclick="openEditModal(\\'${r._key}\\')">✏️</button>
+        ${isAdmin ? `<button class="btn btn-danger btn-sm" ontouchstart="" onclick="deleteRecord(\\'${r._key}\\')">🗑️</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-info btn-sm" ontouchstart="" onclick="exportSinglePDF(\\'${r._key}\\')">📄</button>` : ''}
       </div>
     </div>
     ${r.notes ? `<div class="record-meta">📝 ${r.notes}</div>` : ''}
