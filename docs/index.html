@@ -947,18 +947,18 @@ function renderRecords() {
 
 function recordHTML(r) {
   const photos = r.photos ? Object.values(r.photos).map(p =>
-    `<img class="record-photo" src="${p}" onclick="openLightbox('${p}')" alt="維修照片">`
+    `<img class="record-photo" src="${p}" onclick="openLightbox(\\'${p}\\')" alt="維修照片">`
   ).join('') : '';
   return `
   <div class="record-item">
     <div class="record-grid">
       <div class="record-field">
         <div class="label">客戶名稱</div>
-        <div class="value link" onclick="showHistory('customer','${esc(r.customerName)}')">${r.customerName}</div>
+        <div class="value link" onclick="showHistory(\\'customer\\',\\'${esc(r.customerName)}\\')">${r.customerName}</div>
       </div>
       <div class="record-field">
         <div class="label">維修項目</div>
-        <div class="value link" onclick="showHistory('item','${esc(r.repairItem)}')">${r.repairItem}</div>
+        <div class="value link" onclick="showHistory(\\'item\\',\\'${esc(r.repairItem)}\\')">${r.repairItem}</div>
       </div>
       <div class="record-field">
         <div class="label">維修人員</div>
@@ -973,9 +973,9 @@ function recordHTML(r) {
         <div class="value"><span class="status-badge ${badgeClass(r.status)}">${r.status}</span></div>
       </div>
       <div class="record-actions">
-        <button class="btn btn-success btn-sm" onclick="openEditModal('${r._key}')">✏️</button>
-        ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord('${r._key}')">🗑️</button>` : ''}
-        ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF('${r._key}')">📄</button>` : ''}
+        <button class="btn btn-success btn-sm" onclick="openEditModal(\\'${r._key}\\')">✏️</button>
+        ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord(\\'${r._key}\\')">🗑️</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF(\\'${r._key}\\')">📄</button>` : ''}
       </div>
     </div>
     ${r.notes ? `<div class="record-meta">📝 ${r.notes}</div>` : ''}
