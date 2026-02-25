@@ -543,12 +543,6 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             <input type="text" class="form-input" id="customItem" style="flex:1;display:none" placeholder="輸入其他維修項目">
           </div>
         </div>
-        <script>
-          document.getElementById('customItemCheck').addEventListener('change', function() {
-            document.getElementById('customItem').style.display = this.checked ? 'block' : 'none';
-            if (!this.checked) document.getElementById('customItem').value = '';
-          });
-        </script>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">維修日期 *</label>
@@ -1101,12 +1095,6 @@ window.openEditModal = function(key) {
 window.closeModal = function() {
   document.getElementById('recordModal').classList.remove('active');
   editKey = null; pendingPhotos = [];
-};
-  } else {
-    custom.style.display = 'none';
-    custom.required = false;
-    custom.value = '';
-  }
 };
 
 // ---- PHOTOS ----
@@ -1780,6 +1768,20 @@ function renderCalcHistory() {
 }
 
 // ---- INIT ----
+// 設定自訂維修項目checkbox監聽
+document.addEventListener('DOMContentLoaded', function() {
+  const customCheck = document.getElementById('customItemCheck');
+  if (customCheck) {
+    customCheck.addEventListener('change', function() {
+      const customInput = document.getElementById('customItem');
+      if (customInput) {
+        customInput.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) customInput.value = '';
+      }
+    });
+  }
+});
+
 // 頁面載入時檢查是否有儲存的登入資訊
 const savedWs = localStorage.getItem('ws');
 const savedUser = localStorage.getItem('user');
