@@ -313,6 +313,32 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         <h2 style="color:#2d3748">📊 KPI 統計報表</h2>
         <button class="btn btn-primary" onclick="exportKpiPDF()">📄 匯出 PDF 報告</button>
       </div>
+      
+      <!-- 報表區間選擇 -->
+      <div style="background:#f8f9fa;padding:15px;border-radius:12px;margin-bottom:20px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px">
+          <button class="btn-filter" id="kpi-all" onclick="setKpiPeriod('all')">全部</button>
+          <button class="btn-filter active" id="kpi-month" onclick="setKpiPeriod('month')">月報表</button>
+          <button class="btn-filter" id="kpi-quarter" onclick="setKpiPeriod('quarter')">季報表</button>
+          <button class="btn-filter" id="kpi-year" onclick="setKpiPeriod('year')">年報表</button>
+          <button class="btn-filter" id="kpi-custom" onclick="setKpiPeriod('custom')">自訂區間</button>
+        </div>
+        <div id="kpiCustomRange" style="display:none">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">開始日期</label>
+              <input type="date" class="form-input" id="kpiStartDate">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">結束日期</label>
+              <input type="date" class="form-input" id="kpiEndDate">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="applyKpiCustomRange()">套用區間</button>
+        </div>
+        <div id="kpiPeriodText" style="color:#667eea;font-weight:600;margin-top:10px">📅 本月報表</div>
+      </div>
+      
       <div class="kpi-grid" id="kpiGrid"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap" id="kpiCharts"></div>
     </div>
@@ -463,6 +489,30 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         <div id="memberList"><div class="loading"><div class="spinner"></div><p>載入中...</p></div></div>
       </div>
 
+      <!-- 維修人員管理 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">👷 維修人員管理</h3>
+        <div style="margin-bottom:15px">
+          <div style="display:flex;gap:10px;margin-bottom:10px">
+            <input type="text" class="form-input" id="newTechnicianName" placeholder="新增維修人員姓名" style="flex:1">
+            <button class="btn btn-primary" onclick="addTechnician()">➕ 新增</button>
+          </div>
+          <div id="technicianList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:15px"></div>
+        </div>
+      </div>
+
+      <!-- 維修項目管理 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🔧 維修項目管理</h3>
+        <div style="margin-bottom:15px">
+          <div style="display:flex;gap:10px;margin-bottom:10px">
+            <input type="text" class="form-input" id="newRepairItemName" placeholder="新增維修項目名稱" style="flex:1">
+            <button class="btn btn-primary" onclick="addRepairItem()">➕ 新增</button>
+          </div>
+          <div id="repairItemList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:15px"></div>
+        </div>
+      </div>
+
       <!-- 危險區域 -->
       <div style="border:2px solid #dc3545;border-radius:12px;padding:25px">
         <h3 style="font-size:16px;font-weight:700;color:#dc3545;margin-bottom:10px">⚠️ 危險區域</h3>
@@ -489,73 +539,16 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             <datalist id="customerList"></datalist>
           </div>
           <div class="form-group">
-            <label class="form-label">維修人員 *</label>
-            <input type="text" class="form-input" id="f_technician" required>
+            <label class="form-label">維修人員 *（可複選）</label>
+            <div style="border:2px solid #dee2e6;border-radius:8px;padding:10px;max-height:150px;overflow-y:auto" id="technicianCheckboxContainer">
+              <p style="color:#6c757d;font-size:13px;text-align:center">載入中...</p>
+            </div>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">維修項目 *（可複選）</label>
-          <div style="border:2px solid #dee2e6;border-radius:8px;padding:15px;max-height:250px;overflow-y:auto">
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="台達逆變器故障" style="margin-right:10px;width:18px;height:18px"> 台達逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="新望逆變器故障" style="margin-right:10px;width:18px;height:18px"> 新望逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="古瑞瓦特逆變器故障" style="margin-right:10px;width:18px;height:18px"> 古瑞瓦特逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="亞力逆變器故障" style="margin-right:10px;width:18px;height:18px"> 亞力逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="盈正逆變器故障" style="margin-right:10px;width:18px;height:18px"> 盈正逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="科風逆變器故障" style="margin-right:10px;width:18px;height:18px"> 科風逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="華為逆變器故障" style="margin-right:10px;width:18px;height:18px"> 華為逆變器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="太陽能板破損" style="margin-right:10px;width:18px;height:18px"> 太陽能板破損
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="電路檢修" style="margin-right:10px;width:18px;height:18px"> 電路檢修
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="系統清潔保養" style="margin-right:10px;width:18px;height:18px"> 系統清潔保養
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="監控系統異常" style="margin-right:10px;width:18px;height:18px"> 監控系統異常
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="三惟監控數據機異常" style="margin-right:10px;width:18px;height:18px"> 三惟監控數據機異常
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="網路費未繳" style="margin-right:10px;width:18px;height:18px"> 網路費未繳
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="配電箱維修" style="margin-right:10px;width:18px;height:18px"> 配電箱維修
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="保險絲熔斷" style="margin-right:10px;width:18px;height:18px"> 保險絲熔斷
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="突波保護器故障" style="margin-right:10px;width:18px;height:18px"> 突波保護器故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="端子台故障" style="margin-right:10px;width:18px;height:18px"> 端子台故障
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="支架結構檢查" style="margin-right:10px;width:18px;height:18px"> 支架結構檢查
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="接地系統檢測" style="margin-right:10px;width:18px;height:18px"> 接地系統檢測
-            </label>
-            <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-              <input type="checkbox" name="repairItems" value="線路老化更換" style="margin-right:10px;width:18px;height:18px"> 線路老化更換
-            </label>
+          <div style="border:2px solid #dee2e6;border-radius:8px;padding:15px;max-height:250px;overflow-y:auto" id="repairItemCheckboxContainer">
+            <p style="color:#6c757d;font-size:13px;text-align:center">載入中...</p>
           </div>
           <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
             <input type="checkbox" id="customItemCheck" style="width:18px;height:18px">
@@ -659,6 +652,22 @@ let isAdmin = false;
 
 const PER_PAGE = 10;
 const DEFAULT_ADMIN_PASS = 'admin1234'; // 預設管理員密碼
+
+// 預設維修人員和項目列表
+const DEFAULT_TECHNICIANS = [];
+const DEFAULT_REPAIR_ITEMS = [
+  '台達逆變器故障','新望逆變器故障','古瑞瓦特逆變器故障','亞力逆變器故障',
+  '盈正逆變器故障','科風逆變器故障','華為逆變器故障','太陽能板破損',
+  '電路檢修','系統清潔保養','監控系統異常','三惟監控數據機異常',
+  '網路費未繳','配電箱維修','保險絲熔斷','突波保護器故障',
+  '端子台故障','支架結構檢查','接地系統檢測','線路老化更換'
+];
+
+let techniciansList = [];
+let repairItemsList = [];
+let kpiPeriod = 'month';
+let kpiStartDate = null;
+let kpiEndDate = null;
 
 function syncStatus(s, t) {
   const dot = document.getElementById('syncDot');
@@ -839,6 +848,10 @@ function initDB() {
   });
   
   document.getElementById('f_date').value = today();
+  
+  // 載入維修人員和維修項目列表
+  loadTechnicians();
+  loadRepairItems();
 }
 
 // ---- TABS ----
@@ -889,6 +902,10 @@ function renderMemberList() {
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+  
+  // 同時渲染維修人員和維修項目列表
+  renderTechnicianList();
+  renderRepairItemList();
 }
 
 // ---- FILTER ----
@@ -1072,6 +1089,7 @@ window.openAddModal = function() {
   document.getElementById('photoPreview').innerHTML = '';
   
   // 取消所有勾選
+  document.querySelectorAll('input[name="technicians"]').forEach(cb => cb.checked = false);
   document.querySelectorAll('input[name="repairItems"]').forEach(cb => cb.checked = false);
   document.getElementById('customItemCheck').checked = false;
   document.getElementById('customItem').style.display = 'none';
@@ -1093,14 +1111,20 @@ window.openEditModal = function(key) {
   document.getElementById('modalTitle').textContent = '編輯維修記錄';
   document.getElementById('saveBtn').textContent = '更新';
   document.getElementById('f_customer').value = r.customerName;
-  document.getElementById('f_technician').value = r.technician;
   document.getElementById('f_date').value = r.repairDate;
   document.getElementById('f_status').value = r.status;
   document.getElementById('f_notes').value = r.notes || '';
   
+  // 處理維修人員（複選）
+  const techs = r.technician.split('、');
+  document.querySelectorAll('input[name="technicians"]').forEach(cb => cb.checked = false);
+  techs.forEach(tech => {
+    const cb = document.querySelector(`input[name="technicians"][value="${tech}"]`);
+    if (cb) cb.checked = true;
+  });
+  
   // 處理維修項目（複選）
   const items = r.repairItem.split('、');
-  const predefined = ['台達逆變器故障','新望逆變器故障','古瑞瓦特逆變器故障','亞力逆變器故障','盈正逆變器故障','科風逆變器故障','華為逆變器故障','太陽能板破損','電路檢修','系統清潔保養','監控系統異常','三惟監控數據機異常','網路費未繳','配電箱維修','保險絲熔斷','突波保護器故障','端子台故障','支架結構檢查','接地系統檢測','線路老化更換'];
   
   // 先取消所有勾選
   document.querySelectorAll('input[name="repairItems"]').forEach(cb => cb.checked = false);
@@ -1110,7 +1134,7 @@ window.openEditModal = function(key) {
   
   // 勾選對應項目
   items.forEach(item => {
-    if (predefined.includes(item)) {
+    if (repairItemsList.includes(item)) {
       const cb = document.querySelector(`input[name="repairItems"][value="${item}"]`);
       if (cb) cb.checked = true;
     } else {
@@ -1173,6 +1197,18 @@ window.saveRecord = async function(e) {
   e.preventDefault();
   syncStatus('syncing');
   try {
+    // 取得複選的維修人員
+    const checkedTechs = Array.from(document.querySelectorAll('input[name="technicians"]:checked'))
+      .map(cb => cb.value);
+    
+    if (checkedTechs.length === 0) {
+      alert('請至少選擇一位維修人員');
+      syncStatus('online');
+      return;
+    }
+    
+    const techValue = checkedTechs.join('、');
+    
     // 取得複選的維修項目
     const checkedItems = Array.from(document.querySelectorAll('input[name="repairItems"]:checked'))
       .map(cb => cb.value);
@@ -1197,7 +1233,7 @@ window.saveRecord = async function(e) {
     const data = {
       customerName: document.getElementById('f_customer').value,
       repairItem: itemValue,
-      technician: document.getElementById('f_technician').value,
+      technician: techValue,
       repairDate: document.getElementById('f_date').value,
       status: document.getElementById('f_status').value,
       notes: document.getElementById('f_notes').value,
@@ -1252,15 +1288,16 @@ window.deleteRecord = async function(key) {
 
 // ---- KPI ----
 function renderKPI() {
-  const total = allRecords.length;
-  const completed = allRecords.filter(r => r.status === '已完成').length;
-  const pending = allRecords.filter(r => r.status === '待處理').length;
-  const inprogress = allRecords.filter(r => r.status === '進行中').length;
+  const filteredRecords = getKpiFilteredRecords();
+  const total = filteredRecords.length;
+  const completed = filteredRecords.filter(r => r.status === '已完成').length;
+  const pending = filteredRecords.filter(r => r.status === '待處理').length;
+  const inprogress = filteredRecords.filter(r => r.status === '進行中').length;
   const rate = total ? Math.round(completed / total * 100) : 0;
 
   // 月份分佈
   const monthly = {};
-  allRecords.forEach(r => {
+  filteredRecords.forEach(r => {
     const m = r.repairDate?.substring(0,7) || '未知';
     monthly[m] = (monthly[m] || 0) + 1;
   });
@@ -1269,21 +1306,21 @@ function renderKPI() {
 
   // 技師排行
   const techMap = {};
-  allRecords.forEach(r => { techMap[r.technician] = (techMap[r.technician]||0)+1; });
+  filteredRecords.forEach(r => { techMap[r.technician] = (techMap[r.technician]||0)+1; });
   const topTechs = Object.entries(techMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
   // 常見故障
   const itemMap = {};
-  allRecords.forEach(r => { itemMap[r.repairItem] = (itemMap[r.repairItem]||0)+1; });
+  filteredRecords.forEach(r => { itemMap[r.repairItem] = (itemMap[r.repairItem]||0)+1; });
   const topItems = Object.entries(itemMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
   // 客戶排行
   const custMap = {};
-  allRecords.forEach(r => { custMap[r.customerName] = (custMap[r.customerName]||0)+1; });
+  filteredRecords.forEach(r => { custMap[r.customerName] = (custMap[r.customerName]||0)+1; });
   const topCusts = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
   document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-value">${total}</div><div class="kpi-sub">全部紀錄</div></div>
+    <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-value">${total}</div><div class="kpi-sub">統計期間紀錄</div></div>
     <div class="kpi-card"><h3>完成率</h3><div class="kpi-value">${rate}%</div><div class="kpi-sub">已完成 ${completed} 件</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${rate}%"></div></div></div>
     <div class="kpi-card"><h3>待處理</h3><div class="kpi-value" style="color:#856404">${pending}</div><div class="kpi-sub">需要跟進</div></div>
     <div class="kpi-card"><h3>進行中</h3><div class="kpi-value" style="color:#004085">${inprogress}</div><div class="kpi-sub">施工中</div></div>
@@ -1815,6 +1852,291 @@ function renderCalcHistory() {
   `).join('');
 }
 
+// ============ 維修人員和項目管理 ============
+
+// 載入維修人員列表
+async function loadTechnicians() {
+  try {
+    const snap = await get(ref(db, `workspaces/${ws}/settings/technicians`));
+    techniciansList = snap.val() || DEFAULT_TECHNICIANS;
+    updateTechnicianCheckboxes();
+    renderTechnicianList();
+  } catch (err) {
+    console.error('載入維修人員失敗:', err);
+    techniciansList = DEFAULT_TECHNICIANS;
+    updateTechnicianCheckboxes();
+  }
+}
+
+// 載入維修項目列表
+async function loadRepairItems() {
+  try {
+    const snap = await get(ref(db, `workspaces/${ws}/settings/repairItems`));
+    repairItemsList = snap.val() || DEFAULT_REPAIR_ITEMS;
+    updateRepairItemCheckboxes();
+    renderRepairItemList();
+  } catch (err) {
+    console.error('載入維修項目失敗:', err);
+    repairItemsList = DEFAULT_REPAIR_ITEMS;
+    updateRepairItemCheckboxes();
+  }
+}
+
+// 更新維修人員 checkbox
+function updateTechnicianCheckboxes() {
+  const container = document.getElementById('technicianCheckboxContainer');
+  if (!container) return;
+  
+  if (techniciansList.length === 0) {
+    container.innerHTML = '<p style="color:#6c757d;font-size:13px;text-align:center">尚無維修人員，請先在管理設定中新增</p>';
+    return;
+  }
+  
+  container.innerHTML = techniciansList.map(tech => `
+    <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+      <input type="checkbox" name="technicians" value="${tech}" style="margin-right:10px;width:18px;height:18px"> ${tech}
+    </label>
+  `).join('');
+}
+
+// 更新維修項目 checkbox
+function updateRepairItemCheckboxes() {
+  const container = document.getElementById('repairItemCheckboxContainer');
+  if (!container) return;
+  
+  container.innerHTML = repairItemsList.map(item => `
+    <label style="display:flex;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+      <input type="checkbox" name="repairItems" value="${item}" style="margin-right:10px;width:18px;height:18px"> ${item}
+    </label>
+  `).join('');
+}
+
+// 渲染維修人員管理列表
+function renderTechnicianList() {
+  const el = document.getElementById('technicianList');
+  if (!el) return;
+  
+  if (techniciansList.length === 0) {
+    el.innerHTML = '<p style="color:#6c757d;font-size:13px">尚無維修人員</p>';
+    return;
+  }
+  
+  el.innerHTML = techniciansList.map(tech => `
+    <span style="background:#e7f3ff;color:#004085;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
+      ${tech}
+      <button onclick="removeTechnician('${tech.replace(/'/g, "\\'")}')  " style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+    </span>
+  `).join('');
+}
+
+// 渲染維修項目管理列表
+function renderRepairItemList() {
+  const el = document.getElementById('repairItemList');
+  if (!el) return;
+  
+  el.innerHTML = repairItemsList.map(item => `
+    <span style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
+      ${item}
+      <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}')  " style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+    </span>
+  `).join('');
+}
+
+// 新增維修人員
+window.addTechnician = async function() {
+  const input = document.getElementById('newTechnicianName');
+  const name = input.value.trim();
+  
+  if (!name) {
+    alert('請輸入維修人員姓名');
+    return;
+  }
+  
+  if (techniciansList.includes(name)) {
+    alert('此維修人員已存在');
+    return;
+  }
+  
+  techniciansList.push(name);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/technicians`), techniciansList);
+    input.value = '';
+    updateTechnicianCheckboxes();
+    renderTechnicianList();
+    alert('✅ 已新增維修人員');
+  } catch (err) {
+    alert('新增失敗：' + err.message);
+    techniciansList.pop();
+  }
+};
+
+// 移除維修人員
+window.removeTechnician = async function(name) {
+  if (!confirm(`確定要移除維修人員「${name}」嗎？`)) return;
+  
+  const index = techniciansList.indexOf(name);
+  if (index === -1) return;
+  
+  techniciansList.splice(index, 1);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/technicians`), techniciansList);
+    updateTechnicianCheckboxes();
+    renderTechnicianList();
+  } catch (err) {
+    alert('移除失敗：' + err.message);
+    techniciansList.splice(index, 0, name);
+  }
+};
+
+// 新增維修項目
+window.addRepairItem = async function() {
+  const input = document.getElementById('newRepairItemName');
+  const name = input.value.trim();
+  
+  if (!name) {
+    alert('請輸入維修項目名稱');
+    return;
+  }
+  
+  if (repairItemsList.includes(name)) {
+    alert('此維修項目已存在');
+    return;
+  }
+  
+  repairItemsList.push(name);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/repairItems`), repairItemsList);
+    input.value = '';
+    updateRepairItemCheckboxes();
+    renderRepairItemList();
+    alert('✅ 已新增維修項目');
+  } catch (err) {
+    alert('新增失敗：' + err.message);
+    repairItemsList.pop();
+  }
+};
+
+// 移除維修項目
+window.removeRepairItem = async function(name) {
+  if (!confirm(`確定要移除維修項目「${name}」嗎？`)) return;
+  
+  const index = repairItemsList.indexOf(name);
+  if (index === -1) return;
+  
+  repairItemsList.splice(index, 1);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/repairItems`), repairItemsList);
+    updateRepairItemCheckboxes();
+    renderRepairItemList();
+  } catch (err) {
+    alert('移除失敗：' + err.message);
+    repairItemsList.splice(index, 0, name);
+  }
+};
+
+// ============ KPI 報表期間設定 ============
+
+window.setKpiPeriod = function(period) {
+  kpiPeriod = period;
+  
+  // 更新按鈕狀態
+  ['all','month','quarter','year','custom'].forEach(p => {
+    document.getElementById(`kpi-${p}`).classList.remove('active');
+  });
+  document.getElementById(`kpi-${period}`).classList.add('active');
+  
+  // 顯示/隱藏自訂區間
+  if (period === 'custom') {
+    document.getElementById('kpiCustomRange').style.display = 'block';
+    // 設定預設值為本月
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    document.getElementById('kpiStartDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('kpiEndDate').value = lastDay.toISOString().split('T')[0];
+  } else {
+    document.getElementById('kpiCustomRange').style.display = 'none';
+    kpiStartDate = null;
+    kpiEndDate = null;
+    updateKpiPeriodText(period);
+    renderKPI();
+  }
+};
+
+window.applyKpiCustomRange = function() {
+  kpiStartDate = document.getElementById('kpiStartDate').value;
+  kpiEndDate = document.getElementById('kpiEndDate').value;
+  
+  if (!kpiStartDate || !kpiEndDate) {
+    alert('請選擇開始和結束日期');
+    return;
+  }
+  
+  if (new Date(kpiStartDate) > new Date(kpiEndDate)) {
+    alert('開始日期不能晚於結束日期');
+    return;
+  }
+  
+  updateKpiPeriodText('custom');
+  renderKPI();
+};
+
+function updateKpiPeriodText(period) {
+  const now = new Date();
+  let text = '';
+  
+  if (period === 'all') {
+    text = '📅 全部紀錄';
+  } else if (period === 'month') {
+    text = `📅 本月報表 (${now.getFullYear()}/${now.getMonth()+1})`;
+  } else if (period === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    text = `📅 本季報表 (${now.getFullYear()} Q${q})`;
+  } else if (period === 'year') {
+    text = `📅 年度報表 (${now.getFullYear()})`;
+  } else if (period === 'custom' && kpiStartDate && kpiEndDate) {
+    text = `📅 自訂區間 (${kpiStartDate} ~ ${kpiEndDate})`;
+  }
+  
+  document.getElementById('kpiPeriodText').textContent = text;
+}
+
+function getKpiFilteredRecords() {
+  const now = new Date();
+  
+  if (kpiPeriod === 'all') {
+    return allRecords;
+  }
+  
+  let startDate, endDate;
+  
+  if (kpiPeriod === 'month') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  } else if (kpiPeriod === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    startDate = new Date(now.getFullYear(), q * 3, 1);
+    endDate = new Date(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59);
+  } else if (kpiPeriod === 'year') {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+  } else if (kpiPeriod === 'custom' && kpiStartDate && kpiEndDate) {
+    startDate = new Date(kpiStartDate);
+    endDate = new Date(kpiEndDate);
+    endDate.setHours(23, 59, 59);
+  } else {
+    return allRecords;
+  }
+  
+  return allRecords.filter(r => {
+    const rDate = new Date(r.repairDate);
+    return rDate >= startDate && rDate <= endDate;
+  });
+}
 // ---- INIT ----
 // 設定自訂維修項目checkbox監聽
 document.addEventListener('DOMContentLoaded', function() {
