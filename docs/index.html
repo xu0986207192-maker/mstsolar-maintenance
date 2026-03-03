@@ -513,6 +513,18 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         </div>
       </div>
 
+      <!-- 逆變器容量管理 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">⚡ 逆變器容量管理</h3>
+        <div style="margin-bottom:15px">
+          <div style="display:flex;gap:10px;margin-bottom:10px">
+            <input type="text" class="form-input" id="newInverterCapacity" placeholder="新增逆變器容量（例如：5kW）" style="flex:1">
+            <button class="btn btn-primary" onclick="addInverterCapacity()">➕ 新增</button>
+          </div>
+          <div id="inverterCapacityList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:15px"></div>
+        </div>
+      </div>
+
       <!-- 危險區域 -->
       <div style="border:2px solid #dc3545;border-radius:12px;padding:25px">
         <h3 style="font-size:16px;font-weight:700;color:#dc3545;margin-bottom:10px">⚠️ 危險區域</h3>
@@ -572,8 +584,14 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         </div>
         <div class="form-group">
           <label class="form-label">⚡ 逆變器容量（選填）</label>
-          <input type="text" class="form-input" id="f_inverter_capacity" placeholder="例如：5kW、10kW、15kW">
-          <small style="color:#6c757d;font-size:12px">若此次維修涉及逆變器，請填寫容量</small>
+          <select class="form-select" id="f_inverter_capacity_select" onchange="handleInverterCapacitySelect()">
+            <option value="">-- 請選擇容量 --</option>
+          </select>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="customCapacityCheck" style="width:18px;height:18px">
+            <label for="customCapacityCheck" style="font-weight:600">其他（自訂容量）</label>
+            <input type="text" class="form-input" id="f_inverter_capacity_custom" style="flex:1;display:none" placeholder="例如：5kW、10kW、25kW">
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">備註</label>
@@ -667,9 +685,13 @@ const DEFAULT_REPAIR_ITEMS = [
   '網路費未繳','配電箱維修','保險絲熔斷','突波保護器故障',
   '端子台故障','支架結構檢查','接地系統檢測','線路老化更換'
 ];
+const DEFAULT_INVERTER_CAPACITIES = [
+  '3kW','5kW','8kW','10kW','15kW','20kW','25kW','30kW','40kW','50kW'
+];
 
 let techniciansList = [];
 let repairItemsList = [];
+let inverterCapacitiesList = [];
 let kpiPeriod = 'month';
 let kpiStartDate = null;
 let kpiEndDate = null;
@@ -857,6 +879,7 @@ function initDB() {
   // 載入維修人員和維修項目列表
   loadTechnicians();
   loadRepairItems();
+  loadInverterCapacities();
 }
 
 // ---- TABS ----
@@ -911,6 +934,7 @@ function renderMemberList() {
   // 同時渲染維修人員和維修項目列表
   renderTechnicianList();
   renderRepairItemList();
+  renderInverterCapacityList();
 }
 
 // ---- FILTER ----
@@ -1101,6 +1125,12 @@ window.openAddModal = function() {
   document.getElementById('customItem').style.display = 'none';
   document.getElementById('customItem').value = '';
   
+  // 重置逆變器容量
+  document.getElementById('f_inverter_capacity_select').value = '';
+  document.getElementById('customCapacityCheck').checked = false;
+  document.getElementById('f_inverter_capacity_custom').style.display = 'none';
+  document.getElementById('f_inverter_capacity_custom').value = '';
+  
   document.getElementById('recordModal').classList.add('active');
 };
 
@@ -1119,8 +1149,33 @@ window.openEditModal = function(key) {
   document.getElementById('f_customer').value = r.customerName;
   document.getElementById('f_date').value = r.repairDate;
   document.getElementById('f_status').value = r.status;
-  document.getElementById('f_inverter_capacity').value = r.inverterCapacity || '';
   document.getElementById('f_notes').value = r.notes || '';
+  
+  // 處理逆變器容量
+  const capacitySelect = document.getElementById('f_inverter_capacity_select');
+  const customCapCheck = document.getElementById('customCapacityCheck');
+  const customCapInput = document.getElementById('f_inverter_capacity_custom');
+  
+  if (r.inverterCapacity) {
+    if (inverterCapacitiesList.includes(r.inverterCapacity)) {
+      // 在列表中，使用下拉選單
+      capacitySelect.value = r.inverterCapacity;
+      customCapCheck.checked = false;
+      customCapInput.style.display = 'none';
+      customCapInput.value = '';
+    } else {
+      // 不在列表中，使用自訂輸入
+      capacitySelect.value = '';
+      customCapCheck.checked = true;
+      customCapInput.style.display = 'block';
+      customCapInput.value = r.inverterCapacity;
+    }
+  } else {
+    capacitySelect.value = '';
+    customCapCheck.checked = false;
+    customCapInput.style.display = 'none';
+    customCapInput.value = '';
+  }
   
   // 處理維修人員（複選）
   const techs = r.technician.split('、');
@@ -1237,13 +1292,33 @@ window.saveRecord = async function(e) {
     
     const itemValue = checkedItems.join('、');
     
+    // 取得逆變器容量
+    let inverterCapacityValue = null;
+    const capacitySelect = document.getElementById('f_inverter_capacity_select');
+    const customCapCheck = document.getElementById('customCapacityCheck');
+    const customCapInput = document.getElementById('f_inverter_capacity_custom');
+    
+    if (customCapCheck.checked && customCapInput.value.trim()) {
+      inverterCapacityValue = customCapInput.value.trim();
+      
+      // 自動儲存新的逆變器容量到列表
+      if (!inverterCapacitiesList.includes(inverterCapacityValue)) {
+        inverterCapacitiesList.push(inverterCapacityValue);
+        await set(ref(db, `workspaces/${ws}/settings/inverterCapacities`), inverterCapacitiesList);
+        updateInverterCapacitySelect();
+        renderInverterCapacityList();
+      }
+    } else if (capacitySelect.value) {
+      inverterCapacityValue = capacitySelect.value;
+    }
+    
     const data = {
       customerName: document.getElementById('f_customer').value,
       repairItem: itemValue,
       technician: techValue,
       repairDate: document.getElementById('f_date').value,
       status: document.getElementById('f_status').value,
-      inverterCapacity: document.getElementById('f_inverter_capacity').value.trim() || null,
+      inverterCapacity: inverterCapacityValue,
       notes: document.getElementById('f_notes').value,
       updatedBy: user,
       updatedAt: serverTimestamp()
@@ -2209,6 +2284,124 @@ window.removeRepairItem = async function(name) {
   }
 };
 
+// ============ 逆變器容量管理 ============
+
+// 載入逆變器容量列表
+async function loadInverterCapacities() {
+  try {
+    const snap = await get(ref(db, `workspaces/${ws}/settings/inverterCapacities`));
+    inverterCapacitiesList = snap.val() || DEFAULT_INVERTER_CAPACITIES;
+    updateInverterCapacitySelect();
+    renderInverterCapacityList();
+  } catch (err) {
+    console.error('載入逆變器容量失敗:', err);
+    inverterCapacitiesList = DEFAULT_INVERTER_CAPACITIES;
+    updateInverterCapacitySelect();
+  }
+}
+
+// 更新逆變器容量下拉選單
+function updateInverterCapacitySelect() {
+  const select = document.getElementById('f_inverter_capacity_select');
+  if (!select) return;
+  
+  // 保留第一個選項
+  const firstOption = '<option value="">-- 請選擇容量 --</option>';
+  
+  select.innerHTML = firstOption + inverterCapacitiesList.map(cap => 
+    `<option value="${cap}">${cap}</option>`
+  ).join('');
+}
+
+// 處理逆變器容量選擇
+window.handleInverterCapacitySelect = function() {
+  const sel = document.getElementById('f_inverter_capacity_select');
+  const customCheck = document.getElementById('customCapacityCheck');
+  const customInput = document.getElementById('f_inverter_capacity_custom');
+  
+  if (sel.value === '') {
+    // 未選擇，可以選擇自訂
+  } else {
+    // 已選擇，取消自訂勾選
+    customCheck.checked = false;
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
+};
+
+// 渲染逆變器容量管理列表
+function renderInverterCapacityList() {
+  const el = document.getElementById('inverterCapacityList');
+  if (!el) return;
+  
+  if (inverterCapacitiesList.length === 0) {
+    el.innerHTML = '<p style="color:#6c757d;font-size:13px">尚無逆變器容量</p>';
+    return;
+  }
+  
+  // 按數字大小排序
+  const sortedCapacities = [...inverterCapacitiesList].sort((a, b) => {
+    const numA = parseFloat(a);
+    const numB = parseFloat(b);
+    return numA - numB;
+  });
+  
+  el.innerHTML = sortedCapacities.map(cap => `
+    <span style="background:#fff3cd;color:#856404;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
+      ${cap}
+      <button onclick="removeInverterCapacity('${cap.replace(/'/g, "\\'")}  ')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+    </span>
+  `).join('');
+}
+
+// 新增逆變器容量
+window.addInverterCapacity = async function() {
+  const input = document.getElementById('newInverterCapacity');
+  const capacity = input.value.trim();
+  
+  if (!capacity) {
+    alert('請輸入逆變器容量');
+    return;
+  }
+  
+  if (inverterCapacitiesList.includes(capacity)) {
+    alert('此逆變器容量已存在');
+    return;
+  }
+  
+  inverterCapacitiesList.push(capacity);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/inverterCapacities`), inverterCapacitiesList);
+    input.value = '';
+    updateInverterCapacitySelect();
+    renderInverterCapacityList();
+    alert('✅ 已新增逆變器容量');
+  } catch (err) {
+    alert('新增失敗：' + err.message);
+    inverterCapacitiesList.pop();
+  }
+};
+
+// 移除逆變器容量
+window.removeInverterCapacity = async function(capacity) {
+  if (!confirm(`確定要移除逆變器容量「${capacity}」嗎？`)) return;
+  
+  const index = inverterCapacitiesList.indexOf(capacity);
+  if (index === -1) return;
+  
+  inverterCapacitiesList.splice(index, 1);
+  
+  try {
+    await set(ref(db, `workspaces/${ws}/settings/inverterCapacities`), inverterCapacitiesList);
+    updateInverterCapacitySelect();
+    renderInverterCapacityList();
+  } catch (err) {
+    alert('移除失敗：' + err.message);
+    inverterCapacitiesList.splice(index, 0, capacity);
+  }
+};
+
 // ============ KPI 報表期間設定 ============
 
 window.updateTrendChart = function() {
@@ -2373,6 +2566,20 @@ document.addEventListener('DOMContentLoaded', function() {
       if (customInput) {
         customInput.style.display = this.checked ? 'block' : 'none';
         if (!this.checked) customInput.value = '';
+      }
+    });
+  }
+  
+  // 設定自訂逆變器容量checkbox監聽
+  const customCapCheck = document.getElementById('customCapacityCheck');
+  if (customCapCheck) {
+    customCapCheck.addEventListener('change', function() {
+      const customCapInput = document.getElementById('f_inverter_capacity_custom');
+      const select = document.getElementById('f_inverter_capacity_select');
+      if (customCapInput) {
+        customCapInput.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) customCapInput.value = '';
+        if (this.checked && select) select.value = '';
       }
     });
   }
