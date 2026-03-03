@@ -1244,6 +1244,17 @@ window.saveRecord = async function(e) {
     const photoUrls = await uploadPhotos(key);
     if (Object.keys(photoUrls).length) data.photos = photoUrls;
 
+    // 自動儲存「其他」自訂項目到維修項目列表
+    if (customCheck.checked) {
+      const customValue = document.getElementById('customItem').value.trim();
+      if (customValue && !repairItemsList.includes(customValue)) {
+        repairItemsList.push(customValue);
+        await set(ref(db, `workspaces/${ws}/settings/repairItems`), repairItemsList);
+        updateRepairItemCheckboxes();
+        renderRepairItemList();
+      }
+    }
+
     if (editKey) {
       const existing = allRecords.find(r => r._key === editKey);
       if (existing?.photos) data.photos = { ...existing.photos, ...data.photos };
@@ -1319,22 +1330,58 @@ function renderKPI() {
   filteredRecords.forEach(r => { custMap[r.customerName] = (custMap[r.customerName]||0)+1; });
   const topCusts = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
+  // 逆變器故障統計（獨立欄位）
+  const inverterFailures = filteredRecords.filter(r => 
+    r.repairItem.includes('逆變器故障')
+  ).length;
+  const inverterBrands = {};
+  filteredRecords.forEach(r => {
+    if (r.repairItem.includes('逆變器故障')) {
+      const brands = ['台達','新望','古瑞瓦特','亞力','盈正','科風','華為'];
+      brands.forEach(brand => {
+        if (r.repairItem.includes(brand)) {
+          inverterBrands[brand] = (inverterBrands[brand] || 0) + 1;
+        }
+      });
+    }
+  });
+
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-value">${total}</div><div class="kpi-sub">統計期間紀錄</div></div>
     <div class="kpi-card"><h3>完成率</h3><div class="kpi-value">${rate}%</div><div class="kpi-sub">已完成 ${completed} 件</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${rate}%"></div></div></div>
     <div class="kpi-card"><h3>待處理</h3><div class="kpi-value" style="color:#856404">${pending}</div><div class="kpi-sub">需要跟進</div></div>
     <div class="kpi-card"><h3>進行中</h3><div class="kpi-value" style="color:#004085">${inprogress}</div><div class="kpi-sub">施工中</div></div>
+    <div class="kpi-card"><h3>⚡ 逆變器故障</h3><div class="kpi-value" style="color:#dc3545">${inverterFailures}</div><div class="kpi-sub">佔總數 ${total ? Math.round(inverterFailures/total*100) : 0}%</div></div>
   `;
+
+  // 產生逆變器品牌故障分佈圖
+  const inverterChart = Object.keys(inverterBrands).length > 0 ? `
+    <div class="chart-section">
+      <h3>🔌 逆變器故障品牌分佈</h3>
+      <ul class="top-list">
+        ${Object.entries(inverterBrands).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}逆變器</span><span class="count">${c} 件</span></li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
 
   document.getElementById('kpiCharts').innerHTML = `
     <div class="chart-section">
-      <h3>📅 近 6 個月維修趨勢</h3>
-      <div class="bar-chart">
-        ${months.map(m => `
-          <div class="bar-item">
-            <div class="bar" style="height:${monthly[m]/maxM*120}px" data-value="${monthly[m]}件"></div>
-            <div class="bar-label">${m.substring(5)}月</div>
-          </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+        <h3>📅 維修趨勢圖</h3>
+        <select class="form-select" style="width:auto;padding:5px 10px;font-size:13px" id="trendRange" onchange="updateTrendChart()">
+          <option value="6">近 6 個月</option>
+          <option value="12">近 12 個月</option>
+          <option value="custom">自訂區間</option>
+        </select>
+      </div>
+      <div id="trendChartContainer">
+        <div class="bar-chart">
+          ${months.map(m => `
+            <div class="bar-item">
+              <div class="bar" style="height:${monthly[m]/maxM*120}px" data-value="${monthly[m]}件"></div>
+              <div class="bar-label">${m.substring(5)}月</div>
+            </div>`).join('')}
+        </div>
       </div>
     </div>
     <div class="chart-section">
@@ -1343,6 +1390,7 @@ function renderKPI() {
         ${topTechs.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
       </ul>
     </div>
+    ${inverterChart}
     <div class="chart-section">
       <h3>⚡ 常見故障 TOP 5</h3>
       <ul class="top-list">
@@ -1394,24 +1442,84 @@ window.exportSinglePDF = function(key) {
 };
 
 window.exportKpiPDF = function() {
+  // 詢問是否要自訂日期範圍
+  const useCustom = confirm('是否要自訂匯出日期範圍？\n\n點「確定」自訂日期\n點「取消」匯出全部紀錄');
+  
+  let exportRecords = allRecords;
+  let dateRangeText = '全部紀錄';
+  
+  if (useCustom) {
+    const startDate = prompt('請輸入開始日期 (格式: YYYY-MM-DD)', '2024-01-01');
+    const endDate = prompt('請輸入結束日期 (格式: YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
+    
+    if (!startDate || !endDate) {
+      alert('取消匯出');
+      return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59);
+    
+    exportRecords = allRecords.filter(r => {
+      const rDate = new Date(r.repairDate);
+      return rDate >= start && rDate <= end;
+    });
+    
+    dateRangeText = `${startDate} ~ ${endDate}`;
+    
+    if (exportRecords.length === 0) {
+      alert('此日期範圍內沒有紀錄');
+      return;
+    }
+  }
+  
   const now = new Date().toLocaleDateString('zh-TW');
-  const total = allRecords.length;
-  const done = allRecords.filter(r => r.status === '已完成').length;
-  const wait = allRecords.filter(r => r.status === '待處理').length;
+  const total = exportRecords.length;
+  const done = exportRecords.filter(r => r.status === '已完成').length;
+  const wait = exportRecords.filter(r => r.status === '待處理').length;
   const rate = total ? Math.round(done / total * 100) : 0;
 
+  // 逆變器故障統計
+  const inverterFailures = exportRecords.filter(r => r.repairItem.includes('逆變器故障')).length;
+  const inverterBrands = {};
+  exportRecords.forEach(r => {
+    if (r.repairItem.includes('逆變器故障')) {
+      const brands = ['台達','新望','古瑞瓦特','亞力','盈正','科風','華為'];
+      brands.forEach(brand => {
+        if (r.repairItem.includes(brand)) {
+          inverterBrands[brand] = (inverterBrands[brand] || 0) + 1;
+        }
+      });
+    }
+  });
+
   const tM = {};
-  allRecords.forEach(r => { tM[r.technician] = (tM[r.technician] || 0) + 1; });
+  exportRecords.forEach(r => { tM[r.technician] = (tM[r.technician] || 0) + 1; });
   const topT = Object.entries(tM).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   const iM = {};
-  allRecords.forEach(r => { iM[r.repairItem] = (iM[r.repairItem] || 0) + 1; });
+  exportRecords.forEach(r => { iM[r.repairItem] = (iM[r.repairItem] || 0) + 1; });
   const topI = Object.entries(iM).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const inverterSection = Object.keys(inverterBrands).length > 0 ? `
+    <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">逆變器故障統計</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">總故障次數</td><td style="padding: 10px; font-weight: bold; color: #dc3545;">${inverterFailures}</td></tr>
+      <tr><td style="padding: 10px;">佔總維修比例</td><td style="padding: 10px; font-weight: bold;">${Math.round(inverterFailures/total*100)}%</td></tr>
+    </table>
+    <h3 style="color: #667eea; margin-bottom: 10px; font-size: 16px;">品牌故障分佈</h3>
+    <ol style="line-height: 2; margin-bottom: 30px;">
+      ${Object.entries(inverterBrands).sort((a,b)=>b[1]-a[1]).map(([n, c]) => `<li>${n}逆變器：${c} 件</li>`).join('')}
+    </ol>
+  ` : '';
 
   const html = `
     <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
       <h1 style="text-align: center; color: #667eea; margin-bottom: 10px;">KPI 統計報告</h1>
-      <p style="text-align: center; color: #666; margin-bottom: 30px;">工作區：${ws} | 產生日期：${now}</p>
+      <p style="text-align: center; color: #666; margin-bottom: 10px;">工作區：${ws}</p>
+      <p style="text-align: center; color: #666; margin-bottom: 10px;">統計期間：${dateRangeText}</p>
+      <p style="text-align: center; color: #999; margin-bottom: 30px; font-size: 12px;">產生日期：${now}</p>
       
       <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">整體統計</h2>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
@@ -1420,6 +1528,8 @@ window.exportKpiPDF = function() {
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">已完成</td><td style="padding: 10px; font-weight: bold;">${done}</td></tr>
         <tr><td style="padding: 10px;">待處理</td><td style="padding: 10px; font-weight: bold;">${wait}</td></tr>
       </table>
+      
+      ${inverterSection}
       
       <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">技師維修件數 TOP 5</h2>
       <ol style="line-height: 2;">
@@ -1439,7 +1549,7 @@ window.exportKpiPDF = function() {
   
   html2pdf().from(el).set({
     margin: 10,
-    filename: `KPI報告_${ws}_${now}.pdf`,
+    filename: `KPI報告_${ws}_${dateRangeText.replace(/~/g, '至').replace(/\s/g, '')}_${now}.pdf`,
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   }).save().then(() => {
@@ -1934,13 +2044,71 @@ function renderRepairItemList() {
   const el = document.getElementById('repairItemList');
   if (!el) return;
   
-  el.innerHTML = repairItemsList.map(item => `
-    <span style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
-      ${item}
-      <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}')  " style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
-    </span>
-  `).join('');
+  // 按前兩個字分組
+  const grouped = {};
+  repairItemsList.forEach(item => {
+    const prefix = item.substring(0, 2);
+    if (!grouped[prefix]) grouped[prefix] = [];
+    grouped[prefix].push(item);
+  });
+  
+  // 產生分組顯示
+  const groupedHTML = Object.keys(grouped).sort().map(prefix => {
+    const items = grouped[prefix];
+    return `
+      <div style="margin-bottom:15px">
+        <div style="font-size:12px;color:#6c757d;margin-bottom:8px;font-weight:600">${prefix}字頭 (${items.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${items.map((item, idx) => `
+            <span draggable="true" 
+                  ondragstart="dragStartItem(event, '${item.replace(/'/g, "\\'")}  ')" 
+                  ondragover="event.preventDefault()" 
+                  ondrop="dropItem(event, '${item.replace(/'/g, "\\'")}  ')"
+                  style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:move;user-select:none">
+              <span style="color:#999;font-size:11px">⋮⋮</span>
+              ${item}
+              <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}  ')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  el.innerHTML = repairItemsList.length === 0 
+    ? '<p style="color:#6c757d;font-size:13px">尚無維修項目</p>'
+    : groupedHTML;
 }
+
+// 拖曳開始
+window.dragStartItem = function(event, item) {
+  event.dataTransfer.setData('text/plain', item);
+};
+
+// 拖曳放下
+window.dropItem = function(event, targetItem) {
+  event.preventDefault();
+  const draggedItem = event.dataTransfer.getData('text/plain');
+  
+  if (draggedItem === targetItem) return;
+  
+  const dragIndex = repairItemsList.indexOf(draggedItem);
+  const targetIndex = repairItemsList.indexOf(targetItem);
+  
+  if (dragIndex === -1 || targetIndex === -1) return;
+  
+  // 移除並插入到新位置
+  repairItemsList.splice(dragIndex, 1);
+  const newTargetIndex = repairItemsList.indexOf(targetItem);
+  repairItemsList.splice(newTargetIndex, 0, draggedItem);
+  
+  // 儲存到 Firebase
+  set(ref(db, `workspaces/${ws}/settings/repairItems`), repairItemsList);
+  
+  // 重新渲染
+  updateRepairItemCheckboxes();
+  renderRepairItemList();
+};
 
 // 新增維修人員
 window.addTechnician = async function() {
@@ -2039,6 +2207,61 @@ window.removeRepairItem = async function(name) {
 };
 
 // ============ KPI 報表期間設定 ============
+
+window.updateTrendChart = function() {
+  const range = document.getElementById('trendRange').value;
+  const filteredRecords = getKpiFilteredRecords();
+  
+  let months = [];
+  const monthly = {};
+  
+  if (range === 'custom') {
+    // 顯示自訂區間對話框
+    const start = prompt('請輸入開始月份 (格式: YYYY-MM)', '2024-01');
+    const end = prompt('請輸入結束月份 (格式: YYYY-MM)', '2024-12');
+    
+    if (!start || !end) return;
+    
+    // 產生月份範圍
+    const startDate = new Date(start + '-01');
+    const endDate = new Date(end + '-01');
+    
+    let current = new Date(startDate);
+    while (current <= endDate) {
+      const monthKey = current.toISOString().substring(0, 7);
+      months.push(monthKey);
+      monthly[monthKey] = 0;
+      current.setMonth(current.getMonth() + 1);
+    }
+    
+    // 統計數據
+    filteredRecords.forEach(r => {
+      const m = r.repairDate?.substring(0, 7);
+      if (monthly.hasOwnProperty(m)) {
+        monthly[m]++;
+      }
+    });
+  } else {
+    const monthCount = parseInt(range);
+    filteredRecords.forEach(r => {
+      const m = r.repairDate?.substring(0, 7) || '未知';
+      monthly[m] = (monthly[m] || 0) + 1;
+    });
+    months = Object.keys(monthly).sort().slice(-monthCount);
+  }
+  
+  const maxM = Math.max(...months.map(m => monthly[m] || 0), 1);
+  
+  document.getElementById('trendChartContainer').innerHTML = `
+    <div class="bar-chart">
+      ${months.map(m => `
+        <div class="bar-item">
+          <div class="bar" style="height:${(monthly[m] || 0)/maxM*120}px" data-value="${monthly[m] || 0}件"></div>
+          <div class="bar-label">${m.substring(5)}月</div>
+        </div>`).join('')}
+    </div>
+  `;
+};
 
 window.setKpiPeriod = function(period) {
   kpiPeriod = period;
