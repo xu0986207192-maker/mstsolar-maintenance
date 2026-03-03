@@ -571,6 +571,11 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
           </div>
         </div>
         <div class="form-group">
+          <label class="form-label">⚡ 逆變器容量（選填）</label>
+          <input type="text" class="form-input" id="f_inverter_capacity" placeholder="例如：5kW、10kW、15kW">
+          <small style="color:#6c757d;font-size:12px">若此次維修涉及逆變器，請填寫容量</small>
+        </div>
+        <div class="form-group">
           <label class="form-label">備註</label>
           <textarea class="form-textarea" id="f_notes" placeholder="詳細說明、零件、費用等..."></textarea>
         </div>
@@ -1020,6 +1025,7 @@ function recordHTML(r) {
         ${isAdmin ? `<button class="btn btn-info btn-sm" onclick="exportSinglePDF('${key}')">📄</button>` : ''}
       </div>
     </div>
+    ${r.inverterCapacity ? `<div class="record-meta">⚡ 逆變器容量：${r.inverterCapacity}</div>` : ''}
     ${r.notes ? `<div class="record-meta">📝 ${r.notes}</div>` : ''}
     ${photos ? `<div class="record-photos">${photos}</div>` : ''}
     <div class="record-meta" style="margin-top:6px">
@@ -1113,6 +1119,7 @@ window.openEditModal = function(key) {
   document.getElementById('f_customer').value = r.customerName;
   document.getElementById('f_date').value = r.repairDate;
   document.getElementById('f_status').value = r.status;
+  document.getElementById('f_inverter_capacity').value = r.inverterCapacity || '';
   document.getElementById('f_notes').value = r.notes || '';
   
   // 處理維修人員（複選）
@@ -1236,6 +1243,7 @@ window.saveRecord = async function(e) {
       technician: techValue,
       repairDate: document.getElementById('f_date').value,
       status: document.getElementById('f_status').value,
+      inverterCapacity: document.getElementById('f_inverter_capacity').value.trim() || null,
       notes: document.getElementById('f_notes').value,
       updatedBy: user,
       updatedAt: serverTimestamp()
@@ -1411,6 +1419,8 @@ window.exportSinglePDF = function(key) {
   const r = allRecords.find(x => x._key === key);
   if (!r) return;
   
+  const inverterRow = r.inverterCapacity ? `<tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">逆變器容量</td><td style="padding: 12px;">${r.inverterCapacity}</td></tr>` : '';
+  
   const html = `
     <div style="font-family: Microsoft JhengHei, Arial, sans-serif; padding: 40px; max-width: 800px;">
       <h1 style="text-align: center; color: #667eea; margin-bottom: 30px;">維修報告</h1>
@@ -1420,6 +1430,7 @@ window.exportSinglePDF = function(key) {
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">維修人員</td><td style="padding: 12px;">${r.technician}</td></tr>
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">維修日期</td><td style="padding: 12px;">${r.repairDate}</td></tr>
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">狀態</td><td style="padding: 12px;">${r.status}</td></tr>
+        ${inverterRow}
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">備註</td><td style="padding: 12px;">${r.notes || '-'}</td></tr>
         <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 12px; font-weight: bold;">建立者</td><td style="padding: 12px;">${r.createdBy || '-'}</td></tr>
         <tr><td style="padding: 12px; font-weight: bold;">建立時間</td><td style="padding: 12px;">${new Date().toLocaleDateString('zh-TW')}</td></tr>
@@ -1592,8 +1603,8 @@ window.exportHistoryPDF = function() {
 };
 window.exportCSV = function() {
   if (!allRecords.length) { alert('沒有資料'); return; }
-  const headers = ['客戶名稱','維修項目','維修人員','維修日期','狀態','備註','建立者'];
-  const rows = allRecords.map(r => [r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.notes||'',r.createdBy||''].map(v=>`"${v}"`).join(','));
+  const headers = ['客戶名稱','維修項目','維修人員','維修日期','狀態','逆變器容量','備註','建立者'];
+  const rows = allRecords.map(r => [r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.inverterCapacity||'',r.notes||'',r.createdBy||''].map(v=>`"${v}"`).join(','));
   const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
@@ -2044,40 +2055,32 @@ function renderRepairItemList() {
   const el = document.getElementById('repairItemList');
   if (!el) return;
   
-  // 按前兩個字分組
-  const grouped = {};
-  repairItemsList.forEach(item => {
-    const prefix = item.substring(0, 2);
-    if (!grouped[prefix]) grouped[prefix] = [];
-    grouped[prefix].push(item);
+  if (repairItemsList.length === 0) {
+    el.innerHTML = '<p style="color:#6c757d;font-size:13px">尚無維修項目</p>';
+    return;
+  }
+  
+  // 按前兩個字排序（相同前綴會自動排在一起）
+  const sortedItems = [...repairItemsList].sort((a, b) => {
+    const prefixA = a.substring(0, 2);
+    const prefixB = b.substring(0, 2);
+    if (prefixA === prefixB) {
+      return a.localeCompare(b, 'zh-TW');
+    }
+    return prefixA.localeCompare(prefixB, 'zh-TW');
   });
   
-  // 產生分組顯示
-  const groupedHTML = Object.keys(grouped).sort().map(prefix => {
-    const items = grouped[prefix];
-    return `
-      <div style="margin-bottom:15px">
-        <div style="font-size:12px;color:#6c757d;margin-bottom:8px;font-weight:600">${prefix}字頭 (${items.length})</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          ${items.map((item, idx) => `
-            <span draggable="true" 
-                  ondragstart="dragStartItem(event, '${item.replace(/'/g, "\\'")}  ')" 
-                  ondragover="event.preventDefault()" 
-                  ondrop="dropItem(event, '${item.replace(/'/g, "\\'")}  ')"
-                  style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:move;user-select:none">
-              <span style="color:#999;font-size:11px">⋮⋮</span>
-              ${item}
-              <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}  ')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
-            </span>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  el.innerHTML = repairItemsList.length === 0 
-    ? '<p style="color:#6c757d;font-size:13px">尚無維修項目</p>'
-    : groupedHTML;
+  el.innerHTML = sortedItems.map(item => `
+    <span draggable="true" 
+          ondragstart="dragStartItem(event, '${item.replace(/'/g, "\\'")}  ')" 
+          ondragover="event.preventDefault()" 
+          ondrop="dropItem(event, '${item.replace(/'/g, "\\'")}  ')"
+          style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:move;user-select:none">
+      <span style="color:#999;font-size:11px">⋮⋮</span>
+      ${item}
+      <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}  ')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+    </span>
+  `).join('');
 }
 
 // 拖曳開始
