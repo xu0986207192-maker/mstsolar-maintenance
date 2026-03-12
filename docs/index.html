@@ -2193,6 +2193,10 @@ window.addTechnician = async function() {
   const input = document.getElementById('newTechnicianName');
   const name = input.value.trim();
   
+  console.log('🔧 新增維修人員:', name);
+  console.log('目前工作區:', ws);
+  console.log('目前清單:', techniciansList);
+  
   if (!name) {
     alert('請輸入維修人員姓名');
     return;
@@ -2204,15 +2208,22 @@ window.addTechnician = async function() {
   }
   
   techniciansList.push(name);
+  console.log('更新後清單:', techniciansList);
   
   try {
-    await set(ref(db, `workspaces/${ws}/settings/technicians`), techniciansList);
+    const dbPath = `workspaces/${ws}/settings/technicians`;
+    console.log('儲存路徑:', dbPath);
+    
+    await set(ref(db, dbPath), techniciansList);
+    
+    console.log('✅ Firebase 儲存成功');
     input.value = '';
     updateTechnicianCheckboxes();
     renderTechnicianList();
-    alert('✅ 已新增維修人員');
+    alert('✅ 已新增維修人員「' + name + '」\n請重新整理頁面確認是否儲存成功');
   } catch (err) {
-    alert('新增失敗：' + err.message);
+    console.error('❌ Firebase 儲存失敗:', err);
+    alert('❌ 新增失敗：' + err.message + '\n\n請檢查：\n1. 網路連線是否正常\n2. Firebase 設定是否正確\n3. 是否有權限寫入資料庫');
     techniciansList.pop();
   }
 };
@@ -2241,6 +2252,10 @@ window.addRepairItem = async function() {
   const input = document.getElementById('newRepairItemName');
   const name = input.value.trim();
   
+  console.log('🔧 新增維修項目:', name);
+  console.log('目前工作區:', ws);
+  console.log('目前清單:', repairItemsList);
+  
   if (!name) {
     alert('請輸入維修項目名稱');
     return;
@@ -2252,15 +2267,22 @@ window.addRepairItem = async function() {
   }
   
   repairItemsList.push(name);
+  console.log('更新後清單:', repairItemsList);
   
   try {
-    await set(ref(db, `workspaces/${ws}/settings/repairItems`), repairItemsList);
+    const dbPath = `workspaces/${ws}/settings/repairItems`;
+    console.log('儲存路徑:', dbPath);
+    
+    await set(ref(db, dbPath), repairItemsList);
+    
+    console.log('✅ Firebase 儲存成功');
     input.value = '';
     updateRepairItemCheckboxes();
     renderRepairItemList();
-    alert('✅ 已新增維修項目');
+    alert('✅ 已新增維修項目「' + name + '」\n請重新整理頁面確認是否儲存成功');
   } catch (err) {
-    alert('新增失敗：' + err.message);
+    console.error('❌ Firebase 儲存失敗:', err);
+    alert('❌ 新增失敗：' + err.message + '\n\n請檢查：\n1. 網路連線是否正常\n2. Firebase 設定是否正確\n3. 是否有權限寫入資料庫');
     repairItemsList.pop();
   }
 };
