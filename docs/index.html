@@ -1696,10 +1696,19 @@ window.closeLightbox = function() { document.getElementById('lightbox').classLis
 
 // ---- AUTOCOMPLETE ----
 function updateAutocomplete() {
-  const customers = [...new Set(allRecords.map(r=>r.customerName))];
-  const items = [...new Set(allRecords.map(r=>r.repairItem))];
-  document.getElementById('customerList').innerHTML = customers.map(c=>`<option value="${c}">`).join('');
-  document.getElementById('itemList').innerHTML = items.map(i=>`<option value="${i}">`).join('');
+  const customers = [...new Set(allRecords.map(r=>r.customerName).filter(Boolean))];
+  const items = [...new Set(allRecords.map(r=>r.repairItem).filter(Boolean))];
+  
+  const customerList = document.getElementById('customerList');
+  const itemList = document.getElementById('itemList');
+  
+  if (customerList) {
+    customerList.innerHTML = customers.map(c=>`<option value="${c}">`).join('');
+  }
+  
+  if (itemList) {
+    itemList.innerHTML = items.map(i=>`<option value="${i}">`).join('');
+  }
 }
 
 // ---- UTILS ----
