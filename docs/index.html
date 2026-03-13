@@ -98,6 +98,8 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 .record-meta{margin-top:8px;display:flex;gap:15px;font-size:12px;color:#6c757d;}
 .record-photos{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
 .record-photo{width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e9ecef;touch-action:manipulation;}
+.item-tag{display:inline-block;background:#e7f3ff;color:#004085;padding:4px 10px;border-radius:12px;font-size:12px;margin:2px;cursor:pointer;transition:all .2s;border:1px solid #b3d9ff;}
+.item-tag:hover{background:#004085;color:white;transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,64,133,.3);}
 
 /* PAGINATION */
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;padding:18px;flex-wrap:wrap;}
@@ -1014,7 +1016,13 @@ function renderRecords() {
 function recordHTML(r) {
   const key = r._key;
   const custName = esc(r.customerName);
-  const itemName = esc(r.repairItem);
+  
+  // 將維修項目拆分成多個標籤
+  const items = (r.repairItem || '').split('、').filter(item => item.trim());
+  const itemTags = items.map(item => {
+    const escapedItem = esc(item.trim());
+    return `<span class="item-tag" onclick="showHistory('item','${escapedItem}')">${item.trim()}</span>`;
+  }).join('');
   
   const photos = r.photos ? Object.values(r.photos).map(p =>
     `<img class="record-photo" src="${p}" onclick="openLightbox('${p}')" alt="維修照片">`
@@ -1029,7 +1037,7 @@ function recordHTML(r) {
       </div>
       <div class="record-field">
         <div class="label">維修項目</div>
-        <div class="value link" onclick="showHistory('item','${itemName}')">${r.repairItem}</div>
+        <div class="value">${itemTags}</div>
       </div>
       <div class="record-field">
         <div class="label">維修人員</div>
@@ -1098,9 +1106,19 @@ window.showHistory = function(type, value) {
 function renderHistory() {
   if (!historyMode) return;
   const { type, value } = historyMode;
+  
   const list = allRecords
-    .filter(r => type === 'customer' ? r.customerName === value : r.repairItem === value)
+    .filter(r => {
+      if (type === 'customer') {
+        return r.customerName === value;
+      } else {
+        // 維修項目：檢查是否包含該項目（處理複選情況）
+        const items = (r.repairItem || '').split('、').map(item => item.trim());
+        return items.includes(value);
+      }
+    })
     .sort((a,b) => new Date(b.repairDate) - new Date(a.repairDate));
+    
   const el = document.getElementById('historyList');
   if (!list.length) {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有紀錄</p></div>';
