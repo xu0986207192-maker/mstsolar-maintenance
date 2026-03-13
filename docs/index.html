@@ -2208,7 +2208,7 @@ function renderTechnicianList() {
   el.innerHTML = techniciansList.map(tech => `
     <span style="background:#e7f3ff;color:#004085;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
       ${tech}
-      <button onclick="removeTechnician('${tech.replace(/'/g, "\\'")')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+      <button onclick="removeTechnician('${tech.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
     </span>
   `).join('');
 }
@@ -2459,7 +2459,7 @@ function renderInverterCapacityList() {
   el.innerHTML = sortedCapacities.map(cap => `
     <span style="background:#fff3cd;color:#856404;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
       ${cap}
-      <button onclick="removeInverterCapacity('${cap.replace(/'/g, "\\'")')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+      <button onclick="removeInverterCapacity('${cap.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
     </span>
   `).join('');
 }
