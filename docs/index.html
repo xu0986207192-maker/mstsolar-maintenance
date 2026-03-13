@@ -415,32 +415,32 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       <div class="card-section" style="margin-top:20px">
         <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">⚡ RA 值（直流發電效率）計算</h3>
         <p style="color:#6c757d;font-size:13px;margin-bottom:15px">
-          <strong>計算公式：</strong>RA = (Pmeas ÷ PSTC) × 100%<br>
-          <small>Pmeas：實際量測每串功率 | PSTC：標準測試條件下的太陽能模組容量</small>
+          <strong>計算公式：</strong>RA = P<sub>A</sub> ÷ (P<sub>O</sub> × G<sub>I</sub>/1000) = P<sub>A</sub> × 1000 ÷ (P<sub>O</sub> × G<sub>I</sub>)<br>
+          <small>P<sub>A</sub>：組列輸出功率（W） | P<sub>O</sub>：組列額定功率（W） | G<sub>I</sub>：現場日照強度（W/m²）</small>
         </p>
         
         <div class="row2">
           <div class="form-group">
-            <label class="form-label">Pmeas - 實測串列功率（W）</label>
+            <label class="form-label">P<sub>A</sub> - 組列輸出功率（W）<span style="color:#dc3545">*</span></label>
             <input type="number" class="form-input" id="ra_measured" step="0.01" placeholder="例如：180000">
-            <small style="color:#6c757d;font-size:12px">實際量測每串功率（瓦特）</small>
+            <small style="color:#6c757d;font-size:12px">實際量測的組列輸出功率</small>
           </div>
           <div class="form-group">
-            <label class="form-label">PSTC - 標準測試條件功率（W）</label>
+            <label class="form-label">P<sub>O</sub> - 組列額定功率（W）<span style="color:#dc3545">*</span></label>
             <input type="number" class="form-input" id="ra_rated" step="0.01" placeholder="例如：200000">
-            <small style="color:#6c757d;font-size:12px">標準測試條件(STC: 25°C、1000 W/m²)下的模組容量</small>
+            <small style="color:#6c757d;font-size:12px">組列額定功率（模組總和）</small>
           </div>
         </div>
         <div class="row2">
           <div class="form-group">
-            <label class="form-label">量測時日照強度（W/m²）<span style="color:#999"> - 選填</span></label>
+            <label class="form-label">G<sub>I</sub> - 現場日照強度（W/m²）<span style="color:#dc3545">*</span></label>
             <input type="number" class="form-input" id="ra_irradiance" step="0.01" placeholder="例如：850">
-            <small style="color:#6c757d;font-size:12px">實際量測時的日照強度</small>
+            <small style="color:#6c757d;font-size:12px">量測時的現場日照強度（必填）</small>
           </div>
           <div class="form-group">
             <label class="form-label">量測時模組溫度（°C）<span style="color:#999"> - 選填</span></label>
             <input type="number" class="form-input" id="ra_temperature" step="0.1" placeholder="例如：45">
-            <small style="color:#6c757d;font-size:12px">實際量測時的模組溫度</small>
+            <small style="color:#6c757d;font-size:12px">實際量測時的模組溫度（記錄用）</small>
           </div>
         </div>
         <button class="btn btn-primary" onclick="calculateRA()">計算 RA 值</button>
@@ -1894,44 +1894,54 @@ window.calculatePR = function() {
 
 // ── RA 值計算 ──
 window.calculateRA = function() {
-  const measured = parseFloat(document.getElementById('ra_measured').value);
-  const rated = parseFloat(document.getElementById('ra_rated').value);
-  const irradiance = parseFloat(document.getElementById('ra_irradiance').value);
+  const pa = parseFloat(document.getElementById('ra_measured').value);
+  const po = parseFloat(document.getElementById('ra_rated').value);
+  const gi = parseFloat(document.getElementById('ra_irradiance').value);
   const temperature = parseFloat(document.getElementById('ra_temperature').value);
   
-  if (!measured || !rated) {
-    alert('請填寫 Pmeas（實測功率）和 PSTC（標準功率）');
+  if (!pa || !po || !gi) {
+    alert('請填寫 PA（組列輸出功率）、PO（組列額定功率）和 GI（日照強度）');
     return;
   }
   
-  // RA = (Pmeas ÷ PSTC) × 100%
-  const ra = (measured / rated) * 100;
-  const raRounded = Math.round(ra * 100) / 100;
+  // RA = PA × 1000 ÷ (PO × GI)
+  const ra = (pa * 1000) / (po * gi);
+  const raPercent = ra * 100;
+  const raRounded = Math.round(raPercent * 100) / 100;
   
+  // 顯示計算結果
   document.getElementById('raValue').textContent = 'RA = ' + raRounded + '%';
   
-  // 顯示量測條件和計算過程
-  let conditions = `計算過程：RA = (${measured.toLocaleString()} W ÷ ${rated.toLocaleString()} W) × 100% = ${raRounded}%`;
-  if (irradiance || temperature) {
-    conditions += '\n量測條件：';
-    if (irradiance) conditions += ` 日照 ${irradiance} W/m²`;
-    if (temperature) conditions += ` | 溫度 ${temperature}°C`;
+  // 顯示計算過程
+  let conditions = `
+    <strong>計算過程：</strong><br>
+    RA = P<sub>A</sub> × 1000 ÷ (P<sub>O</sub> × G<sub>I</sub>)<br>
+    RA = ${pa.toLocaleString()} × 1000 ÷ (${po.toLocaleString()} × ${gi})<br>
+    RA = ${(pa * 1000).toLocaleString()} ÷ ${(po * gi).toLocaleString()}<br>
+    RA = ${ra.toFixed(4)} = ${raRounded}%
+  `;
+  
+  if (temperature) {
+    conditions += `<br><br><strong>量測條件：</strong>日照強度 ${gi} W/m² | 模組溫度 ${temperature}°C`;
+  } else {
+    conditions += `<br><br><strong>量測條件：</strong>日照強度 ${gi} W/m²`;
   }
-  document.getElementById('raConditions').innerHTML = conditions.replace(/\n/g, '<br>');
+  
+  document.getElementById('raConditions').innerHTML = conditions;
   
   // 根據 RA 值判斷效能
   let color = '';
   let status = '';
-  if (ra >= 95) {
+  if (raPercent >= 95) {
     color = '#28a745';
     status = '優良';
-  } else if (ra >= 90) {
+  } else if (raPercent >= 90) {
     color = '#17a2b8';
     status = '良好';
-  } else if (ra >= 85) {
+  } else if (raPercent >= 85) {
     color = '#ffc107';
     status = '普通';
-  } else if (ra >= 80) {
+  } else if (raPercent >= 80) {
     color = '#ff9800';
     status = '需注意';
   } else {
@@ -1945,21 +1955,21 @@ window.calculateRA = function() {
   
   // 儲存計算結果
   lastRACalc = {
-    measured,
-    rated,
-    irradiance: irradiance || null,
+    pa: pa,
+    po: po,
+    gi: gi,
     temperature: temperature || null,
     ra: raRounded
   };
   
   // 記錄到歷史
   const details = {
-    'Pmeas (實測功率)': measured.toLocaleString() + ' W',
-    'PSTC (標準功率)': rated.toLocaleString() + ' W',
+    'PA (組列輸出功率)': pa.toLocaleString() + ' W',
+    'PO (組列額定功率)': po.toLocaleString() + ' W',
+    'GI (日照強度)': gi + ' W/m²',
     '計算結果': raRounded + '%',
     '效能評估': status
   };
-  if (irradiance) details['日照強度'] = irradiance + ' W/m²';
   if (temperature) details['模組溫度'] = temperature + '°C';
   
   addCalcHistory('RA值', `${raRounded}% (${status})`, details);
@@ -2009,12 +2019,10 @@ window.exportCalcPDF = function(type) {
     else status = '需改善';
     
     let conditionsHTML = `
-      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">Pmeas (實測功率)</td><td style="padding: 10px; font-weight: bold;">${c.measured.toLocaleString()} W</td></tr>
-      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">PSTC (標準功率)</td><td style="padding: 10px; font-weight: bold;">${c.rated.toLocaleString()} W</td></tr>
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">P<sub>A</sub> (組列輸出功率)</td><td style="padding: 10px; font-weight: bold;">${c.pa.toLocaleString()} W</td></tr>
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">P<sub>O</sub> (組列額定功率)</td><td style="padding: 10px; font-weight: bold;">${c.po.toLocaleString()} W</td></tr>
+      <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">G<sub>I</sub> (日照強度)</td><td style="padding: 10px; font-weight: bold;">${c.gi} W/m²</td></tr>
     `;
-    if (c.irradiance) {
-      conditionsHTML += `<tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px;">量測時日照強度</td><td style="padding: 10px; font-weight: bold;">${c.irradiance} W/m²</td></tr>`;
-    }
     if (c.temperature) {
       conditionsHTML += `<tr><td style="padding: 10px;">量測時模組溫度</td><td style="padding: 10px; font-weight: bold;">${c.temperature}°C</td></tr>`;
     }
@@ -2028,7 +2036,10 @@ window.exportCalcPDF = function(type) {
         <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 20px;">
           <div style="font-size: 36px; font-weight: bold; color: #28a745; margin-bottom: 10px;">RA = ${c.ra}%</div>
           <div style="font-size: 18px; color: #28a745; margin-bottom: 10px;">效能評估：${status}</div>
-          <div style="font-size: 14px; color: #666;">計算過程：RA = (${c.measured.toLocaleString()} W ÷ ${c.rated.toLocaleString()} W) × 100% = ${c.ra}%</div>
+          <div style="font-size: 14px; color: #666;">
+            計算過程：RA = ${c.pa.toLocaleString()} × 1000 ÷ (${c.po.toLocaleString()} × ${c.gi})<br>
+            = ${(c.pa * 1000).toLocaleString()} ÷ ${(c.po * c.gi).toLocaleString()} = ${c.ra}%
+          </div>
         </div>
         
         <h2 style="color: #28a745; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">量測條件與參數</h2>
@@ -2037,17 +2048,34 @@ window.exportCalcPDF = function(type) {
         </table>
         
         <h2 style="color: #28a745; margin-top: 30px; margin-bottom: 15px; font-size: 18px;">計算公式</h2>
-        <p style="color: #666; font-size: 14px;"><strong>公式：</strong>RA = (Pmeas ÷ PSTC) × 100%</p>
-        <p style="color: #666; font-size: 14px;"><strong>說明：</strong></p>
-        <ul style="color: #666; font-size: 14px; margin-left: 20px;">
-          <li>Pmeas：實際量測每串功率（W）</li>
-          <li>PSTC：標準測試條件下的太陽能模組容量（W）</li>
-          <li>RA：直流發電效率（%）</li>
+        <p style="color: #666; font-size: 14px;"><strong>直流發電比 R<sub>A</sub> 計算方式：</strong></p>
+        <p style="color: #666; font-size: 16px; margin: 15px 0;">
+          R<sub>A</sub> = P<sub>A</sub> ÷ (P<sub>O</sub> × G<sub>I</sub>/1000) = (P<sub>A</sub> × 1000) ÷ (P<sub>O</sub> × G<sub>I</sub>)
+        </p>
+        
+        <p style="color: #666; font-size: 14px; margin-top: 20px;"><strong>符號說明：</strong></p>
+        <ul style="color: #666; font-size: 14px; margin-left: 20px; line-height: 1.8;">
+          <li><strong>V<sub>s</sub></strong>：組列量測電壓</li>
+          <li><strong>I<sub>n</sub></strong>：組列量測電流</li>
+          <li><strong>P</strong>：第 i 片模組額定功率</li>
+          <li><strong>N</strong>：組列所含模組之片數</li>
+          <li><strong>P<sub>A</sub></strong>：組列輸出功率（單位：W）= V<sub>s</sub> × I<sub>n</sub></li>
+          <li><strong>P<sub>O</sub></strong>：組列額定功率（單位：W）= Σ P</li>
+          <li><strong>G<sub>I</sub></strong>：現場日照強度（單位：W/m²）</li>
         </ul>
-        <p style="color: #666; font-size: 14px; margin-top: 10px;"><strong>本次計算：</strong>RA = ${c.measured.toLocaleString()} W ÷ ${c.rated.toLocaleString()} W × 100% = ${c.ra}%</p>
+        
+        <p style="color: #666; font-size: 14px; margin-top: 20px;"><strong>本次計算：</strong></p>
+        <p style="color: #666; font-size: 14px; margin-left: 20px;">
+          R<sub>A</sub> = ${c.pa.toLocaleString()} W × 1000 ÷ (${c.po.toLocaleString()} W × ${c.gi} W/m²)<br>
+          R<sub>A</sub> = ${(c.pa * 1000).toLocaleString()} ÷ ${(c.po * c.gi).toLocaleString()}<br>
+          R<sub>A</sub> = ${c.ra}%
+        </p>
         
         <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-          <p style="font-size: 12px; color: #666; margin: 0;"><strong>註：</strong>RA 值反映太陽能模組在特定環境條件下的實際發電效率。標準測試條件(STC)為 25°C、1000 W/m²。</p>
+          <p style="font-size: 12px; color: #666; margin: 0;">
+            <strong>註：</strong>R<sub>A</sub> 值反映太陽能模組在特定環境條件下的實際發電效率。<br>
+            標準測試條件(STC)為 25°C、1000 W/m²。
+          </p>
         </div>
       </div>
     `;
