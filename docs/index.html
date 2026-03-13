@@ -2205,12 +2205,15 @@ function renderTechnicianList() {
     return;
   }
   
-  el.innerHTML = techniciansList.map(tech => `
+  el.innerHTML = techniciansList.map(tech => {
+    const escaped = tech.replace(/'/g, "\\'");
+    return `
     <span style="background:#e7f3ff;color:#004085;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
       ${tech}
-      <button onclick="removeTechnician('${tech.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+      <button onclick="removeTechnician('${escaped}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
     </span>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // 渲染維修項目管理列表
@@ -2233,17 +2236,20 @@ function renderRepairItemList() {
     return prefixA.localeCompare(prefixB, 'zh-TW');
   });
   
-  el.innerHTML = sortedItems.map(item => `
+  el.innerHTML = sortedItems.map(item => {
+    const escaped = item.replace(/'/g, "\\'");
+    return `
     <span draggable="true" 
-          ondragstart="dragStartItem(event, '${item.replace(/'/g, "\\'")}')" 
+          ondragstart="dragStartItem(event, '${escaped}')" 
           ondragover="event.preventDefault()" 
-          ondrop="dropItem(event, '${item.replace(/'/g, "\\'")}')"
+          ondrop="dropItem(event, '${escaped}')"
           style="background:#d4edda;color:#155724;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:move;user-select:none">
       <span style="color:#999;font-size:11px">⋮⋮</span>
       ${item}
-      <button onclick="removeRepairItem('${item.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+      <button onclick="removeRepairItem('${escaped}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
     </span>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // 拖曳開始
@@ -2456,12 +2462,15 @@ function renderInverterCapacityList() {
     return numA - numB;
   });
   
-  el.innerHTML = sortedCapacities.map(cap => `
+  el.innerHTML = sortedCapacities.map(cap => {
+    const escaped = cap.replace(/'/g, "\\'");
+    return `
     <span style="background:#fff3cd;color:#856404;padding:8px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
       ${cap}
-      <button onclick="removeInverterCapacity('${cap.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+      <button onclick="removeInverterCapacity('${escaped}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
     </span>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // 新增逆變器容量
