@@ -573,11 +573,14 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             從備份檔案恢復資料（可選擇覆蓋或合併）
           </p>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <input type="file" id="backupFile" accept=".json" style="flex:1;padding:8px;border:2px solid #dee2e6;border-radius:8px">
-            <button class="btn btn-primary" onclick="importBackup('merge')">
+            <input type="file" id="backupFile" accept=".json" style="flex:1;padding:8px;border:2px solid #dee2e6;border-radius:8px" onchange="previewBackupFile()">
+            <button class="btn btn-info" onclick="verifyBackupFile()" id="verifyBtn" style="display:none">
+              🔍 驗證備份
+            </button>
+            <button class="btn btn-primary" onclick="importBackup('merge')" id="mergeBtn" style="display:none">
               🔄 合併匯入
             </button>
-            <button class="btn btn-warning" onclick="importBackup('replace')">
+            <button class="btn btn-warning" onclick="importBackup('replace')" id="replaceBtn" style="display:none">
               ⚠️ 覆蓋匯入
             </button>
           </div>
@@ -585,6 +588,15 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             • 合併：保留現有資料，新增備份資料<br>
             • 覆蓋：刪除現有資料，完全使用備份資料
           </small>
+          
+          <!-- 備份預覽區域 -->
+          <div id="backupPreview" style="display:none;margin-top:15px;padding:15px;background:#fff;border:2px solid #667eea;border-radius:8px">
+            <h5 style="font-size:13px;font-weight:600;color:#667eea;margin-bottom:10px">📋 備份檔案預覽</h5>
+            <div id="backupPreviewContent" style="font-size:13px;color:#495057"></div>
+          </div>
+          
+          <!-- 驗證結果 -->
+          <div id="verifyResult" style="display:none;margin-top:15px"></div>
         </div>
 
         <!-- 備份統計 -->
@@ -2909,13 +2921,181 @@ window.exportRecordsOnly = async function() {
   }
 };
 
-// 匯入備份
-window.importBackup = async function(mode) {
+// 全域變數儲存備份資料
+let currentBackupData = null;
+
+// 預覽備份檔案
+window.previewBackupFile = function() {
   const fileInput = document.getElementById('backupFile');
   const file = fileInput.files[0];
   
   if (!file) {
+    document.getElementById('backupPreview').style.display = 'none';
+    document.getElementById('verifyBtn').style.display = 'none';
+    document.getElementById('mergeBtn').style.display = 'none';
+    document.getElementById('replaceBtn').style.display = 'none';
+    return;
+  }
+  
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    try {
+      currentBackupData = JSON.parse(e.target.result);
+      
+      // 顯示預覽
+      const previewDiv = document.getElementById('backupPreview');
+      const contentDiv = document.getElementById('backupPreviewContent');
+      
+      const recordCount = currentBackupData.data?.records?.length || 0;
+      const techCount = currentBackupData.data?.technicians?.length || 0;
+      const itemCount = currentBackupData.data?.repairItems?.length || 0;
+      const capCount = currentBackupData.data?.inverterCapacities?.length || 0;
+      
+      contentDiv.innerHTML = `
+        <div style="display:grid;gap:8px">
+          <div><strong>檔案版本：</strong>${currentBackupData.version || '未知'}</div>
+          <div><strong>工作區：</strong>${currentBackupData.workspace || '未知'}</div>
+          <div><strong>匯出時間：</strong>${currentBackupData.exportTime ? new Date(currentBackupData.exportTime).toLocaleString('zh-TW') : '未知'}</div>
+          <div><strong>匯出者：</strong>${currentBackupData.exportBy || '未知'}</div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid #dee2e6">
+            <strong>資料內容：</strong>
+            <div style="margin-top:5px;margin-left:15px">
+              • 維修紀錄：${recordCount} 筆<br>
+              • 維修人員：${techCount} 位<br>
+              • 維修項目：${itemCount} 個<br>
+              • 逆變器容量：${capCount} 個
+            </div>
+          </div>
+        </div>
+      `;
+      
+      previewDiv.style.display = 'block';
+      document.getElementById('verifyBtn').style.display = 'inline-block';
+      document.getElementById('verifyResult').style.display = 'none';
+      
+    } catch (error) {
+      alert('❌ 無法讀取備份檔案：' + error.message);
+      currentBackupData = null;
+    }
+  };
+  
+  reader.readAsText(file);
+};
+
+// 驗證備份檔案
+window.verifyBackupFile = function() {
+  if (!currentBackupData) {
     alert('請先選擇備份檔案');
+    return;
+  }
+  
+  const resultDiv = document.getElementById('verifyResult');
+  let errors = [];
+  let warnings = [];
+  let infos = [];
+  
+  // 檢查版本
+  if (!currentBackupData.version) {
+    errors.push('缺少版本資訊');
+  }
+  
+  // 檢查基本結構
+  if (!currentBackupData.data) {
+    errors.push('備份檔案格式錯誤：缺少 data 區塊');
+  }
+  
+  // 檢查資料完整性
+  const data = currentBackupData.data || {};
+  
+  if (!data.records || !Array.isArray(data.records)) {
+    warnings.push('缺少維修紀錄資料');
+  } else {
+    infos.push(`✅ 維修紀錄：${data.records.length} 筆`);
+    
+    // 檢查紀錄結構
+    if (data.records.length > 0) {
+      const sampleRecord = data.records[0];
+      const requiredFields = ['_key', 'customerName', 'repairDate', 'repairItem'];
+      const missingFields = requiredFields.filter(field => !sampleRecord[field]);
+      
+      if (missingFields.length > 0) {
+        warnings.push(`維修紀錄缺少欄位：${missingFields.join(', ')}`);
+      }
+    }
+  }
+  
+  if (!data.technicians || !Array.isArray(data.technicians)) {
+    warnings.push('缺少維修人員資料');
+  } else {
+    infos.push(`✅ 維修人員：${data.technicians.length} 位`);
+  }
+  
+  if (!data.repairItems || !Array.isArray(data.repairItems)) {
+    warnings.push('缺少維修項目資料');
+  } else {
+    infos.push(`✅ 維修項目：${data.repairItems.length} 個`);
+  }
+  
+  if (!data.inverterCapacities || !Array.isArray(data.inverterCapacities)) {
+    warnings.push('缺少逆變器容量資料');
+  } else {
+    infos.push(`✅ 逆變器容量：${data.inverterCapacities.length} 個`);
+  }
+  
+  // 檢查工作區是否一致
+  if (currentBackupData.workspace && currentBackupData.workspace !== ws) {
+    warnings.push(`⚠️ 工作區不一致：備份是「${currentBackupData.workspace}」，目前是「${ws}」`);
+  }
+  
+  // 顯示驗證結果
+  let resultHTML = '';
+  
+  if (errors.length > 0) {
+    resultHTML += `
+      <div style="padding:15px;background:#fee;border:2px solid #dc3545;border-radius:8px;margin-bottom:10px">
+        <h5 style="color:#dc3545;font-size:14px;font-weight:600;margin-bottom:8px">❌ 嚴重錯誤（無法匯入）</h5>
+        ${errors.map(e => `<div style="font-size:13px;color:#721c24">• ${e}</div>`).join('')}
+      </div>
+    `;
+  }
+  
+  if (warnings.length > 0) {
+    resultHTML += `
+      <div style="padding:15px;background:#fff3cd;border:2px solid #ffc107;border-radius:8px;margin-bottom:10px">
+        <h5 style="color:#856404;font-size:14px;font-weight:600;margin-bottom:8px">⚠️ 警告</h5>
+        ${warnings.map(w => `<div style="font-size:13px;color:#856404">• ${w}</div>`).join('')}
+      </div>
+    `;
+  }
+  
+  if (infos.length > 0) {
+    resultHTML += `
+      <div style="padding:15px;background:#d4edda;border:2px solid #28a745;border-radius:8px">
+        <h5 style="color:#155724;font-size:14px;font-weight:600;margin-bottom:8px">✅ 驗證通過</h5>
+        ${infos.map(i => `<div style="font-size:13px;color:#155724">${i}</div>`).join('')}
+      </div>
+    `;
+  }
+  
+  resultDiv.innerHTML = resultHTML;
+  resultDiv.style.display = 'block';
+  
+  // 如果沒有嚴重錯誤，顯示匯入按鈕
+  if (errors.length === 0) {
+    document.getElementById('mergeBtn').style.display = 'inline-block';
+    document.getElementById('replaceBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('mergeBtn').style.display = 'none';
+    document.getElementById('replaceBtn').style.display = 'none';
+    alert('❌ 備份檔案有嚴重錯誤，無法匯入！');
+  }
+};
+
+// 匯入備份
+window.importBackup = async function(mode) {
+  if (!currentBackupData) {
+    alert('請先選擇並驗證備份檔案');
     return;
   }
   
@@ -2930,91 +3110,74 @@ window.importBackup = async function(mode) {
   try {
     console.log(`開始${modeText}匯入備份...`);
     
-    // 讀取檔案
-    const reader = new FileReader();
+    const backupData = currentBackupData;
     
-    reader.onload = async function(e) {
-      try {
-        const backupData = JSON.parse(e.target.result);
-        
-        // 驗證備份檔案
-        if (!backupData.version || !backupData.data) {
-          throw new Error('備份檔案格式不正確');
-        }
-        
-        console.log('備份檔案資訊:', {
-          版本: backupData.version,
-          工作區: backupData.workspace,
-          匯出時間: backupData.exportTime,
-          匯出者: backupData.exportBy
-        });
-        
-        // 準備匯入的資料
-        let importRecords = backupData.data.records || [];
-        let importTechs = backupData.data.technicians || [];
-        let importItems = backupData.data.repairItems || [];
-        let importCaps = backupData.data.inverterCapacities || [];
-        
-        if (mode === 'merge') {
-          // 合併模式：去重複後合併
-          console.log('使用合併模式...');
-          
-          // 合併維修紀錄（根據 ID 去重）
-          const existingIds = new Set(allRecords.map(r => r._key));
-          const newRecords = importRecords.filter(r => !existingIds.has(r._key));
-          
-          // 合併人員和項目（去重）
-          importTechs = [...new Set([...techniciansList, ...importTechs])];
-          importItems = [...new Set([...repairItemsList, ...importItems])];
-          importCaps = [...new Set([...inverterCapacitiesList, ...importCaps])];
-          
-          importRecords = [...allRecords, ...newRecords];
-          
-          console.log(`合併結果：新增 ${newRecords.length} 筆維修紀錄`);
-        } else {
-          // 覆蓋模式：直接使用備份資料
-          console.log('使用覆蓋模式...');
-        }
-        
-        // 上傳到 Firebase
-        console.log('開始上傳到 Firebase...');
-        
-        // 上傳維修紀錄
-        if (importRecords.length > 0) {
-          const recordsRef = ref(db, `workspaces/${ws}/records`);
-          const recordsObj = {};
-          importRecords.forEach(r => {
-            recordsObj[r._key] = r;
-          });
-          await set(recordsRef, recordsObj);
-        }
-        
-        // 上傳設定
-        await set(ref(db, `workspaces/${ws}/settings/technicians`), importTechs);
-        await set(ref(db, `workspaces/${ws}/settings/repairItems`), importItems);
-        await set(ref(db, `workspaces/${ws}/settings/inverterCapacities`), importCaps);
-        
-        console.log('✅ 上傳完成');
-        
-        // 重新載入資料
-        alert(`✅ ${modeText}匯入成功！\n\n維修紀錄：${importRecords.length} 筆\n維修人員：${importTechs.length} 位\n維修項目：${importItems.length} 個\n逆變器容量：${importCaps.length} 個\n\n頁面即將重新載入...`);
-        
-        // 重新載入頁面
-        setTimeout(() => {
-          location.reload();
-        }, 1000);
-        
-      } catch (parseError) {
-        console.error('解析備份檔案失敗:', parseError);
-        alert('❌ 備份檔案格式錯誤：' + parseError.message);
-      }
-    };
+    // 驗證備份檔案
+    if (!backupData.version || !backupData.data) {
+      throw new Error('備份檔案格式不正確');
+    }
     
-    reader.onerror = function() {
-      alert('❌ 讀取檔案失敗');
-    };
+    console.log('備份檔案資訊:', {
+      版本: backupData.version,
+      工作區: backupData.workspace,
+      匯出時間: backupData.exportTime,
+      匯出者: backupData.exportBy
+    });
     
-    reader.readAsText(file);
+    // 準備匯入的資料
+    let importRecords = backupData.data.records || [];
+    let importTechs = backupData.data.technicians || [];
+    let importItems = backupData.data.repairItems || [];
+    let importCaps = backupData.data.inverterCapacities || [];
+    
+    if (mode === 'merge') {
+      // 合併模式：去重複後合併
+      console.log('使用合併模式...');
+      
+      // 合併維修紀錄（根據 ID 去重）
+      const existingIds = new Set(allRecords.map(r => r._key));
+      const newRecords = importRecords.filter(r => !existingIds.has(r._key));
+      
+      // 合併人員和項目（去重）
+      importTechs = [...new Set([...techniciansList, ...importTechs])];
+      importItems = [...new Set([...repairItemsList, ...importItems])];
+      importCaps = [...new Set([...inverterCapacitiesList, ...importCaps])];
+      
+      importRecords = [...allRecords, ...newRecords];
+      
+      console.log(`合併結果：新增 ${newRecords.length} 筆維修紀錄`);
+    } else {
+      // 覆蓋模式：直接使用備份資料
+      console.log('使用覆蓋模式...');
+    }
+    
+    // 上傳到 Firebase
+    console.log('開始上傳到 Firebase...');
+    
+    // 上傳維修紀錄
+    if (importRecords.length > 0) {
+      const recordsRef = ref(db, `workspaces/${ws}/records`);
+      const recordsObj = {};
+      importRecords.forEach(r => {
+        recordsObj[r._key] = r;
+      });
+      await set(recordsRef, recordsObj);
+    }
+    
+    // 上傳設定
+    await set(ref(db, `workspaces/${ws}/settings/technicians`), importTechs);
+    await set(ref(db, `workspaces/${ws}/settings/repairItems`), importItems);
+    await set(ref(db, `workspaces/${ws}/settings/inverterCapacities`), importCaps);
+    
+    console.log('✅ 上傳完成');
+    
+    // 重新載入資料
+    alert(`✅ ${modeText}匯入成功！\n\n維修紀錄：${importRecords.length} 筆\n維修人員：${importTechs.length} 位\n維修項目：${importItems.length} 個\n逆變器容量：${importCaps.length} 個\n\n頁面即將重新載入...`);
+    
+    // 重新載入頁面
+    setTimeout(() => {
+      location.reload();
+    }, 1000);
     
   } catch (error) {
     console.error('匯入失敗:', error);
