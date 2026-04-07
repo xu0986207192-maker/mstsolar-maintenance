@@ -734,47 +734,6 @@ div class=modal id=importModal
   div
 div
 
-!-- 匯出 CSV 日期區間 Modal --
-div class=modal id=exportModal
-  div class=modal-content style=max-width480px
-    div class=modal-header
-      h2📥 匯出維修紀錄h2
-      button class=close-btn onclick=closeExportModal()&times;button
-    div
-    div class=modal-body
-      div style=background#f0f2ff;border-radius10px;padding14px;margin-bottom18px;font-size13px;color#495057
-        ℹ️ 選擇要匯出的日期區間，留空則匯出全部紀錄。
-      div
-      div class=form-group
-        label class=form-label匯出範圍label
-        div style=displayflex;gap8px;flex-wrapwrap;margin-bottom12px
-          button class=btn btn-sm btn-filter id=exp-all onclick=setExportPreset('all',this)全部button
-          button class=btn btn-sm btn-filter onclick=setExportPreset('month',this)本月button
-          button class=btn btn-sm btn-filter onclick=setExportPreset('quarter',this)近三個月button
-          button class=btn btn-sm btn-filter onclick=setExportPreset('year',this)今年button
-          button class=btn btn-sm btn-filter onclick=setExportPreset('custom',this)自訂button
-        div
-      div
-      div id=exportDateInputs style=displayflex;gap12px;align-itemscenter;flex-wrapwrap;margin-bottom18px
-        div style=flex1;min-width120px
-          label class=form-label style=margin-bottom5px開始日期label
-          input type=date id=exportStartDate class=form-input style=padding8px
-        div
-        div style=color#6c757d;padding-top24px至
-        div style=flex1;min-width120px
-          label class=form-label style=margin-bottom5px結束日期label
-          input type=date id=exportEndDate class=form-input style=padding8px
-        div
-      div
-      div id=exportPreviewText style=color#667eea;font-weight600;font-size13px;margin-bottom8pxdiv
-      div class=form-actions
-        button type=button class=btn btn-cancel onclick=closeExportModal()取消button
-        button type=button class=btn btn-info onclick=doExportCSV()📥 確認匯出button
-      div
-    div
-  div
-div
-
 !-- 照片燈箱 --
 div class=lightbox id=lightbox onclick=closeLightbox()
   span class=lightbox-close&times;span
@@ -1833,74 +1792,13 @@ window.exportHistoryPDF = function() {
 };
 window.exportCSV = function() {
   if (!allRecords.length) { alert('沒有資料'); return; }
-   預設選全部
-  document.getElementById('exportStartDate').value = '';
-  document.getElementById('exportEndDate').value = '';
-   高亮「全部」按鈕
-  document.querySelectorAll('#exportModal .btn-filter').forEach(b => b.classList.remove('active'));
-  document.getElementById('exp-all').classList.add('active');
-  updateExportPreview();
-  document.getElementById('exportModal').classList.add('active');
-};
-
-window.closeExportModal = function() {
-  document.getElementById('exportModal').classList.remove('active');
-};
-
-window.setExportPreset = function(preset, btn) {
-  document.querySelectorAll('#exportModal .btn-filter').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const now = new Date();
-  let s = '', e = '';
-  if (preset === 'month') {
-    s = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`;
-    e = today();
-  } else if (preset === 'quarter') {
-    const d = new Date(now); d.setMonth(d.getMonth()-3);
-    s = d.toISOString().split('T')[0]; e = today();
-  } else if (preset === 'year') {
-    s = `${now.getFullYear()}-01-01`; e = today();
-  } else if (preset === 'custom') {
-    s = ''; e = '';
-  }
-   all: 留空
-  document.getElementById('exportStartDate').value = s;
-  document.getElementById('exportEndDate').value = e;
-  updateExportPreview();
-};
-
-window.updateExportPreview = function() {
-  const s = document.getElementById('exportStartDate').value;
-  const e = document.getElementById('exportEndDate').value;
-  let filtered = allRecords;
-  if (s) filtered = filtered.filter(r => r.repairDate >= s);
-  if (e) filtered = filtered.filter(r => r.repairDate <= e);
-  const el = document.getElementById('exportPreviewText');
-  el.textContent = `📋 符合條件：${filtered.length} 筆紀錄`;
-};
-
- 監聽日期輸入變更
-['exportStartDate','exportEndDate'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('change', updateExportPreview);
-});
-
-window.doExportCSV = function() {
-  const s = document.getElementById('exportStartDate').value;
-  const e = document.getElementById('exportEndDate').value;
-  let filtered = allRecords;
-  if (s) filtered = filtered.filter(r => r.repairDate >= s);
-  if (e) filtered = filtered.filter(r => r.repairDate <= e);
-  if (!filtered.length) { alert('所選區間沒有資料'); return; }
   const headers = ['客戶名稱','維修項目','維修人員','維修日期','狀態','逆變器容量','備註','建立者'];
-  const rows = filtered.map(r => [r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.inverterCapacity||'',r.notes||'',r.createdBy||''].map(v=>`${v}`).join(','));
-  const suffix = s && e ? `_${s}_${e}` : s ? `_${s}起` : e ? `_至${e}` : '_全部';
-  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const rows = allRecords.map(r = [r.customerName,r.repairItem,r.technician,r.repairDate,r.status,r.inverterCapacity'',r.notes'',r.createdBy''].map(v=`${v}`).join(','));
+  const csv = 'uFEFF' + [headers.join(','), ...rows].join('n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `維修紀錄_${ws}${suffix}.csv`;
+  a.href = URL.createObjectURL(new Blob([csv], { type'textcsv;charset=utf-8' }));
+  a.download = `維修紀錄_${ws}_${today()}.csv`;
   a.click();
-  closeExportModal();
 };
 
  ---- LIGHTBOX ----
