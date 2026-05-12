@@ -253,6 +253,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="nav-tab active" onclick="showTab('main')">📋 維修紀錄</div>
     <div class="nav-tab" id="kpiTab" onclick="showTab('kpi')">📊 KPI 統計</div>
     <div class="nav-tab" onclick="showTab('inspection')">✅ 檢查紀錄</div>
+    <div class="nav-tab" onclick="showTab('sites')">🏢 案場管理</div>
     <div class="nav-tab" onclick="showTab('calculator')">🔢 PR/RA 計算</div>
     <div class="nav-tab" id="adminTab" style="display:none" onclick="showTab('admin')">⚙️ 管理設定</div>
   </div>
@@ -523,6 +524,19 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     </div>
   </div>
 
+  <!-- 🏢 案場管理頁面 -->
+  <div id="tabSites" style="display:none">
+    <div class="controls">
+      <div class="control-row">
+        <h2 style="color:#2d3748;font-size:18px;font-weight:700;">🏢 案場管理</h2>
+        <button class="btn btn-primary" onclick="iOpenSiteModal()" style="margin-left:auto;">➕ 新增案場</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="sites-card-list"></div>
+    </div>
+  </div>
+
   <!-- PR/RA 計算器頁面 -->
   <div id="tabCalculator" style="display:none">
     <div class="content">
@@ -633,15 +647,6 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <div id="tabAdmin" style="display:none">
     <div class="content">
       <h2 style="color:#2d3748;margin-bottom:20px">⚙️ 管理員設定</h2>
-
-      <!-- 案場管理 -->
-      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
-        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🏢 檢查案場管理</h3>
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="iOpenSiteModal()">➕ 新增案場</button>
-        </div>
-        <div id="i-admin-sites-list"></div>
-      </div>
 
       <!-- 設定管理員密碼 -->
       <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
@@ -1276,11 +1281,13 @@ function initDB() {
 
 // ---- TABS ----
 window.showTab = function(tab) {
-  ['tabMain','tabKpi','tabHistory','tabAdmin','tabCalculator','tabInspection'].forEach(id => {
+  ['tabMain','tabKpi','tabHistory','tabAdmin','tabCalculator','tabInspection','tabSites'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tabs = ['main','kpi','inspection','sites','calculator','admin'];
+  const ids  = ['tabMain','tabKpi','tabInspection','tabSites','tabCalculator','tabAdmin'];
   if (tab === 'main') {
     document.getElementById('tabMain').style.display = 'block';
     document.querySelectorAll('.nav-tab')[0].classList.add('active');
@@ -1292,20 +1299,22 @@ window.showTab = function(tab) {
     document.getElementById('tabInspection').style.display = 'block';
     document.querySelectorAll('.nav-tab')[2].classList.add('active');
     iRefreshSiteSel();
-    // 每次切換都重建，確保項目顯示
     iBuildCklist();
-    // 延遲初始化簽名（確保 canvas 已可見）
     setTimeout(()=>iInitSig(), 50);
+  } else if (tab === 'sites') {
+    document.getElementById('tabSites').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[3].classList.add('active');
+    renderSiteCards();
   } else if (tab === 'calculator') {
     document.getElementById('tabCalculator').style.display = 'block';
-    document.querySelectorAll('.nav-tab')[3].classList.add('active');
+    document.querySelectorAll('.nav-tab')[4].classList.add('active');
   } else if (tab === 'history') {
     document.getElementById('tabHistory').style.display = 'block';
     renderHistory();
   } else if (tab === 'admin') {
     if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
     document.getElementById('tabAdmin').style.display = 'block';
-    document.querySelectorAll('.nav-tab')[4].classList.add('active');
+    document.querySelectorAll('.nav-tab')[5].classList.add('active');
     renderMemberList();
   }
 };
@@ -4149,6 +4158,7 @@ window.iSaveSite = async function(){
   localStorage.setItem('insp_sites',JSON.stringify(iSites));
   iRefreshSiteSel();
   iRenderAdminSites();
+  renderSiteCards();
   await iSaveSiteToDB(d);
   iCloseSiteModal();
 };
@@ -4159,6 +4169,7 @@ window.iDeleteSite = async function(id){
   localStorage.setItem('insp_sites',JSON.stringify(iSites));
   iRefreshSiteSel();
   iRenderAdminSites();
+  renderSiteCards();
   await iDeleteSiteFromDB(id);
 };
 
@@ -4285,6 +4296,54 @@ window.sdSwitch = function(tab){
   it.style.color = tab==='insp'?'#667eea':'#6c757d';
   it.style.borderBottomColor = tab==='insp'?'#667eea':'transparent';
 };
+// ---- 案場卡片頁面 ----
+function renderSiteCards(){
+  const el = document.getElementById('sites-card-list');
+  if(!el) return;
+  if(!iSites.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>尚無案場，請點右上角「➕ 新增案場」</p></div>';
+    return;
+  }
+  el.innerHTML = iSites.map(s => {
+    const repairCount = allRecords.filter(r=>r.customerName===s.name).length;
+    const inspCount   = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).length;
+    const lastInsp    = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    const lastRepair  = allRecords.filter(r=>r.customerName===s.name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate))[0];
+    return `<div onclick="iShowSiteDetail('${s.id}')" style="background:white;border:1px solid #e9ecef;border-radius:14px;padding:20px;margin-bottom:14px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.06);" onmouseover="this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:4px;">🏢 ${s.name}</div>
+          <div style="font-size:13px;color:#6c757d;margin-bottom:10px;">${s.addr||'地址未填寫'}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+            ${s.cap?`<span style="background:#e7f3ff;color:#004085;padding:3px 10px;border-radius:20px;">${s.cap} kWp</span>`:''}
+            ${s.type?`<span style="background:#f0f0f0;color:#495057;padding:3px 10px;border-radius:20px;">${s.type}</span>`:''}
+            ${s.inv?`<span style="background:#fff3cd;color:#856404;padding:3px 10px;border-radius:20px;">${s.inv}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <div style="text-align:center;background:#f8f9fa;border-radius:10px;padding:8px 14px;">
+            <div style="font-size:20px;font-weight:700;color:#667eea;">${repairCount}</div>
+            <div style="font-size:10px;color:#6c757d;">維修</div>
+          </div>
+          <div style="text-align:center;background:#f8f9fa;border-radius:10px;padding:8px 14px;">
+            <div style="font-size:20px;font-weight:700;color:#28a745;">${inspCount}</div>
+            <div style="font-size:10px;color:#6c757d;">檢查</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;">
+        <span>最後維修：${lastRepair?.repairDate||'無紀錄'}</span>
+        <span>最後檢查：${lastInsp?.date||'無紀錄'}</span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;" onclick="event.stopPropagation()">
+        <button class="btn btn-primary btn-sm" onclick="iShowSiteDetail('${s.id}')">📋 查看紀錄</button>
+        <button class="btn btn-success btn-sm" onclick="iOpenSiteModal('${s.id}')">✏️ 編輯</button>
+        <button class="btn btn-danger btn-sm" onclick="iDeleteSite('${s.id}')">🗑️ 刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 window.iShowSiteDetailByName = function(name){
   const s = iSites.find(x=>x.name===name);
   if(s){ iShowSiteDetail(s.id); return; }
