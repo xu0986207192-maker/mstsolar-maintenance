@@ -996,6 +996,9 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     </div>
   </div>
 </div>
+
+<!-- 案場管理 Modal -->
+<div class="modal" id="iSiteModal">
   <div class="modal-content" style="max-width:560px;">
     <div class="modal-header">
       <h2 id="iSiteModalTitle">新增案場</h2>
@@ -3942,7 +3945,7 @@ function iRenderList(){
       <div style="display:flex;gap:6px;margin-top:10px;" onclick="event.stopPropagation()">
         <button class="btn btn-warning btn-sm" onclick="iShowSiteDetailByName('${r.sname}')">🏢 案場</button>
         <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄 PDF</button>
-        ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️ 刪除</button>
       </div>
     </div>
   `).join('');
@@ -3950,8 +3953,13 @@ function iRenderList(){
 
 window.iDelRec = async function(id){
   if(!confirm('確定刪除此檢查紀錄？'))return;
+  // 先從本地移除並重新渲染，讓 UI 立即反應
+  iRecs = iRecs.filter(r=>r.id!==id);
+  localStorage.setItem('insp_recs', JSON.stringify(iRecs));
+  iRenderList();
+  // 再同步到 Firebase
   try { await remove(ref(db, `workspaces/${ws}/inspRecs/${id}`)); }
-  catch(e){ iRecs=iRecs.filter(r=>r.id!==id); localStorage.setItem('insp_recs',JSON.stringify(iRecs)); iRenderList(); }
+  catch(e){ console.error('Firebase 刪除失敗:', e); }
 };
 
 // ---- Detail Modal ----
