@@ -3955,82 +3955,163 @@ window.iShowDet = function(id){
 
 window.iCloseDetModal = function(){ document.getElementById('iDetModal').classList.remove('active'); window.iCurDetId=null; };
 
-// ---- PDF Export ----
+// ---- PDF Export (純 jsPDF 文字模式，不依賴 html2canvas) ----
 window.iExportPDF = function(id){
   const r = iRecs.find(x=>x.id===id);
   if(!r){ alert('找不到紀錄'); return; }
-  const om={pass:'正常',warn:'需注意',fail:'異常'};
-  const oc={pass:'#155724',warn:'#856404',fail:'#721c24'};
-  const sm={ok:'正常',wa:'注意',fa:'異常',none:'—'};
-  const sc={ok:'#155724',wa:'#856404',fa:'#721c24',none:'#6c757d'};
 
-  const rows = INSP_CK.map(g=>`
-    <tr><td colspan="3" style="padding:7px 8px;background:#f0f2ff;font-weight:bold;color:#667eea;font-size:12px;">${g.sec}</td></tr>
-    ${g.items.map(it=>{
+  // html2pdf.bundle 已包含 jsPDF，嘗試多種取得方式
+  const jsPDF = (window.jspdf && window.jspdf.jsPDF)
+    || (window.jsPDF)
+    || (typeof jspdf !== 'undefined' && jspdf.jsPDF);
+  if(!jsPDF){ alert('PDF 套件尚未載入，請稍後再試'); return; }
+
+  const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+  const pw = 210, ph = 297, ml = 15, mr = 15, mt = 15;
+  const cw = pw - ml - mr;
+  let y = mt;
+
+  const om = { pass:'正常', warn:'需注意', fail:'異常' };
+  const sm = { ok:'✓ 正常', wa:'△ 注意', fa:'✗ 異常', none:'—' };
+
+  // ── 標題列 ──
+  doc.setFillColor(102,126,234);
+  doc.rect(ml, y, cw, 18, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('Solar PV Maintenance Inspection Report', ml+4, y+7);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('太陽光電維運檢查報告', ml+4, y+13);
+  doc.text(new Date().toLocaleDateString('zh-TW'), pw-mr-2, y+13, {align:'right'});
+  y += 22;
+
+  // ── 基本資料 ──
+  const field = (label, val, x, fy, w) => {
+    doc.setTextColor(100,100,100); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text(label, x, fy);
+    doc.setTextColor(30,30,30); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(String(val||'—').substring(0,30), x, fy+5);
+  };
+
+  doc.setDrawColor(220,220,220);
+  doc.setLineWidth(0.3);
+  doc.rect(ml, y, cw, 52, 'S');
+  doc.setFillColor(248,249,250);
+  doc.rect(ml, y, cw, 6, 'F');
+  doc.setTextColor(102,126,234); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('案場資訊', ml+3, y+4.5);
+  y += 8;
+
+  const hw = cw/2;
+  field('案場名稱', r.sname, ml+3, y, hw);
+  field('檢查日期', r.date, ml+hw+3, y, hw);
+  y += 10;
+  field('地址', r.addr, ml+3, y, cw);
+  y += 10;
+  field('業主', r.owner, ml+3, y, hw);
+  field('電話', r.phone, ml+hw+3, y, hw);
+  y += 10;
+  field('裝置容量', r.cap ? r.cap+' kWp' : '', ml+3, y, hw);
+  field('設置類型', r.type, ml+hw+3, y, hw);
+  y += 10;
+  field('逆變器型號', r.inv, ml+3, y, hw);
+  field('模組型號', r.mod, ml+hw+3, y, hw);
+  y += 10;
+
+  // ── 天氣 / 檢查員 / 評級 ──
+  y += 4;
+  doc.setFillColor(248,249,250);
+  doc.rect(ml, y, cw, 14, 'F');
+  doc.setDrawColor(220,220,220); doc.rect(ml, y, cw, 14, 'S');
+  field('天氣', r.weather, ml+3, y+2, cw/3);
+  field('負責人員', r.inspector, ml+cw/3+3, y+2, cw/3);
+  const ratingColor = r.overall==='pass'?[21,87,36]:r.overall==='warn'?[133,100,4]:[114,28,36];
+  doc.setTextColor(...ratingColor);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('整體評級', ml+cw*2/3+3, y+4);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(om[r.overall]||'—', ml+cw*2/3+3, y+11);
+  doc.setTextColor(30,30,30);
+  y += 18;
+
+  // ── 備註 ──
+  if(r.notes){
+    doc.setFillColor(240,242,255);
+    doc.rect(ml, y, cw, 10, 'F');
+    doc.setDrawColor(102,126,234); doc.setLineWidth(0.8);
+    doc.line(ml, y, ml, y+10);
+    doc.setLineWidth(0.3); doc.setDrawColor(220,220,220);
+    doc.setTextColor(60,60,60); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('備註：', ml+3, y+4);
+    doc.setFont('helvetica','normal');
+    doc.text(r.notes.substring(0,60), ml+16, y+4);
+    y += 14;
+  }
+
+  // ── 檢查項目標題 ──
+  doc.setFillColor(102,126,234);
+  doc.rect(ml, y, cw, 7, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('檢查項目詳細記錄', ml+3, y+5);
+  y += 9;
+
+  // ── 檢查項目逐行 ──
+  INSP_CK.forEach(g => {
+    // 分區標題
+    if(y > ph-30){ doc.addPage(); y=mt; }
+    doc.setFillColor(230,235,255);
+    doc.rect(ml, y, cw, 6, 'F');
+    doc.setTextColor(80,80,200); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(g.sec.replace(/[^\x00-\x7F]/g,'').trim() || g.sec, ml+3, y+4.5);
+    y += 7;
+
+    g.items.forEach(it => {
+      if(y > ph-20){ doc.addPage(); y=mt; }
       const res = r.cr?.[it.id]||{};
       const st = res.status||'none';
-      return `<tr style="border-bottom:1px solid #e9ecef;">
-        <td style="padding:5px 8px;font-size:12px;">${it.t}</td>
-        <td style="padding:5px 8px;color:${sc[st]};font-weight:bold;width:60px;text-align:center;font-size:12px;">${sm[st]}</td>
-        <td style="padding:5px 8px;color:#6c757d;font-size:11px;">${res.note||''}</td>
-      </tr>`;
-    }).join('')}
-  `).join('');
+      const stLabel = sm[st];
+      const stColor = st==='ok'?[21,87,36]:st==='wa'?[133,100,4]:st==='fa'?[114,28,36]:[120,120,120];
 
-  const td = (k,v) => `<td style="padding:5px 8px;color:#6c757d;font-size:12px;font-weight:600;white-space:nowrap;">${k}</td><td style="padding:5px 8px;font-size:13px;">${v||'—'}</td>`;
+      // 交替底色
+      doc.setFillColor(255,255,255); doc.setDrawColor(230,230,230);
+      doc.rect(ml, y, cw, 7, 'FD');
 
-  const sigHtml = r.sig
-    ? `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e9ecef;">
-        <div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:8px;">客戶簽名確認</div>
-        <img src="${r.sig}" style="height:80px;border:1px solid #dee2e6;border-radius:6px;background:#fafaf8;">
-       </div>`
-    : `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e9ecef;">
-        <div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:8px;">客戶簽名確認</div>
-        <div style="height:70px;border:1px solid #dee2e6;border-radius:6px;"></div>
-       </div>`;
+      doc.setTextColor(40,40,40); doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.text(it.t, ml+3, y+5);
 
-  const el = document.createElement('div');
-  el.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;padding:15mm 15mm;background:white;font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;color:#2d3748;line-height:1.6;box-sizing:border-box;';
-  el.innerHTML = `
-    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:18px 24px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-size:18px;font-weight:bold;">太陽光電維運檢查報告</div>
-        <div style="font-size:10px;opacity:.85;margin-top:2px;">Solar PV Maintenance Inspection Report</div>
-      </div>
-      <div style="font-size:10px;opacity:.85;text-align:right;">${new Date().toLocaleString('zh-TW')}</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e9ecef;border-radius:6px;overflow:hidden;">
-      <tr style="background:#f8f9fa;">${td('案場名稱',`<strong>${r.sname||'—'}</strong>`)}${td('檢查日期',r.date||'—')}</tr>
-      <tr>${td('地址',r.addr||'—')}${td('天氣',r.weather||'—')}</tr>
-      <tr style="background:#f8f9fa;">${td('業主',r.owner||'—')}${td('電話',r.phone||'—')}</tr>
-      <tr>${td('裝置容量',r.cap?r.cap+' kWp':'—')}${td('設置類型',r.type||'—')}</tr>
-      <tr style="background:#f8f9fa;">${td('逆變器型號',r.inv||'—')}${td('模組型號',r.mod||'—')}</tr>
-      <tr>
-        ${td('檢查員',r.inspector||'—')}
-        <td style="padding:5px 8px;color:#6c757d;font-size:12px;font-weight:600;">整體評級</td>
-        <td style="padding:5px 8px;font-weight:bold;color:${oc[r.overall]||'#2d3748'};font-size:14px;">${om[r.overall]||'—'}</td>
-      </tr>
-    </table>
-    ${r.notes ? `<div style="background:#f0f2ff;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:12px;color:#495057;border-left:4px solid #667eea;"><strong>備註：</strong>${r.notes}</div>` : ''}
-    <div style="font-weight:bold;font-size:13px;margin-bottom:8px;color:#2d3748;">✅ 檢查項目詳細記錄</div>
-    <table style="width:100%;border-collapse:collapse;border:1px solid #e9ecef;">${rows}</table>
-    ${sigHtml}
-  `;
+      doc.setTextColor(...stColor); doc.setFont('helvetica','bold');
+      doc.text(stLabel, ml+cw-45, y+5);
 
-  document.body.appendChild(el);
-
-  window.html2pdf().from(el).set({
-    margin: [0,0,0,0],
-    filename: `維運檢查報告_${r.sname||'unnamed'}_${r.date||'nodate'}.pdf`,
-    image: { type:'jpeg', quality:0.95 },
-    html2canvas: { scale:2, useCORS:true, logging:false, allowTaint:true },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-  }).save().then(()=>{
-    document.body.removeChild(el);
-  }).catch(err=>{
-    document.body.removeChild(el);
-    alert('PDF 匯出失敗：'+err.message);
+      if(res.note){
+        doc.setTextColor(120,120,120); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+        doc.text(res.note.substring(0,25), ml+cw-25, y+5);
+      }
+      y += 7;
+    });
   });
+
+  // ── 簽名欄 ──
+  y += 6;
+  if(y > ph-40){ doc.addPage(); y=mt; }
+  doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+  doc.rect(ml, y, cw, 35, 'S');
+  doc.setFillColor(248,249,250); doc.rect(ml, y, cw, 7, 'F');
+  doc.setTextColor(80,80,80); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('客戶簽名確認', ml+3, y+5);
+
+  if(r.sig){
+    try {
+      doc.addImage(r.sig, 'PNG', ml+3, y+9, 60, 22);
+    } catch(e){}
+  }
+
+  doc.setTextColor(150,150,150); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('業主 / 客戶簽名', ml+3, y+33);
+  doc.text('日期：______ 年 ______ 月 ______ 日', ml+cw/2, y+33);
+
+  // ── 儲存 ──
+  const fname = `維運檢查報告_${(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')}_${r.date||'nodate'}.pdf`;
+  doc.save(fname);
 };
 
 // ---- 案場管理 UI ----
