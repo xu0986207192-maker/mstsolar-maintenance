@@ -3962,28 +3962,33 @@ window.iExportPDF = function(id){
   if(!r){ alert('找不到紀錄'); return; }
 
   const om={pass:'正常',warn:'需注意',fail:'異常'};
-  const oc={pass:'#155724',warn:'#856404',fail:'#721c24'};
-  const sm={ok:'✓ 正常',wa:'△ 注意',fa:'✗ 異常',none:'—'};
-  const sc={ok:'#155724',wa:'#856404',fa:'#721c24',none:'#999'};
+  const oc={pass:'#1a7a4a',warn:'#b45309',fail:'#b91c1c'};
+  const obg={pass:'#d1fae5',warn:'#fef3c7',fail:'#fee2e2'};
+  const sm={ok:'✓ 正常',wa:'⚠ 注意',fa:'✗ 異常',none:'—'};
+  const sc={ok:'#1a7a4a',wa:'#b45309',fa:'#b91c1c',none:'#aaa'};
+  const sbg={ok:'#d1fae5',wa:'#fef3c7',fa:'#fee2e2',none:'#f5f5f5'};
 
-  const rows = INSP_CK.map(g=>`
-    <div style="background:#e8ecff;padding:6px 10px;font-weight:bold;font-size:11px;color:#4455cc;margin-top:6px;">${g.sec}</div>
-    ${g.items.map(it=>{
+  const rows = INSP_CK.map(g => {
+    const items = g.items.map((it,i) => {
       const res=r.cr?.[it.id]||{};
       const st=res.status||'none';
-      return `<div style="display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;background:white;">
-        <span style="color:#333;flex:1;">${it.t}${res.note?`<span style="color:#999;font-size:10px;margin-left:8px;">${res.note}</span>`:''}</span>
-        <span style="color:${sc[st]};font-weight:bold;white-space:nowrap;margin-left:12px;">${sm[st]}</span>
-      </div>`;
-    }).join('')}
-  `).join('');
+      return `<tr style="background:${i%2===0?'#fff':'#f9fafb'};">
+        <td style="padding:6px 12px;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb;">${it.t}${res.note?`<span style="color:#9ca3af;font-size:10px;margin-left:6px;">— ${res.note}</span>`:''}</td>
+        <td style="padding:6px 10px;text-align:center;border-bottom:1px solid #e5e7eb;white-space:nowrap;">
+          <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${sbg[st]};color:${sc[st]};">${sm[st]}</span>
+        </td>
+      </tr>`;
+    }).join('');
+    const icon = g.sec.match(/^(\S+)/)?.[1]||'';
+    const secName = g.sec.replace(/^\S+\s*/,'');
+    return `<tr><td colspan="2" style="padding:8px 12px;background:linear-gradient(90deg,#4f46e5,#6366f1);color:white;font-size:11px;font-weight:700;">${icon} ${secName}</td></tr>${items}`;
+  }).join('');
 
   const sigHtml = r.sig
-    ? `<img src="${r.sig}" style="height:65px;border:1px solid #ddd;border-radius:4px;display:block;">`
-    : `<div style="height:55px;border:1px solid #ddd;border-radius:4px;"></div>`;
+    ? `<img src="${r.sig}" style="height:65px;border:1px solid #d1d5db;border-radius:6px;display:block;margin-top:8px;">`
+    : `<div style="height:60px;border:2px dashed #d1d5db;border-radius:6px;margin-top:8px;"></div>`;
 
   const W = 720;
-
   const iframe = document.createElement('iframe');
   iframe.style.cssText = `position:fixed;top:-9999px;left:0;width:${W}px;height:2000px;border:none;`;
   document.body.appendChild(iframe);
@@ -3992,44 +3997,100 @@ window.iExportPDF = function(id){
   idoc.open();
   idoc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;font-size:12px;color:#2d3748;background:white;width:${W}px;padding:24px 28px;}
-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
-td{padding:5px 8px;border:1px solid #e0e0e0;font-size:11px;background:white;}
-.lbl{background:#f5f5f5;color:#666;width:72px;white-space:nowrap;font-weight:600;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;font-size:12px;color:#1f2937;background:white;width:${W}px;padding:28px 32px;}
+  table{width:100%;border-collapse:collapse;}
 </style></head><body>
 
-<div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:14px 18px;border-radius:6px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+<div style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 60%,#a855f7 100%);border-radius:10px;padding:20px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
   <div>
-    <div style="font-size:15px;font-weight:bold;">太陽光電維運檢查報告</div>
-    <div style="font-size:9px;opacity:.85;margin-top:2px;">Solar PV Maintenance Inspection Report</div>
+    <div style="font-size:18px;font-weight:800;color:white;letter-spacing:.5px;">太陽光電維運檢查報告</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.75);margin-top:3px;">Solar PV Maintenance Inspection Report</div>
   </div>
-  <div style="font-size:9px;opacity:.85;">${new Date().toLocaleDateString('zh-TW')}</div>
+  <div style="text-align:right;">
+    <div style="font-size:11px;color:rgba(255,255,255,.9);font-weight:600;">${new Date().toLocaleDateString('zh-TW')}</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px;">產製日期</div>
+  </div>
 </div>
 
-<table>
-  <tr><td class="lbl">案場名稱</td><td style="font-weight:bold;background:white;">${r.sname||'—'}</td><td class="lbl">檢查日期</td><td style="background:white;">${r.date||'—'}</td></tr>
-  <tr><td class="lbl">地址</td><td colspan="3" style="background:white;">${r.addr||'—'}</td></tr>
-  <tr><td class="lbl">業主</td><td style="background:white;">${r.owner||'—'}</td><td class="lbl">電話</td><td style="background:white;">${r.phone||'—'}</td></tr>
-  <tr><td class="lbl">容量</td><td style="background:white;">${r.cap?r.cap+' kWp':'—'}</td><td class="lbl">設置類型</td><td style="background:white;">${r.type||'—'}</td></tr>
-  <tr><td class="lbl">逆變器</td><td style="background:white;">${r.inv||'—'}</td><td class="lbl">模組型號</td><td style="background:white;">${r.mod||'—'}</td></tr>
-  <tr><td class="lbl">天氣</td><td style="background:white;">${r.weather||'—'}</td><td class="lbl">負責人員</td><td style="background:white;">${r.inspector||'—'}</td></tr>
-  <tr><td class="lbl">整體評級</td><td colspan="3" style="font-weight:bold;font-size:13px;color:${oc[r.overall]};background:white;">${om[r.overall]||'—'}</td></tr>
-</table>
-
-${r.notes?`<div style="background:#f0f2ff;border-left:3px solid #667eea;padding:7px 10px;margin-bottom:10px;font-size:11px;border-radius:3px;"><strong>備註：</strong>${r.notes}</div>`:''}
-
-<div style="font-weight:bold;font-size:12px;margin-bottom:5px;color:#333;">✅ 檢查項目詳細記錄</div>
-<div style="border:1px solid #e0e0e0;border-radius:4px;overflow:hidden;margin-bottom:12px;">
-${rows}
+<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+  <div style="background:#f3f4f6;padding:7px 14px;border-bottom:1.5px solid #e5e7eb;">
+    <span style="font-size:11px;font-weight:800;color:#374151;">🏢 案場資訊</span>
+  </div>
+  <table>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;width:72px;white-space:nowrap;background:#fafafa;border-bottom:1px solid #f3f4f6;">案場名稱</td>
+      <td style="padding:7px 10px;font-size:12px;font-weight:800;color:#111827;background:white;border-bottom:1px solid #f3f4f6;">${r.sname||'—'}</td>
+      <td style="padding:7px 10px;color:#6b7280;font-size:10px;font-weight:700;width:60px;white-space:nowrap;background:#fafafa;border-bottom:1px solid #f3f4f6;">檢查日期</td>
+      <td style="padding:7px 14px 7px 10px;font-size:12px;color:#111827;background:white;border-bottom:1px solid #f3f4f6;">${r.date||'—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">地址</td>
+      <td colspan="3" style="padding:7px 14px 7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.addr||'—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">業主</td>
+      <td style="padding:7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.owner||'—'}</td>
+      <td style="padding:7px 10px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">電話</td>
+      <td style="padding:7px 14px 7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.phone||'—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">裝置容量</td>
+      <td style="padding:7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.cap?r.cap+' kWp':'—'}</td>
+      <td style="padding:7px 10px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">設置類型</td>
+      <td style="padding:7px 14px 7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.type||'—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">逆變器型號</td>
+      <td style="padding:7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.inv||'—'}</td>
+      <td style="padding:7px 10px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;border-bottom:1px solid #f3f4f6;">模組型號</td>
+      <td style="padding:7px 14px 7px 10px;font-size:11px;color:#374151;background:white;border-bottom:1px solid #f3f4f6;">${r.mod||'—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:7px 10px 7px 14px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;">天氣</td>
+      <td style="padding:7px 10px;font-size:11px;color:#374151;background:white;">${r.weather||'—'}</td>
+      <td style="padding:7px 10px;color:#6b7280;font-size:10px;font-weight:700;background:#fafafa;">負責人員</td>
+      <td style="padding:7px 14px 7px 10px;font-size:11px;color:#374151;background:white;">${r.inspector||'—'}</td>
+    </tr>
+  </table>
 </div>
 
-<div style="border:1px solid #ddd;border-radius:5px;padding:10px;background:white;">
-  <div style="font-size:11px;font-weight:bold;color:#666;margin-bottom:7px;">客戶簽名確認</div>
+<div style="display:flex;gap:12px;margin-bottom:16px;">
+  <div style="flex:1;border:1.5px solid ${oc[r.overall]};border-radius:8px;padding:12px 16px;background:${obg[r.overall]};display:flex;align-items:center;gap:10px;">
+    <div style="font-size:22px;">${r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌'}</div>
+    <div>
+      <div style="font-size:9px;color:${oc[r.overall]};font-weight:700;letter-spacing:.4px;">整體評級</div>
+      <div style="font-size:16px;font-weight:800;color:${oc[r.overall]};">${om[r.overall]}</div>
+    </div>
+  </div>
+  <div style="flex:3;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 14px;background:#f9fafb;">
+    <div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">備註事項</div>
+    <div style="font-size:11px;color:#374151;">${r.notes||'無'}</div>
+  </div>
+</div>
+
+<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+  <div style="background:linear-gradient(90deg,#4f46e5,#7c3aed);padding:8px 14px;">
+    <span style="font-size:11px;font-weight:800;color:white;">✅ 檢查項目詳細記錄</span>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>
+    ${rows}
+  </table>
+</div>
+
+<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:14px 16px;background:#fafafa;">
+  <div style="font-size:10px;font-weight:800;color:#374151;margin-bottom:4px;">✍️ 客戶簽名確認</div>
   ${sigHtml}
-  <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:#999;">
-    <span>業主 / 客戶簽名</span><span>日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</span>
+  <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:8px;border-top:1px dashed #d1d5db;font-size:10px;color:#9ca3af;">
+    <span>業主 / 客戶簽名</span>
+    <span>確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</span>
   </div>
+</div>
+
+<div style="margin-top:14px;padding-top:8px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
+  <span>太陽光電維運管理系統 自動產製</span>
+  <span>${r.sname||''} · ${r.date||''}</span>
 </div>
 
 </body></html>`);
@@ -4037,7 +4098,6 @@ ${rows}
 
   setTimeout(()=>{
     iframe.style.height = idoc.body.scrollHeight + 'px';
-
     window.html2pdf().from(idoc.body).set({
       margin: [10, 10, 10, 10],
       filename: `維運檢查報告_${(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')}_${r.date||'nodate'}.pdf`,
@@ -4050,12 +4110,9 @@ ${rows}
         windowWidth: W,
         scrollX: 0,
         scrollY: 0,
-        x: 0,
-        y: 0,
         backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
           clonedDoc.body.style.margin = '0';
-          clonedDoc.body.style.padding = '24px 28px';
           clonedDoc.body.style.background = 'white';
           clonedDoc.body.style.width = W + 'px';
         }
@@ -4069,7 +4126,6 @@ ${rows}
     });
   }, 800);
 };
-
 // ---- 案場管理 UI ----
 window.iOpenSiteModal = function(id){
   document.getElementById('im-eid').value=id||'';
