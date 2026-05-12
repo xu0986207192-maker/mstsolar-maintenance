@@ -1303,6 +1303,8 @@ function renderMemberList() {
   renderTechnicianList();
   renderRepairItemList();
   renderInverterCapacityList();
+  // 同時渲染案場管理列表
+  if(typeof iRenderAdminSites === 'function') iRenderAdminSites();
 }
 
 // ---- FILTER ----
@@ -4059,13 +4061,6 @@ function iRenderAdminSites(){
       </tr>`).join('')}
     </tbody>
   </table>`;
-}
-
-// hook into renderMemberList to also render sites
-const _origRenderMemberList = renderMemberList;
-function renderMemberList(){
-  _origRenderMemberList && _origRenderMemberList();
-  iRenderAdminSites();
 }
 
 // ---- 初始化 ----
