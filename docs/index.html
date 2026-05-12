@@ -3922,9 +3922,9 @@ window.iDelRec = async function(id){
 };
 
 // ---- Detail Modal ----
-let iCurDetId=null;
+window.iCurDetId = null;
 window.iShowDet = function(id){
-  iCurDetId=id;
+  window.iCurDetId=id;
   const r=iRecs.find(x=>x.id===id);
   if(!r)return;
   const om={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
@@ -3953,52 +3953,84 @@ window.iShowDet = function(id){
   document.getElementById('iDetModal').classList.add('active');
 };
 
-window.iCloseDetModal = function(){ document.getElementById('iDetModal').classList.remove('active'); };
+window.iCloseDetModal = function(){ document.getElementById('iDetModal').classList.remove('active'); window.iCurDetId=null; };
 
 // ---- PDF Export ----
 window.iExportPDF = function(id){
-  const r=iRecs.find(x=>x.id===id);if(!r)return;
+  const r = iRecs.find(x=>x.id===id);
+  if(!r){ alert('找不到紀錄'); return; }
   const om={pass:'正常',warn:'需注意',fail:'異常'};
   const oc={pass:'#155724',warn:'#856404',fail:'#721c24'};
   const sm={ok:'正常',wa:'注意',fa:'異常',none:'—'};
   const sc={ok:'#155724',wa:'#856404',fa:'#721c24',none:'#6c757d'};
-  const rows=INSP_CK.map(g=>`
+
+  const rows = INSP_CK.map(g=>`
     <tr><td colspan="3" style="padding:7px 8px;background:#f0f2ff;font-weight:bold;color:#667eea;font-size:12px;">${g.sec}</td></tr>
-    ${g.items.map(it=>{const res=r.cr?.[it.id]||{};const st=res.status||'none';
-      return`<tr style="border-bottom:1px solid #e9ecef;"><td style="padding:5px 8px;font-size:12px;">${it.t}</td><td style="padding:5px 8px;color:${sc[st]};font-weight:bold;width:52px;text-align:center;font-size:12px;">${sm[st]}</td><td style="padding:5px 8px;color:#6c757d;font-size:11px;">${res.note||''}</td></tr>`;
+    ${g.items.map(it=>{
+      const res = r.cr?.[it.id]||{};
+      const st = res.status||'none';
+      return `<tr style="border-bottom:1px solid #e9ecef;">
+        <td style="padding:5px 8px;font-size:12px;">${it.t}</td>
+        <td style="padding:5px 8px;color:${sc[st]};font-weight:bold;width:60px;text-align:center;font-size:12px;">${sm[st]}</td>
+        <td style="padding:5px 8px;color:#6c757d;font-size:11px;">${res.note||''}</td>
+      </tr>`;
     }).join('')}
   `).join('');
-  const td=(k,v)=>`<td style="padding:4px 8px;color:#6c757d;font-size:12px;">${k}</td><td style="padding:4px 8px;font-size:12px;">${v||'—'}</td>`;
-  const sigHtml=r.sig
-    ?`<div style="margin-top:20px;border-top:1px solid #e9ecef;padding-top:16px;"><div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:6px;">客戶簽名確認</div><img src="${r.sig}" style="height:80px;border:1px solid #dee2e6;border-radius:6px;background:#fafaf8;"></div>`
-    :`<div style="margin-top:20px;border-top:1px solid #e9ecef;padding-top:16px;"><div style="font-size:12px;color:#6c757d;font-weight:bold;">客戶簽名確認</div><div style="height:60px;border:1px solid #dee2e6;border-radius:6px;margin-top:6px;"></div></div>`;
-  const el=document.createElement('div');
-  el.style.cssText='position:fixed;left:-9999px;top:0;width:794px;padding:36px 40px;background:white;font-family:Arial,sans-serif;color:#2d3748;line-height:1.6;';
-  el.innerHTML=`
-    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:20px 28px;border-radius:10px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-end;">
-      <div><div style="font-size:20px;font-weight:bold;">太陽光電維運檢查報告</div><div style="font-size:11px;opacity:.85;margin-top:3px;">Solar PV Maintenance Inspection Report</div></div>
-      <div style="font-size:11px;opacity:.85;">${new Date().toLocaleString('zh-TW')}</div>
+
+  const td = (k,v) => `<td style="padding:5px 8px;color:#6c757d;font-size:12px;font-weight:600;white-space:nowrap;">${k}</td><td style="padding:5px 8px;font-size:13px;">${v||'—'}</td>`;
+
+  const sigHtml = r.sig
+    ? `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e9ecef;">
+        <div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:8px;">客戶簽名確認</div>
+        <img src="${r.sig}" style="height:80px;border:1px solid #dee2e6;border-radius:6px;background:#fafaf8;">
+       </div>`
+    : `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e9ecef;">
+        <div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:8px;">客戶簽名確認</div>
+        <div style="height:70px;border:1px solid #dee2e6;border-radius:6px;"></div>
+       </div>`;
+
+  const el = document.createElement('div');
+  el.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;padding:15mm 15mm;background:white;font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;color:#2d3748;line-height:1.6;box-sizing:border-box;';
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:18px 24px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:18px;font-weight:bold;">太陽光電維運檢查報告</div>
+        <div style="font-size:10px;opacity:.85;margin-top:2px;">Solar PV Maintenance Inspection Report</div>
+      </div>
+      <div style="font-size:10px;opacity:.85;text-align:right;">${new Date().toLocaleString('zh-TW')}</div>
     </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-      <tr>${td('案場名稱',`<strong>${r.sname}</strong>`)}${td('檢查日期',r.date)}</tr>
-      <tr>${td('地址',r.addr)}${td('天氣',r.weather)}</tr>
-      <tr>${td('業主',r.owner)}${td('電話',r.phone)}</tr>
-      <tr>${td('裝置容量',r.cap?r.cap+' kWp':'')}${td('設置類型',r.type)}</tr>
-      <tr>${td('逆變器型號',r.inv)}${td('模組型號',r.mod)}</tr>
-      <tr>${td('檢查員',r.inspector)}<td style="padding:4px 8px;color:#6c757d;font-size:12px;">整體評級</td><td style="padding:4px 8px;font-weight:bold;color:${oc[r.overall]};font-size:14px;">${om[r.overall]}</td></tr>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e9ecef;border-radius:6px;overflow:hidden;">
+      <tr style="background:#f8f9fa;">${td('案場名稱',`<strong>${r.sname||'—'}</strong>`)}${td('檢查日期',r.date||'—')}</tr>
+      <tr>${td('地址',r.addr||'—')}${td('天氣',r.weather||'—')}</tr>
+      <tr style="background:#f8f9fa;">${td('業主',r.owner||'—')}${td('電話',r.phone||'—')}</tr>
+      <tr>${td('裝置容量',r.cap?r.cap+' kWp':'—')}${td('設置類型',r.type||'—')}</tr>
+      <tr style="background:#f8f9fa;">${td('逆變器型號',r.inv||'—')}${td('模組型號',r.mod||'—')}</tr>
+      <tr>
+        ${td('檢查員',r.inspector||'—')}
+        <td style="padding:5px 8px;color:#6c757d;font-size:12px;font-weight:600;">整體評級</td>
+        <td style="padding:5px 8px;font-weight:bold;color:${oc[r.overall]||'#2d3748'};font-size:14px;">${om[r.overall]||'—'}</td>
+      </tr>
     </table>
-    ${r.notes?`<div style="background:#f0f2ff;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:12px;color:#495057;border-left:3px solid #667eea;"><strong>備註：</strong>${r.notes}</div>`:''}
-    <div style="font-weight:bold;font-size:13px;margin-bottom:8px;color:#2d3748;">檢查項目詳細記錄</div>
+    ${r.notes ? `<div style="background:#f0f2ff;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:12px;color:#495057;border-left:4px solid #667eea;"><strong>備註：</strong>${r.notes}</div>` : ''}
+    <div style="font-weight:bold;font-size:13px;margin-bottom:8px;color:#2d3748;">✅ 檢查項目詳細記錄</div>
     <table style="width:100%;border-collapse:collapse;border:1px solid #e9ecef;">${rows}</table>
     ${sigHtml}
   `;
+
   document.body.appendChild(el);
-  html2pdf().from(el).set({
-    margin:8, filename:`維運檢查報告_${r.sname}_${r.date}.pdf`,
-    image:{type:'jpeg',quality:.95},
-    html2canvas:{scale:2,useCORS:true},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).save().then(()=>document.body.removeChild(el));
+
+  window.html2pdf().from(el).set({
+    margin: [0,0,0,0],
+    filename: `維運檢查報告_${r.sname||'unnamed'}_${r.date||'nodate'}.pdf`,
+    image: { type:'jpeg', quality:0.95 },
+    html2canvas: { scale:2, useCORS:true, logging:false, allowTaint:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  }).save().then(()=>{
+    document.body.removeChild(el);
+  }).catch(err=>{
+    document.body.removeChild(el);
+    alert('PDF 匯出失敗：'+err.message);
+  });
 };
 
 // ---- 案場管理 UI ----
