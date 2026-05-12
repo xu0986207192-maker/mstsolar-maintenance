@@ -967,8 +967,32 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   </div>
 </div>
 
-<!-- 案場管理 Modal -->
-<div class="modal" id="iSiteModal">
+<!-- 案場詳情 Modal（維修 + 檢查紀錄） -->
+<div class="modal" id="iSiteDetailModal">
+  <div class="modal-content" style="max-width:700px;">
+    <div class="modal-header">
+      <h2 id="iSiteDetailTitle">案場紀錄</h2>
+      <button class="close-btn" onclick="document.getElementById('iSiteDetailModal').classList.remove('active')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <!-- 案場基本資訊 -->
+      <div id="iSiteDetailInfo" style="padding:16px 20px;background:#f8f9fa;border-bottom:2px solid #e9ecef;font-size:13px;color:#495057;"></div>
+      <!-- 子 Tab -->
+      <div style="display:flex;border-bottom:2px solid #e9ecef;">
+        <div id="sdtab-repair" style="padding:11px 20px;cursor:pointer;font-weight:600;font-size:14px;color:#667eea;border-bottom:3px solid #667eea;" onclick="sdSwitch('repair')">🔧 維修紀錄</div>
+        <div id="sdtab-insp" style="padding:11px 20px;cursor:pointer;font-weight:600;font-size:14px;color:#6c757d;border-bottom:3px solid transparent;" onclick="sdSwitch('insp')">✅ 檢查紀錄</div>
+      </div>
+      <!-- 維修紀錄 -->
+      <div id="sdpanel-repair" style="max-height:420px;overflow-y:auto;">
+        <div id="sd-repair-list"></div>
+      </div>
+      <!-- 檢查紀錄 -->
+      <div id="sdpanel-insp" style="display:none;max-height:420px;overflow-y:auto;">
+        <div id="sd-insp-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
   <div class="modal-content" style="max-width:560px;">
     <div class="modal-header">
       <h2 id="iSiteModalTitle">新增案場</h2>
@@ -3909,6 +3933,7 @@ function iRenderList(){
         <span class="insp-rec-badge ${bc[r.overall]}">${bt[r.overall]}</span>
       </div>
       <div style="display:flex;gap:6px;margin-top:10px;" onclick="event.stopPropagation()">
+        <button class="btn btn-warning btn-sm" onclick="iShowSiteDetailByName('${r.sname}')">🏢 案場</button>
         <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄 PDF</button>
         ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️</button>`:''}
       </div>
@@ -4152,11 +4177,12 @@ function iRenderAdminSites(){
     </tr></thead>
     <tbody>${iSites.map(s=>`
       <tr style="border-bottom:1px solid #e9ecef;">
-        <td style="padding:10px;font-weight:600;">🏢 ${s.name}</td>
+        <td style="padding:10px;font-weight:600;cursor:pointer;color:#667eea;" onclick="iShowSiteDetail('${s.id}')">🏢 ${s.name}</td>
         <td style="padding:10px;color:#6c757d;">${s.addr||'—'}</td>
         <td style="padding:10px;text-align:center;">${s.cap?s.cap+' kWp':'—'}</td>
         <td style="padding:10px;text-align:center;">
           <div style="display:flex;gap:6px;justify-content:center;">
+            <button class="btn btn-info btn-sm" onclick="iShowSiteDetail('${s.id}')">📋</button>
             <button class="btn btn-success btn-sm" onclick="iOpenSiteModal('${s.id}')">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="iDeleteSite('${s.id}')">🗑️</button>
           </div>
@@ -4166,7 +4192,111 @@ function iRenderAdminSites(){
   </table>`;
 }
 
-// ---- 初始化 ----
+// ---- 案場詳情（維修 + 檢查紀錄）----
+window.iShowSiteDetail = function(sid){
+  const s = iSites.find(x=>x.id===sid);
+  if(!s){ alert('找不到案場'); return; }
+
+  document.getElementById('iSiteDetailTitle').textContent = '🏢 ' + s.name;
+  document.getElementById('iSiteDetailInfo').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 16px;">
+      ${s.addr?`<div><span style="color:#6c757d;">地址：</span>${s.addr}</div>`:''}
+      ${s.owner?`<div><span style="color:#6c757d;">業主：</span>${s.owner}</div>`:''}
+      ${s.phone?`<div><span style="color:#6c757d;">電話：</span>${s.phone}</div>`:''}
+      ${s.cap?`<div><span style="color:#6c757d;">容量：</span>${s.cap} kWp</div>`:''}
+      ${s.type?`<div><span style="color:#6c757d;">類型：</span>${s.type}</div>`:''}
+      ${s.inv?`<div><span style="color:#6c757d;">逆變器：</span>${s.inv}</div>`:''}
+      ${s.mod?`<div><span style="color:#6c757d;">模組：</span>${s.mod}</div>`:''}
+      ${s.complete?`<div><span style="color:#6c757d;">併聯日：</span>${s.complete}</div>`:''}
+    </div>`;
+
+  // 維修紀錄：用案場名稱比對 customerName
+  const repairRecs = allRecords
+    .filter(r => r.customerName === s.name)
+    .sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
+
+  const repairEl = document.getElementById('sd-repair-list');
+  if(!repairRecs.length){
+    repairEl.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="empty-icon">🔧</div><p>此案場尚無維修紀錄</p></div>';
+  } else {
+    const bClass={待處理:'badge-pending',進行中:'badge-inprogress',已完成:'badge-completed'};
+    repairEl.innerHTML = repairRecs.map(r=>`
+      <div class="record-item">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="record-field" style="flex:2;min-width:120px;">
+            <div class="label">維修項目</div>
+            <div class="value" style="font-size:13px;">${r.repairItem||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">維修人員</div>
+            <div class="value" style="font-size:13px;">${r.technician||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">維修日期</div>
+            <div class="value" style="font-size:13px;">${r.repairDate||'—'}</div>
+          </div>
+          <span class="status-badge ${bClass[r.status]||''}">${r.status||'—'}</span>
+        </div>
+        ${r.notes?`<div class="record-meta">📝 ${r.notes}</div>`:''}
+      </div>`).join('');
+  }
+
+  // 檢查紀錄：用 sid 或名稱比對
+  const inspRecs = iRecs
+    .filter(r => r.sid===sid || r.sname===s.name)
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const inspEl = document.getElementById('sd-insp-list');
+  const bc={pass:'badge-completed',warn:'badge-pending',fail:'badge-inprogress'};
+  const bt={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
+  if(!inspRecs.length){
+    inspEl.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="empty-icon">✅</div><p>此案場尚無檢查紀錄</p></div>';
+  } else {
+    inspEl.innerHTML = inspRecs.map(r=>`
+      <div class="record-item" style="cursor:pointer;" onclick="iShowDet('${r.id}')">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">檢查日期</div>
+            <div class="value" style="font-size:13px;">${r.date||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">天氣</div>
+            <div class="value" style="font-size:13px;">${r.weather||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">負責人員</div>
+            <div class="value" style="font-size:13px;">${r.inspector||'—'}</div>
+          </div>
+          <span class="status-badge ${bc[r.overall]||''}">${bt[r.overall]||'—'}</span>
+        </div>
+        ${r.notes?`<div class="record-meta">📝 ${r.notes}</div>`:''}
+      </div>`).join('');
+  }
+
+  sdSwitch('repair');
+  document.getElementById('iSiteDetailModal').classList.add('active');
+};
+
+window.sdSwitch = function(tab){
+  document.getElementById('sdpanel-repair').style.display = tab==='repair'?'block':'none';
+  document.getElementById('sdpanel-insp').style.display   = tab==='insp'?'block':'none';
+  const rt = document.getElementById('sdtab-repair');
+  const it = document.getElementById('sdtab-insp');
+  rt.style.color = tab==='repair'?'#667eea':'#6c757d';
+  rt.style.borderBottomColor = tab==='repair'?'#667eea':'transparent';
+  it.style.color = tab==='insp'?'#667eea':'#6c757d';
+  it.style.borderBottomColor = tab==='insp'?'#667eea':'transparent';
+};
+window.iShowSiteDetailByName = function(name){
+  const s = iSites.find(x=>x.name===name);
+  if(s){ iShowSiteDetail(s.id); return; }
+  // 案場不在清單但有紀錄，建立虛擬物件顯示
+  const fake = {id:'__fake__', name, addr:'', owner:'', phone:'', cap:'', type:'', inv:'', mod:'', complete:''};
+  iSites.push(fake);
+  iShowSiteDetail('__fake__');
+  iSites = iSites.filter(x=>x.id!=='__fake__');
+};
+
 function iInit(){
   const di = document.getElementById('i-chk-date');
   if(di) di.value = today();
