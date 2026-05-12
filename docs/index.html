@@ -3970,8 +3970,8 @@ window.iExportPDF = function(id){
   var sbg = {ok:'#dcfce7', wa:'#fef9c3', fa:'#fee2e2', none:'#f3f4f6'};
 
   function cell(label, val){
-    return '<td style="padding:5px 8px;font-size:10px;font-weight:bold;color:#6b7280;background:#f8f9fa;border:1px solid #e5e7eb;white-space:nowrap;">'+label+'</td>'
-          +'<td style="padding:5px 10px;font-size:11px;color:#111827;background:#fff;border:1px solid #e5e7eb;">'+val+'</td>';
+    return '<td style="padding:3px 7px;font-size:10px;font-weight:bold;color:#6b7280;background:#f8f9fa;border:1px solid #e5e7eb;white-space:nowrap;">'+label+'</td>'
+          +'<td style="padding:4px 8px;font-size:10px;color:#111827;background:#fff;border:1px solid #e5e7eb;">'+val+'</td>';
   }
 
   var ckRows = INSP_CK.map(function(g){
@@ -3981,54 +3981,54 @@ window.iExportPDF = function(id){
       var res=(r.cr&&r.cr[it.id])||{};
       var st=res.status||'none';
       return '<tr style="background:'+(i%2?'#f9fafb':'#fff')+';">'
-        +'<td style="padding:6px 12px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+it.t
+        +'<td style="padding:4px 10px;font-size:10px;color:#374151;border-bottom:1px solid #f3f4f6;">'+it.t
         +(res.note?'<span style="font-size:10px;color:#9ca3af;margin-left:6px;">— '+res.note+'</span>':'')
         +'</td>'
         +'<td style="padding:5px 12px;text-align:right;border-bottom:1px solid #f3f4f6;">'
         +'<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:bold;background:'+sbg[st]+';color:'+sco[st]+';">'+sm[st]+'</span>'
         +'</td></tr>';
     }).join('');
-    return '<tr style="background:#eef2ff;"><td colspan="2" style="padding:6px 12px;font-size:11px;font-weight:bold;color:#3730a3;border-bottom:1px solid #e0e7ff;">'+icon+' '+name+'</td></tr>'+rows;
+    return '<tr style="background:#eef2ff;"><td colspan="2" style="padding:4px 10px;font-size:10px;font-weight:bold;color:#3730a3;border-bottom:1px solid #e0e7ff;">'+icon+' '+name+'</td></tr>'+rows;
   }).join('');
 
   var sigBlock = r.sig
-    ? '<img src="'+r.sig+'" style="height:55px;border:1px solid #e5e7eb;border-radius:4px;display:block;margin-top:6px;">'
-    : '<div style="height:55px;border:1.5px dashed #d1d5db;border-radius:4px;margin-top:6px;"></div>';
+    ? '<img src="'+r.sig+'" style="height:40px;border:1px solid #e5e7eb;border-radius:4px;display:block;margin-top:4px;">'
+    : '<div style="height:40px;border:1.5px dashed #d1d5db;border-radius:4px;margin-top:4px;"></div>';
 
   var html =
-    '<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">'
-      +'<div><div style="font-size:16px;font-weight:900;color:#3730a3;">太陽光電維運檢查報告</div>'
+    '<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:8px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:13px;font-weight:900;color:#3730a3;">太陽光電維運檢查報告</div>'
       +'<div style="font-size:9px;color:#7c7a9e;margin-top:2px;">Solar PV Maintenance Inspection Report</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:700;color:#4338ca;">'+new Date().toLocaleDateString('zh-TW')+'</div>'
+      +'<div style="text-align:right;"><div style="font-size:10px;font-weight:700;color:#4338ca;">'+new Date().toLocaleDateString('zh-TW')+'</div>'
       +'<div style="font-size:9px;color:#a5b4fc;">產製日期</div></div></div>'
-    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:12px;">'
-      +'<div style="padding:6px 12px;background:#f8f9fa;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:900;color:#374151;">🏢 案場資訊</div>'
+    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:7px;">'
+      +'<div style="padding:4px 10px;background:#f8f9fa;border-bottom:1px solid #e5e7eb;font-size:10px;font-weight:900;color:#374151;">🏢 案場資訊</div>'
       +'<table style="width:100%;border-collapse:collapse;">'
         +'<tr>'+cell('案場名稱','<strong>'+(r.sname||'—')+'</strong>')+cell('檢查日期',r.date||'—')+'</tr>'
-        +'<tr><td style="padding:5px 8px;font-size:10px;font-weight:bold;color:#6b7280;background:#f8f9fa;border:1px solid #e5e7eb;">地址</td><td colspan="3" style="padding:5px 10px;font-size:11px;color:#111827;background:#fff;border:1px solid #e5e7eb;">'+(r.addr||'—')+'</td></tr>'
+        +'<tr><td style="padding:3px 7px;font-size:10px;font-weight:bold;color:#6b7280;background:#f8f9fa;border:1px solid #e5e7eb;">地址</td><td colspan="3" style="padding:4px 8px;font-size:10px;color:#111827;background:#fff;border:1px solid #e5e7eb;">'+(r.addr||'—')+'</td></tr>'
         +'<tr>'+cell('業主',r.owner||'—')+cell('電話',r.phone||'—')+'</tr>'
         +'<tr>'+cell('裝置容量',r.cap?r.cap+' kWp':'—')+cell('設置類型',r.type||'—')+'</tr>'
         +'<tr>'+cell('逆變器型號',r.inv||'—')+cell('模組型號',r.mod||'—')+'</tr>'
         +'<tr>'+cell('天氣',r.weather||'—')+cell('負責人員',r.inspector||'—')+'</tr>'
       +'</table></div>'
-    +'<div style="display:flex;gap:10px;margin-bottom:12px;">'
-      +'<div style="flex:0 0 auto;border:1.5px solid '+obr[r.overall]+';border-radius:8px;padding:10px 14px;background:'+obg[r.overall]+';display:flex;align-items:center;gap:8px;">'
-        +'<div style="font-size:18px;">'+(r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌')+'</div>'
+    +'<div style="display:flex;gap:7px;margin-bottom:7px;">'
+      +'<div style="flex:0 0 auto;border:1.5px solid '+obr[r.overall]+';border-radius:8px;padding:6px 10px;background:'+obg[r.overall]+';display:flex;align-items:center;gap:6px;">'
+        +'<div style="font-size:14px;">'+(r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌')+'</div>'
         +'<div><div style="font-size:9px;font-weight:bold;color:'+oc[r.overall]+';">整體評級</div>'
-        +'<div style="font-size:14px;font-weight:900;color:'+oc[r.overall]+';">'+om[r.overall]+'</div></div></div>'
-      +'<div style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 14px;background:#f9fafb;">'
+        +'<div style="font-size:11px;font-weight:900;color:'+oc[r.overall]+';">'+om[r.overall]+'</div></div></div>'
+      +'<div style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 10px;background:#f9fafb;">'
         +'<div style="font-size:9px;font-weight:bold;color:#6b7280;margin-bottom:3px;">備註事項</div>'
-        +'<div style="font-size:11px;color:#374151;">'+(r.notes||'無')+'</div></div></div>'
-    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:12px;">'
-      +'<div style="padding:6px 12px;background:#eef2ff;border-bottom:1px solid #e0e7ff;font-size:11px;font-weight:900;color:#3730a3;">✅ 檢查項目詳細記錄</div>'
+        +'<div style="font-size:10px;color:#374151;">'+(r.notes||'無')+'</div></div></div>'
+    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:7px;">'
+      +'<div style="padding:4px 10px;background:#eef2ff;border-bottom:1px solid #e0e7ff;font-size:10px;font-weight:900;color:#3730a3;">✅ 檢查項目詳細記錄</div>'
       +'<table style="width:100%;border-collapse:collapse;"><colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>'
       +ckRows+'</table></div>'
-    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#fafafa;">'
+    +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 12px;background:#fafafa;">'
       +'<div style="font-size:10px;font-weight:bold;color:#374151;margin-bottom:3px;">✍️ 客戶簽名確認</div>'
       +sigBlock
-      +'<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:10px;color:#9ca3af;">'
+      +'<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:10px;color:#9ca3af;">'
       +'<span>業主 / 客戶簽名</span><span>確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</span></div></div>'
-    +'<div style="margin-top:12px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;font-size:9px;color:#d1d5db;">'
+    +'<div style="margin-top:7px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;font-size:9px;color:#d1d5db;">'
     +'<span>太陽光電維運管理系統 自動產製</span><span>'+(r.sname||'')+' · '+(r.date||'')+'</span></div>';
 
   var el = document.createElement('div');
@@ -4036,12 +4036,31 @@ window.iExportPDF = function(id){
   document.body.appendChild(el);
 
   html2pdf().from(el).set({
-    margin: 10,
+    margin: 6,
     filename: '維運檢查報告_'+(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')+'_'+(r.date||'nodate')+'.pdf',
-    html2canvas: { scale: 2 },
+    html2canvas: { scale: 1.5 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save().then(function(){
-    document.body.removeChild(el);
+  }).toPdf().get('pdf').then(function(pdf){
+    // 取得實際內容高度，縮放到一頁
+    var pageH = pdf.internal.pageSize.getHeight();
+    var pageW = pdf.internal.pageSize.getWidth();
+    var totalPages = pdf.internal.getNumberOfPages();
+    if(totalPages > 1){
+      // 重新產生，用較小 scale 讓內容縮進一頁
+      document.body.removeChild(el);
+      var el2 = document.createElement('div');
+      el2.innerHTML = html;
+      document.body.appendChild(el2);
+      html2pdf().from(el2).set({
+        margin: 5,
+        filename: '維運檢查報告_'+(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')+'_'+(r.date||'nodate')+'.pdf',
+        html2canvas: { scale: 1.1 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).save().then(function(){ document.body.removeChild(el2); });
+    } else {
+      pdf.save('維運檢查報告_'+(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')+'_'+(r.date||'nodate')+'.pdf');
+      document.body.removeChild(el);
+    }
   });
 };
 // ---- 案場管理 UI ----
