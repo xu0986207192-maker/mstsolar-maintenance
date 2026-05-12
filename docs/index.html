@@ -250,6 +250,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="showTab('main')">📋 維修紀錄</div>
     <div class="nav-tab" id="kpiTab" onclick="showTab('kpi')">📊 KPI 統計</div>
+    <div class="nav-tab" onclick="showTab('inspection')">✅ 檢查紀錄</div>
     <div class="nav-tab" onclick="showTab('calculator')">🔢 PR/RA 計算</div>
     <div class="nav-tab" id="adminTab" style="display:none" onclick="showTab('admin')">⚙️ 管理設定</div>
   </div>
@@ -360,6 +361,162 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       <div class="records-table">
         <div class="table-header"><span id="historyTableTitle">歷史紀錄</span></div>
         <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ 檢查紀錄頁面 -->
+  <div id="tabInspection" style="display:none">
+    <style>
+    .insp-card-section{background:white;border:1px solid #e9ecef;border-radius:12px;padding:22px;margin-bottom:18px;}
+    .insp-card-section h3{font-size:15px;font-weight:700;color:#2d3748;margin-bottom:15px;display:flex;align-items:center;gap:7px;}
+    .insp-field{margin-bottom:14px;}
+    .insp-field label{display:block;font-size:13px;font-weight:600;color:#495057;margin-bottom:5px;}
+    .insp-field input,.insp-field select,.insp-field textarea{width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .2s;}
+    .insp-field input:focus,.insp-field select:focus,.insp-field textarea:focus{outline:none;border-color:#667eea;}
+    .insp-field textarea{resize:vertical;min-height:70px;}
+    .insp-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .insp-weather-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+    .insp-weather-btn{border:2px solid #dee2e6;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:#6c757d;background:white;transition:all .2s;}
+    .insp-weather-btn .wi{font-size:22px;display:block;margin-bottom:3px;}
+    .insp-weather-btn.active{border-color:#667eea;background:#f0f2ff;color:#667eea;}
+    .insp-site-info{background:#f8f9fa;border-radius:8px;padding:14px;margin-top:10px;display:none;}
+    .insp-site-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px;}
+    .insp-site-info-grid .k{color:#6c757d;font-size:11px;font-weight:600;margin-bottom:1px;}
+    .insp-site-info-grid .v{color:#2d3748;}
+    .insp-ck-sec-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0f2ff;border-radius:8px 8px 0 0;border:1px solid #e9ecef;border-bottom:none;}
+    .insp-ck-sec-hdr strong{font-size:13px;font-weight:700;color:#667eea;flex:1;}
+    .insp-ck-item{padding:12px 14px;border:1px solid #e9ecef;border-top:none;background:white;}
+    .insp-ck-item:last-child{border-radius:0 0 8px 8px;}
+    .insp-ck-txt strong{display:block;font-size:14px;font-weight:500;color:#2d3748;}
+    .insp-ck-txt small{font-size:12px;color:#6c757d;}
+    .insp-st-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;}
+    .insp-st-btn{border:2px solid #dee2e6;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#6c757d;background:white;transition:all .2s;}
+    .insp-st-btn.ok.active{border-color:#28a745;background:#d4edda;color:#155724;}
+    .insp-st-btn.wa.active{border-color:#ffc107;background:#fff3cd;color:#856404;}
+    .insp-st-btn.fa.active{border-color:#dc3545;background:#f8d7da;color:#721c24;}
+    .insp-ck-note{width:100%;margin-top:7px;padding:7px 10px;border:2px solid #dee2e6;border-radius:7px;font-size:13px;color:#2d3748;background:#f8f9fa;}
+    .insp-ck-note:focus{outline:none;border-color:#667eea;background:white;}
+    .insp-prog-bar{height:6px;background:#e9ecef;border-radius:3px;margin:10px 0 4px;}
+    .insp-prog-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:3px;transition:width .3s;}
+    .insp-rating-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    .insp-rating-btn{border:2px solid #dee2e6;border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#6c757d;background:white;transition:all .2s;}
+    .insp-rating-btn .ri{font-size:24px;display:block;margin-bottom:4px;}
+    .insp-rating-btn.pass.active{border-color:#28a745;background:#d4edda;color:#155724;}
+    .insp-rating-btn.warn.active{border-color:#ffc107;background:#fff3cd;color:#856404;}
+    .insp-rating-btn.fail.active{border-color:#dc3545;background:#f8d7da;color:#721c24;}
+    .insp-sig-canvas{width:100%;height:150px;display:block;cursor:crosshair;border:2px solid #dee2e6;border-radius:8px;background:#fafaf8;}
+    .insp-save-btn{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;font-family:inherit;}
+    .insp-save-btn:hover{opacity:.92;}
+    .insp-rec-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+    .insp-b-pass{background:#d4edda;color:#155724;}
+    .insp-b-warn{background:#fff3cd;color:#856404;}
+    .insp-b-fail{background:#f8d7da;color:#721c24;}
+    .insp-rec-item{padding:16px 18px;border-bottom:1px solid #e9ecef;transition:background .1s;cursor:pointer;}
+    .insp-rec-item:hover{background:#f8f9fa;}
+    .insp-rec-item:last-child{border-bottom:none;}
+    .insp-rec-top{display:flex;align-items:center;gap:12px;}
+    .insp-rec-info{flex:1;min-width:0;}
+    .insp-rec-info strong{display:block;font-size:15px;font-weight:600;color:#2d3748;}
+    .insp-rec-info span{font-size:12px;color:#6c757d;}
+    .insp-rec-btns{display:flex;gap:6px;}
+    .insp-kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px;margin-bottom:12px;}
+    .insp-kv .ik{font-size:11px;color:#6c757d;font-weight:600;margin-bottom:1px;}
+    .insp-kv .iv{color:#2d3748;}
+    .insp-det-sec{font-size:12px;font-weight:700;color:#667eea;background:#f0f2ff;padding:5px 10px;border-radius:6px;margin:10px 0 6px;}
+    .insp-det-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+    .insp-det-row:last-child{border-bottom:none;}
+    .ds-ok{color:#155724;font-weight:600;}
+    .ds-wa{color:#856404;font-weight:600;}
+    .ds-fa{color:#721c24;font-weight:600;}
+    .ds-no{color:#6c757d;}
+    @media(max-width:600px){.insp-row2{grid-template-columns:1fr;}.insp-weather-grid{grid-template-columns:repeat(4,1fr);}.insp-site-info-grid{grid-template-columns:1fr 1fr;}.insp-rating-grid{grid-template-columns:1fr 1fr 1fr;}}
+    </style>
+
+    <!-- 子 tab 切換 -->
+    <div style="display:flex;border-bottom:2px solid #e9ecef;background:#f8f9fa;">
+      <div id="isub-new" style="padding:12px 22px;cursor:pointer;font-weight:600;font-size:14px;color:#667eea;border-bottom:3px solid #667eea;" onclick="isubSwitch('new')">➕ 新增檢查</div>
+      <div id="isub-list" style="padding:12px 22px;cursor:pointer;font-weight:600;font-size:14px;color:#6c757d;border-bottom:3px solid transparent;" onclick="isubSwitch('list')">📋 檢查紀錄</div>
+    </div>
+
+    <!-- 新增檢查表單 -->
+    <div id="ipanel-new" style="padding:20px 25px;">
+
+      <div class="insp-card-section">
+        <h3>🏢 案場資訊</h3>
+        <div class="insp-field">
+          <label>案場名稱</label>
+          <select id="i-site-sel" onchange="iFillSite()">
+            <option value="">— 選擇案場 —</option>
+          </select>
+        </div>
+        <div class="insp-row2">
+          <div class="insp-field"><label>檢查日期</label><input type="date" id="i-chk-date"></div>
+          <div class="insp-field"><label>負責人員</label><input type="text" id="i-inspector" placeholder="姓名"></div>
+        </div>
+        <div class="insp-field">
+          <label>天氣狀況</label>
+          <div class="insp-weather-grid">
+            <div class="insp-weather-btn active" data-w="晴天" onclick="iSelW(this)"><span class="wi">☀️</span>晴天</div>
+            <div class="insp-weather-btn" data-w="多雲" onclick="iSelW(this)"><span class="wi">⛅</span>多雲</div>
+            <div class="insp-weather-btn" data-w="陰天" onclick="iSelW(this)"><span class="wi">☁️</span>陰天</div>
+            <div class="insp-weather-btn" data-w="雨天" onclick="iSelW(this)"><span class="wi">🌧️</span>雨天</div>
+          </div>
+        </div>
+        <div class="insp-site-info" id="i-site-info">
+          <div style="font-size:12px;font-weight:700;color:#667eea;margin-bottom:8px;letter-spacing:.04em;">📋 案場資料</div>
+          <div class="insp-site-info-grid" id="i-site-info-body"></div>
+        </div>
+      </div>
+
+      <div class="insp-card-section">
+        <h3>✅ 檢查項目
+          <span style="font-weight:400;font-size:13px;color:#6c757d;margin-left:4px;" id="i-prog-lbl">0 / 16</span>
+        </h3>
+        <div class="insp-prog-bar"><div class="insp-prog-fill" id="i-prog-fill" style="width:0%"></div></div>
+        <div id="i-cklist"></div>
+      </div>
+
+      <div class="insp-card-section">
+        <h3>⭐ 整體評級</h3>
+        <div class="insp-rating-grid" style="margin-bottom:14px;">
+          <div class="insp-rating-btn pass active" onclick="iSelR('pass',this)"><span class="ri">✅</span>正常</div>
+          <div class="insp-rating-btn warn" onclick="iSelR('warn',this)"><span class="ri">⚠️</span>需注意</div>
+          <div class="insp-rating-btn fail" onclick="iSelR('fail',this)"><span class="ri">❌</span>異常</div>
+        </div>
+        <div class="insp-field"><label>備註事項</label><textarea id="i-notes" placeholder="異常狀況、維修建議…"></textarea></div>
+      </div>
+
+      <div class="insp-card-section">
+        <h3>✍️ 客戶簽名</h3>
+        <div style="font-size:13px;color:#6c757d;margin-bottom:8px;">業主 / 客戶確認簽名</div>
+        <div style="position:relative;">
+          <canvas id="i-sig-canvas" class="insp-sig-canvas"></canvas>
+          <div id="i-sig-hint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#adb5bd;font-size:14px;pointer-events:none;">請在此處簽名</div>
+        </div>
+        <button onclick="iClearSig()" style="margin-top:8px;width:100%;padding:8px;border:2px solid #dee2e6;border-radius:8px;background:white;font-size:13px;color:#6c757d;cursor:pointer;font-family:inherit;">清除簽名</button>
+      </div>
+
+      <button class="insp-save-btn" onclick="iSaveRec()">💾 儲存檢查紀錄</button>
+      <div style="height:20px;"></div>
+    </div>
+
+    <!-- 檢查紀錄列表 -->
+    <div id="ipanel-list" style="display:none;">
+      <div style="padding:16px 20px;background:#f8f9fa;border-bottom:2px solid #e9ecef;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="position:relative;flex:1;min-width:180px;">
+          <input type="text" id="i-srch" placeholder="🔍 搜尋案場…" oninput="iRenderList()" style="width:100%;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+        </div>
+        <select id="i-filter" onchange="iRenderList()" style="padding:9px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+          <option value="">全部狀態</option>
+          <option value="pass">✅ 正常</option>
+          <option value="warn">⚠️ 需注意</option>
+          <option value="fail">❌ 異常</option>
+        </select>
+      </div>
+      <div style="padding:16px 20px 6px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="i-stats-grid"></div>
+      <div class="records-table" style="margin:0 20px 20px;">
+        <div id="i-rec-list"></div>
       </div>
     </div>
   </div>
@@ -629,6 +786,15 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         <p style="color:#6c757d;font-size:14px;margin-bottom:15px">以下操作不可復原，請謹慎使用</p>
         <button class="btn btn-danger" onclick="clearAllRecords()">🗑️ 清除所有紀錄</button>
       </div>
+
+      <!-- 案場管理 -->
+      <div class="kpi-card" style="margin-top:20px;margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🏢 檢查案場管理</h3>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="iOpenSiteModal()">➕ 新增案場</button>
+        </div>
+        <div id="i-admin-sites-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -782,6 +948,61 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <img id="lightboxImg" src="" alt="">
 </div>
 
+<!-- 檢查紀錄詳情 Modal -->
+<div class="modal" id="iDetModal">
+  <div class="modal-content" style="max-width:640px;">
+    <div class="modal-header">
+      <h2 id="iDetTitle">檢查詳情</h2>
+      <button class="close-btn" onclick="iCloseDetModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="iDetBody"></div>
+    <div style="padding:0 25px 20px;display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn" style="background:#6c757d;color:white;" onclick="iCloseDetModal()">關閉</button>
+      <button class="btn btn-info" onclick="iExportPDF(iCurDetId)">📄 匯出 PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- 案場管理 Modal -->
+<div class="modal" id="iSiteModal">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="iSiteModalTitle">新增案場</h2>
+      <button class="close-btn" onclick="iCloseSiteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">案場名稱 *</label><input type="text" class="form-input" id="im-name" placeholder="如：台南仁德案場"></div>
+        <div class="form-group"><label class="form-label">業主/聯絡人</label><input type="text" class="form-input" id="im-owner" placeholder="姓名"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">電話</label><input type="tel" class="form-input" id="im-phone" placeholder="0912-000-000"></div>
+        <div class="form-group"><label class="form-label">設置類型</label><select class="form-select" id="im-type"><option>屋頂型</option><option>地面型</option><option>農電共生</option><option>BIPV</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">地址</label><input type="text" class="form-input" id="im-addr" placeholder="完整地址"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">緯度 (Lat)</label><input type="number" class="form-input" id="im-lat" placeholder="23.0000" step="any"></div>
+        <div class="form-group"><label class="form-label">經度 (Lng)</label><input type="number" class="form-input" id="im-lng" placeholder="120.0000" step="any"></div>
+      </div>
+      <button type="button" onclick="iGetGPS()" style="width:100%;padding:9px;border:2px dashed #dee2e6;border-radius:8px;background:#f8f9fa;color:#667eea;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;font-family:inherit;">📍 取得目前 GPS 座標</button>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">容量 (kWp)</label><input type="number" class="form-input" id="im-cap" step="any"></div>
+        <div class="form-group"><label class="form-label">竣工日期</label><input type="date" class="form-input" id="im-complete"></div>
+      </div>
+      <div class="form-group"><label class="form-label">逆變器型號</label><input type="text" class="form-input" id="im-inv" placeholder="如：Delta M80U / Huawei SUN2000-50KTL"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">模組型號</label><input type="text" class="form-input" id="im-mod" placeholder="如：CS6W-550MS"></div>
+        <div class="form-group"><label class="form-label">模組數量 (片)</label><input type="number" class="form-input" id="im-modcnt" placeholder="0"></div>
+      </div>
+      <input type="hidden" id="im-eid">
+      <div class="form-actions">
+        <button class="btn" style="background:#6c757d;color:white;" onclick="iCloseSiteModal()">取消</button>
+        <button class="btn btn-primary" onclick="iSaveSite()">儲存案場</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getDatabase, ref, set, push, remove, onValue, get, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
@@ -909,6 +1130,9 @@ window.login = async function(e) {
     console.log('初始化資料庫...');
     initDB();
     
+    console.log('初始化檢查系統...');
+    iInit();
+    
     console.log('=== 登入完成 ===');
   } catch (err) {
     console.error('登入錯誤:', err);
@@ -1024,7 +1248,7 @@ function initDB() {
 
 // ---- TABS ----
 window.showTab = function(tab) {
-  ['tabMain','tabKpi','tabHistory','tabAdmin','tabCalculator'].forEach(id => {
+  ['tabMain','tabKpi','tabHistory','tabAdmin','tabCalculator','tabInspection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1036,16 +1260,20 @@ window.showTab = function(tab) {
     document.getElementById('tabKpi').style.display = 'block';
     document.querySelectorAll('.nav-tab')[1].classList.add('active');
     renderKPI();
+  } else if (tab === 'inspection') {
+    document.getElementById('tabInspection').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[2].classList.add('active');
+    iRefreshSiteSel();
   } else if (tab === 'calculator') {
     document.getElementById('tabCalculator').style.display = 'block';
-    document.querySelectorAll('.nav-tab')[2].classList.add('active');
+    document.querySelectorAll('.nav-tab')[3].classList.add('active');
   } else if (tab === 'history') {
     document.getElementById('tabHistory').style.display = 'block';
     renderHistory();
   } else if (tab === 'admin') {
     if (!isAdmin) { alert('此功能僅限管理員使用'); showTab('main'); return; }
     document.getElementById('tabAdmin').style.display = 'block';
-    document.querySelectorAll('.nav-tab')[3].classList.add('active');
+    document.querySelectorAll('.nav-tab')[4].classList.add('active');
     renderMemberList();
   }
 };
@@ -3354,6 +3582,501 @@ window.showTab = function(tab) {
     updateBackupStats();
   }
 };
+
+// ============================================================
+// ✅ 檢查紀錄系統
+// ============================================================
+
+const INSP_CK = [
+  {sec:'☀️ 模組檢查', items:[
+    {id:'c01',t:'模組外觀目視',h:'裂縫、汙損、熱斑、黃變'},
+    {id:'c03',t:'模組框架固定',h:'鬆脫、變形、鏽蝕'},
+    {id:'c04',t:'DC 線纜外觀',h:'破損、老化、壓傷'},
+    {id:'c05',t:'DC 接頭緊固',h:'MC4 或其他連接器'},
+  ]},
+  {sec:'⚡ 逆變器檢查', items:[
+    {id:'c06',t:'逆變器外觀狀態',h:'面板顯示、燈號指示'},
+    {id:'c07',t:'逆變器散熱狀況',h:'通風口清潔、散熱正常'},
+    {id:'c08',t:'直流開關狀態',h:'開關功能正常'},
+    {id:'c09',t:'交流斷路器狀態',h:'無跳脫、無異音'},
+    {id:'c10',t:'逆變器告警紀錄',h:'日誌無異常告警'},
+  ]},
+  {sec:'🔌 配電與安全', items:[
+    {id:'c11',t:'接地線連接',h:'接地電阻值正常'},
+    {id:'c12',t:'防雷設備 (SPD)',h:'狀態指示燈正常'},
+    {id:'c13',t:'主配電盤狀態',h:'無過熱、無燒焦'},
+    {id:'c14',t:'監控系統通訊',h:'數據傳輸正常'},
+  ]},
+  {sec:'🏗️ 結構與環境', items:[
+    {id:'c15',t:'支架結構目視',h:'鏽蝕、變形、螺栓鬆動'},
+    {id:'c16',t:'模組清潔度',h:'遮蔽物、鳥糞、落葉'},
+    {id:'c17',t:'周邊遮蔭排查',h:'新增遮蔭或植物遮擋'},
+  ]},
+];
+const INSP_TOTAL = INSP_CK.reduce((s,g)=>s+g.items.length,0);
+
+let iRecs = JSON.parse(localStorage.getItem('insp_recs')||'[]');
+let iSites = JSON.parse(localStorage.getItem('insp_sites')||'[]');
+let iCurRating = 'pass';
+let iCurWeather = '晴天';
+let iSigCanvas, iSigCtx, iSigDrawing=false, iSigEmpty=true;
+
+// ---- 案場資料 ----
+// 同步 i-sites 清單：從 Firebase sites node（若有），否則用 localStorage
+function iLoadSites(){
+  // 若 Firebase 有 sites，則用 Firebase；否則只用 localStorage
+  try {
+    const sitesRef = ref(db, `workspaces/${ws}/inspSites`);
+    onValue(sitesRef, snap => {
+      const data = snap.val();
+      if(data) iSites = Object.keys(data).map(k=>({id:k,...data[k]}));
+      localStorage.setItem('insp_sites', JSON.stringify(iSites));
+      iRefreshSiteSel();
+      iRenderSitesList && iRenderSitesList();
+    });
+  } catch(e){}
+}
+
+async function iSaveSiteToDB(site){
+  try {
+    await set(ref(db, `workspaces/${ws}/inspSites/${site.id}`), site);
+  } catch(e){
+    localStorage.setItem('insp_sites', JSON.stringify(iSites));
+  }
+}
+async function iDeleteSiteFromDB(id){
+  try { await remove(ref(db, `workspaces/${ws}/inspSites/${id}`)); } catch(e){}
+}
+
+// ---- 案場選單 ----
+function iRefreshSiteSel(){
+  const sel = document.getElementById('i-site-sel');
+  if(!sel) return;
+  const v = sel.value;
+  sel.innerHTML = '<option value="">— 選擇案場 —</option>' +
+    iSites.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  if(v) sel.value = v;
+}
+
+window.iFillSite = function(){
+  const id = document.getElementById('i-site-sel').value;
+  const s = iSites.find(x=>x.id===id);
+  const card = document.getElementById('i-site-info');
+  const body = document.getElementById('i-site-info-body');
+  if(!s){ card.style.display='none'; body.innerHTML=''; return; }
+  card.style.display='block';
+  const kv=(k,v)=>v?`<div><div class="k">${k}</div><div class="v">${v}</div></div>`:'';
+  body.innerHTML=
+    kv('地址',s.addr)+
+    kv('業主',s.owner)+
+    kv('電話',s.phone)+
+    kv('容量',s.cap?s.cap+' kWp':'')+
+    kv('設置類型',s.type)+
+    kv('逆變器型號',s.inv)+
+    kv('模組型號',s.mod)+
+    (s.modcnt?kv('模組數量',s.modcnt+' 片'):'')+
+    kv('竣工日期',s.complete)+
+    ((s.lat&&s.lng)?kv('GPS座標',s.lat+', '+s.lng):'');
+};
+
+// ---- 子tab切換 ----
+window.isubSwitch = function(sub){
+  document.getElementById('ipanel-new').style.display = sub==='new'?'block':'none';
+  document.getElementById('ipanel-list').style.display = sub==='list'?'block':'none';
+  const newTab = document.getElementById('isub-new');
+  const listTab = document.getElementById('isub-list');
+  if(sub==='new'){
+    newTab.style.color='#667eea'; newTab.style.borderBottomColor='#667eea';
+    listTab.style.color='#6c757d'; listTab.style.borderBottomColor='transparent';
+  } else {
+    listTab.style.color='#667eea'; listTab.style.borderBottomColor='#667eea';
+    newTab.style.color='#6c757d'; newTab.style.borderBottomColor='transparent';
+    iRenderList();
+  }
+};
+
+// ---- Checklist ----
+function iBuildCklist(){
+  const el = document.getElementById('i-cklist');
+  if(!el) return;
+  el.innerHTML = INSP_CK.map(g=>`
+    <div style="margin-bottom:14px;">
+      <div class="insp-ck-sec-hdr"><strong>${g.sec}</strong><span style="font-size:11px;color:#6c757d;">${g.items.length} 項</span></div>
+      ${g.items.map(item=>`
+        <div class="insp-ck-item" id="ici-${item.id}">
+          <div class="insp-ck-txt"><strong>${item.t}</strong><small>${item.h}</small></div>
+          <div class="insp-st-row">
+            <div class="insp-st-btn ok" onclick="iSetSt('${item.id}','ok',this)">✅ 正常</div>
+            <div class="insp-st-btn wa" onclick="iSetSt('${item.id}','wa',this)">⚠️ 注意</div>
+            <div class="insp-st-btn fa" onclick="iSetSt('${item.id}','fa',this)">❌ 異常</div>
+          </div>
+          <input class="insp-ck-note" id="int-${item.id}" type="text" placeholder="備註（選填）">
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  iUpdProg();
+}
+
+window.iSetSt = function(id,st,btn){
+  btn.closest('.insp-st-row').querySelectorAll('.insp-st-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  iUpdProg();
+};
+
+function iUpdProg(){
+  let done=0;
+  INSP_CK.forEach(g=>g.items.forEach(it=>{if(document.querySelector(`#ici-${it.id} .insp-st-btn.active`))done++;}));
+  const pct=Math.round(done/INSP_TOTAL*100);
+  const fill=document.getElementById('i-prog-fill');
+  const lbl=document.getElementById('i-prog-lbl');
+  if(fill) fill.style.width=pct+'%';
+  if(lbl) lbl.textContent=`${done} / ${INSP_TOTAL}`;
+}
+
+// ---- Weather / Rating ----
+window.iSelW = function(el){
+  document.querySelectorAll('.insp-weather-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  iCurWeather = el.dataset.w;
+};
+
+window.iSelR = function(v,el){
+  document.querySelectorAll('.insp-rating-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  iCurRating = v;
+};
+
+// ---- Signature ----
+function iInitSig(){
+  iSigCanvas = document.getElementById('i-sig-canvas');
+  if(!iSigCanvas) return;
+  iSigCtx = iSigCanvas.getContext('2d');
+  function resize(){
+    const r=iSigCanvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    iSigCanvas.width=r.width*dpr;
+    iSigCanvas.height=r.height*dpr;
+    iSigCtx.scale(dpr,dpr);
+    iSigCtx.strokeStyle='#2d3748';
+    iSigCtx.lineWidth=2;
+    iSigCtx.lineCap='round';
+    iSigCtx.lineJoin='round';
+  }
+  resize();
+  function pos(e){const r=iSigCanvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+  iSigCanvas.addEventListener('mousedown',e=>{iSigDrawing=true;const p=pos(e);iSigCtx.beginPath();iSigCtx.moveTo(p.x,p.y);});
+  iSigCanvas.addEventListener('mousemove',e=>{if(!iSigDrawing)return;const p=pos(e);iSigCtx.lineTo(p.x,p.y);iSigCtx.stroke();iSigEmpty=false;const h=document.getElementById('i-sig-hint');if(h)h.style.display='none';});
+  iSigCanvas.addEventListener('mouseup',()=>iSigDrawing=false);
+  iSigCanvas.addEventListener('touchstart',e=>{e.preventDefault();iSigDrawing=true;const p=pos(e);iSigCtx.beginPath();iSigCtx.moveTo(p.x,p.y);},{passive:false});
+  iSigCanvas.addEventListener('touchmove',e=>{e.preventDefault();if(!iSigDrawing)return;const p=pos(e);iSigCtx.lineTo(p.x,p.y);iSigCtx.stroke();iSigEmpty=false;const h=document.getElementById('i-sig-hint');if(h)h.style.display='none';},{passive:false});
+  iSigCanvas.addEventListener('touchend',()=>iSigDrawing=false);
+}
+
+window.iClearSig = function(){
+  if(!iSigCtx||!iSigCanvas)return;
+  iSigCtx.clearRect(0,0,iSigCanvas.width,iSigCanvas.height);
+  iSigEmpty=true;
+  const h=document.getElementById('i-sig-hint');if(h)h.style.display='flex';
+};
+
+function iGetSigData(){ return iSigEmpty?null:iSigCanvas.toDataURL('image/png'); }
+
+// ---- Save Record ----
+window.iSaveRec = async function(){
+  const date = document.getElementById('i-chk-date').value;
+  const inspector = document.getElementById('i-inspector').value.trim();
+  if(!date){alert('請選擇檢查日期');return;}
+  if(!inspector){alert('請填寫負責人員');return;}
+  const sid = document.getElementById('i-site-sel').value;
+  const site = iSites.find(s=>s.id===sid)||{};
+  const sname = site.name||'未命名案場';
+  const cr={};
+  INSP_CK.forEach(g=>g.items.forEach(it=>{
+    const a=document.querySelector(`#ici-${it.id} .insp-st-btn.active`);
+    cr[it.id]={status:a?a.classList[1]:'none',note:document.getElementById('int-'+it.id)?.value||''};
+  }));
+  const rec={id:Date.now().toString(),sid,sname,
+    date,weather:iCurWeather,
+    addr:site.addr||'',cap:site.cap||'',
+    owner:site.owner||'',phone:site.phone||'',
+    inv:site.inv||'',mod:site.mod||'',modcnt:site.modcnt||'',
+    type:site.type||'',complete:site.complete||'',
+    lat:site.lat||'',lng:site.lng||'',
+    inspector,overall:iCurRating,
+    notes:document.getElementById('i-notes').value,
+    sig:iGetSigData(),
+    cr,at:new Date().toISOString(),
+    createdBy:user};
+  // 儲存到 Firebase
+  try {
+    await set(ref(db, `workspaces/${ws}/inspRecs/${rec.id}`), rec);
+  } catch(e){
+    iRecs.unshift(rec);
+    localStorage.setItem('insp_recs', JSON.stringify(iRecs));
+  }
+  iResetForm();
+  isubSwitch('list');
+};
+
+function iResetForm(){
+  document.getElementById('i-site-sel').value='';
+  document.getElementById('i-site-info').style.display='none';
+  document.getElementById('i-site-info-body').innerHTML='';
+  document.getElementById('i-inspector').value='';
+  document.getElementById('i-notes').value='';
+  document.querySelectorAll('.insp-st-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.insp-ck-note').forEach(n=>n.value='');
+  iSelR('pass',document.querySelector('.insp-rating-btn.pass'));
+  iSelW(document.querySelector('.insp-weather-btn[data-w="晴天"]'));
+  iClearSig();
+  iUpdProg();
+}
+
+// ---- Load inspection records from Firebase ----
+function iInitDB(){
+  try {
+    const recRef = ref(db, `workspaces/${ws}/inspRecs`);
+    onValue(recRef, snap=>{
+      const data = snap.val();
+      iRecs = data ? Object.keys(data).map(k=>({...data[k], id:k})) : [];
+      iRecs.sort((a,b)=>new Date(b.at)-new Date(a.at));
+      localStorage.setItem('insp_recs', JSON.stringify(iRecs));
+      iRenderList();
+    });
+  } catch(e){}
+}
+
+// ---- Render List ----
+function iRenderList(){
+  const srch=(document.getElementById('i-srch')?.value||'').toLowerCase();
+  const fil=document.getElementById('i-filter')?.value||'';
+  const filtered=iRecs.filter(r=>(!srch||r.sname.toLowerCase().includes(srch))&&(!fil||r.overall===fil));
+  const pass=iRecs.filter(r=>r.overall==='pass').length;
+  const warn=iRecs.filter(r=>r.overall==='warn').length;
+  const fail=iRecs.filter(r=>r.overall==='fail').length;
+  const sg=document.getElementById('i-stats-grid');
+  if(sg) sg.innerHTML=`
+    <div class="stat-card total" style="cursor:default;"><div class="stat-number">${iRecs.length}</div><div class="stat-label">總次數</div></div>
+    <div class="stat-card completed" style="cursor:default;"><div class="stat-number" style="color:#155724;">${pass}</div><div class="stat-label">正常</div></div>
+    <div class="stat-card pending" style="cursor:default;"><div class="stat-number" style="color:#856404;">${warn}</div><div class="stat-label">需注意</div></div>
+    <div class="stat-card" style="cursor:default;background:linear-gradient(135deg,#f8d7da,#f5c6cb);"><div class="stat-number" style="color:#721c24;">${fail}</div><div class="stat-label">異常</div></div>
+  `;
+  const el=document.getElementById('i-rec-list');
+  if(!el) return;
+  if(!filtered.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>尚無檢查紀錄</p></div>';return;}
+  const bc={pass:'insp-b-pass',warn:'insp-b-warn',fail:'insp-b-fail'};
+  const bt={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
+  el.innerHTML=filtered.map(r=>`
+    <div class="insp-rec-item" onclick="iShowDet('${r.id}')">
+      <div class="insp-rec-top">
+        <div style="width:40px;height:40px;border-radius:10px;background:#f0f2ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌'}</div>
+        <div class="insp-rec-info">
+          <strong>${r.sname}</strong>
+          <span>${r.date} ｜ ${r.weather} ｜ ${r.inspector}</span>
+        </div>
+        <span class="insp-rec-badge ${bc[r.overall]}">${bt[r.overall]}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;" onclick="event.stopPropagation()">
+        <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄 PDF</button>
+        ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+window.iDelRec = async function(id){
+  if(!confirm('確定刪除此檢查紀錄？'))return;
+  try { await remove(ref(db, `workspaces/${ws}/inspRecs/${id}`)); }
+  catch(e){ iRecs=iRecs.filter(r=>r.id!==id); localStorage.setItem('insp_recs',JSON.stringify(iRecs)); iRenderList(); }
+};
+
+// ---- Detail Modal ----
+let iCurDetId=null;
+window.iShowDet = function(id){
+  iCurDetId=id;
+  const r=iRecs.find(x=>x.id===id);
+  if(!r)return;
+  const om={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
+  const sm={ok:'正常',wa:'注意',fa:'異常',none:'—'};
+  const sc={ok:'ds-ok',wa:'ds-wa',fa:'ds-fa',none:'ds-no'};
+  const chk=INSP_CK.map(g=>`
+    <div class="insp-det-sec">${g.sec}</div>
+    ${g.items.map(it=>{const res=r.cr?.[it.id]||{};const st=res.status||'none';
+      return`<div class="insp-det-row"><span>${it.t}${res.note?`<br><small style="color:#6c757d;">${res.note}</small>`:''}</span><span class="${sc[st]}">${sm[st]}</span></div>`;
+    }).join('')}
+  `).join('');
+  const kv=(k,v)=>v?`<div class="insp-kv"><div class="ik">${k}</div><div class="iv">${v}</div></div>`:'';
+  document.getElementById('iDetTitle').textContent=r.sname;
+  document.getElementById('iDetBody').innerHTML=`
+    <div class="insp-kv-grid">
+      ${kv('檢查日期',r.date)}${kv('天氣',r.weather)}
+      ${kv('檢查員',r.inspector)}${kv('整體評級',om[r.overall])}
+      ${kv('地址',r.addr)}${kv('容量',r.cap?r.cap+' kWp':'')}
+      ${kv('逆變器',r.inv)}${kv('模組',r.mod)}
+      ${kv('業主',r.owner)}${kv('電話',r.phone)}
+    </div>
+    ${r.notes?`<div style="background:#f8f9fa;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px;"><strong>備註：</strong>${r.notes}</div>`:''}
+    ${chk}
+    ${r.sig?`<div style="margin-top:14px;"><div style="font-size:12px;font-weight:600;color:#6c757d;margin-bottom:6px;">客戶簽名</div><img src="${r.sig}" style="width:100%;border:2px solid #dee2e6;border-radius:8px;background:#fafaf8;"></div>`:''}
+  `;
+  document.getElementById('iDetModal').classList.add('active');
+};
+
+window.iCloseDetModal = function(){ document.getElementById('iDetModal').classList.remove('active'); };
+
+// ---- PDF Export ----
+window.iExportPDF = function(id){
+  const r=iRecs.find(x=>x.id===id);if(!r)return;
+  const om={pass:'正常',warn:'需注意',fail:'異常'};
+  const oc={pass:'#155724',warn:'#856404',fail:'#721c24'};
+  const sm={ok:'正常',wa:'注意',fa:'異常',none:'—'};
+  const sc={ok:'#155724',wa:'#856404',fa:'#721c24',none:'#6c757d'};
+  const rows=INSP_CK.map(g=>`
+    <tr><td colspan="3" style="padding:7px 8px;background:#f0f2ff;font-weight:bold;color:#667eea;font-size:12px;">${g.sec}</td></tr>
+    ${g.items.map(it=>{const res=r.cr?.[it.id]||{};const st=res.status||'none';
+      return`<tr style="border-bottom:1px solid #e9ecef;"><td style="padding:5px 8px;font-size:12px;">${it.t}</td><td style="padding:5px 8px;color:${sc[st]};font-weight:bold;width:52px;text-align:center;font-size:12px;">${sm[st]}</td><td style="padding:5px 8px;color:#6c757d;font-size:11px;">${res.note||''}</td></tr>`;
+    }).join('')}
+  `).join('');
+  const td=(k,v)=>`<td style="padding:4px 8px;color:#6c757d;font-size:12px;">${k}</td><td style="padding:4px 8px;font-size:12px;">${v||'—'}</td>`;
+  const sigHtml=r.sig
+    ?`<div style="margin-top:20px;border-top:1px solid #e9ecef;padding-top:16px;"><div style="font-size:12px;color:#6c757d;font-weight:bold;margin-bottom:6px;">客戶簽名確認</div><img src="${r.sig}" style="height:80px;border:1px solid #dee2e6;border-radius:6px;background:#fafaf8;"></div>`
+    :`<div style="margin-top:20px;border-top:1px solid #e9ecef;padding-top:16px;"><div style="font-size:12px;color:#6c757d;font-weight:bold;">客戶簽名確認</div><div style="height:60px;border:1px solid #dee2e6;border-radius:6px;margin-top:6px;"></div></div>`;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:-9999px;top:0;width:794px;padding:36px 40px;background:white;font-family:Arial,sans-serif;color:#2d3748;line-height:1.6;';
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:20px 28px;border-radius:10px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div><div style="font-size:20px;font-weight:bold;">太陽光電維運檢查報告</div><div style="font-size:11px;opacity:.85;margin-top:3px;">Solar PV Maintenance Inspection Report</div></div>
+      <div style="font-size:11px;opacity:.85;">${new Date().toLocaleString('zh-TW')}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <tr>${td('案場名稱',`<strong>${r.sname}</strong>`)}${td('檢查日期',r.date)}</tr>
+      <tr>${td('地址',r.addr)}${td('天氣',r.weather)}</tr>
+      <tr>${td('業主',r.owner)}${td('電話',r.phone)}</tr>
+      <tr>${td('裝置容量',r.cap?r.cap+' kWp':'')}${td('設置類型',r.type)}</tr>
+      <tr>${td('逆變器型號',r.inv)}${td('模組型號',r.mod)}</tr>
+      <tr>${td('檢查員',r.inspector)}<td style="padding:4px 8px;color:#6c757d;font-size:12px;">整體評級</td><td style="padding:4px 8px;font-weight:bold;color:${oc[r.overall]};font-size:14px;">${om[r.overall]}</td></tr>
+    </table>
+    ${r.notes?`<div style="background:#f0f2ff;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:12px;color:#495057;border-left:3px solid #667eea;"><strong>備註：</strong>${r.notes}</div>`:''}
+    <div style="font-weight:bold;font-size:13px;margin-bottom:8px;color:#2d3748;">檢查項目詳細記錄</div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e9ecef;">${rows}</table>
+    ${sigHtml}
+  `;
+  document.body.appendChild(el);
+  html2pdf().from(el).set({
+    margin:8, filename:`維運檢查報告_${r.sname}_${r.date}.pdf`,
+    image:{type:'jpeg',quality:.95},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).save().then(()=>document.body.removeChild(el));
+};
+
+// ---- 案場管理 UI ----
+window.iOpenSiteModal = function(id){
+  document.getElementById('im-eid').value=id||'';
+  document.getElementById('iSiteModalTitle').textContent=id?'編輯案場':'新增案場';
+  ['im-name','im-owner','im-phone','im-addr','im-lat','im-lng','im-cap','im-complete','im-inv','im-mod','im-modcnt'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('im-type').value='屋頂型';
+  if(id){
+    const s=iSites.find(x=>x.id===id);
+    if(s){
+      document.getElementById('im-name').value=s.name||'';
+      document.getElementById('im-owner').value=s.owner||'';
+      document.getElementById('im-phone').value=s.phone||'';
+      document.getElementById('im-addr').value=s.addr||'';
+      document.getElementById('im-lat').value=s.lat||'';
+      document.getElementById('im-lng').value=s.lng||'';
+      document.getElementById('im-cap').value=s.cap||'';
+      document.getElementById('im-type').value=s.type||'屋頂型';
+      document.getElementById('im-complete').value=s.complete||'';
+      document.getElementById('im-inv').value=s.inv||'';
+      document.getElementById('im-mod').value=s.mod||'';
+      document.getElementById('im-modcnt').value=s.modcnt||'';
+    }
+  }
+  document.getElementById('iSiteModal').classList.add('active');
+};
+
+window.iCloseSiteModal = function(){ document.getElementById('iSiteModal').classList.remove('active'); };
+
+window.iGetGPS = function(){
+  if(!navigator.geolocation){alert('瀏覽器不支援 GPS');return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('im-lat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('im-lng').value=pos.coords.longitude.toFixed(6);
+  },()=>alert('無法取得 GPS，請手動輸入'));
+};
+
+window.iSaveSite = async function(){
+  const name=document.getElementById('im-name').value.trim();
+  if(!name){alert('請輸入案場名稱');return;}
+  const eid=document.getElementById('im-eid').value;
+  const d={id:eid||Date.now().toString(),name,
+    owner:document.getElementById('im-owner').value,
+    phone:document.getElementById('im-phone').value,
+    addr:document.getElementById('im-addr').value,
+    lat:document.getElementById('im-lat').value,
+    lng:document.getElementById('im-lng').value,
+    cap:document.getElementById('im-cap').value,
+    type:document.getElementById('im-type').value,
+    inv:document.getElementById('im-inv').value,
+    mod:document.getElementById('im-mod').value,
+    modcnt:document.getElementById('im-modcnt').value,
+    complete:document.getElementById('im-complete').value};
+  await iSaveSiteToDB(d);
+  iCloseSiteModal();
+  iRenderAdminSites();
+};
+
+window.iDeleteSite = async function(id){
+  if(!confirm('確定刪除此案場？'))return;
+  await iDeleteSiteFromDB(id);
+  iRenderAdminSites();
+};
+
+function iRenderAdminSites(){
+  const el=document.getElementById('i-admin-sites-list');
+  if(!el)return;
+  if(!iSites.length){el.innerHTML='<p style="color:#6c757d;font-size:14px;">尚無案場資料</p>';return;}
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f8f9fa;">
+      <th style="padding:10px;text-align:left;border-bottom:2px solid #e9ecef;">案場名稱</th>
+      <th style="padding:10px;text-align:left;border-bottom:2px solid #e9ecef;">地址</th>
+      <th style="padding:10px;text-align:center;border-bottom:2px solid #e9ecef;">容量</th>
+      <th style="padding:10px;text-align:center;border-bottom:2px solid #e9ecef;">操作</th>
+    </tr></thead>
+    <tbody>${iSites.map(s=>`
+      <tr style="border-bottom:1px solid #e9ecef;">
+        <td style="padding:10px;font-weight:600;">🏢 ${s.name}</td>
+        <td style="padding:10px;color:#6c757d;">${s.addr||'—'}</td>
+        <td style="padding:10px;text-align:center;">${s.cap?s.cap+' kWp':'—'}</td>
+        <td style="padding:10px;text-align:center;">
+          <div style="display:flex;gap:6px;justify-content:center;">
+            <button class="btn btn-success btn-sm" onclick="iOpenSiteModal('${s.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="iDeleteSite('${s.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// hook into renderMemberList to also render sites
+const _origRenderMemberList = renderMemberList;
+function renderMemberList(){
+  _origRenderMemberList && _origRenderMemberList();
+  iRenderAdminSites();
+}
+
+// ---- 初始化 ----
+function iInit(){
+  const di = document.getElementById('i-chk-date');
+  if(di) di.value = today();
+  iBuildCklist();
+  iInitSig();
+  iLoadSites();
+  iInitDB();
+}
 
 </script>
 </body>
