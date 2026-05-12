@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#667eea">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="光電維修">
 <title>太陽光電維修管理系統 v2-Fixed</title>
@@ -634,6 +635,17 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 
       <!-- 設定管理員密碼 -->
       <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+      <!-- 案場管理 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
+        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🏢 檢查案場管理</h3>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="iOpenSiteModal()">➕ 新增案場</button>
+        </div>
+        <div id="i-admin-sites-list"></div>
+      </div>
+
+      <!-- 設定管理員密碼 -->
+      <div class="kpi-card" style="margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
         <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🔑 更改管理員密碼</h3>
         <div class="form-row">
           <div class="form-group">
@@ -785,15 +797,6 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         <h3 style="font-size:16px;font-weight:700;color:#dc3545;margin-bottom:10px">⚠️ 危險區域</h3>
         <p style="color:#6c757d;font-size:14px;margin-bottom:15px">以下操作不可復原，請謹慎使用</p>
         <button class="btn btn-danger" onclick="clearAllRecords()">🗑️ 清除所有紀錄</button>
-      </div>
-
-      <!-- 案場管理 -->
-      <div class="kpi-card" style="margin-top:20px;margin-bottom:20px;border:1px solid #e9ecef;border-radius:12px;padding:25px">
-        <h3 style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:15px">🏢 檢查案場管理</h3>
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="iOpenSiteModal()">➕ 新增案場</button>
-        </div>
-        <div id="i-admin-sites-list"></div>
       </div>
     </div>
   </div>
@@ -977,17 +980,19 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">電話</label><input type="tel" class="form-input" id="im-phone" placeholder="0912-000-000"></div>
-        <div class="form-group"><label class="form-label">設置類型</label><select class="form-select" id="im-type"><option>屋頂型</option><option>地面型</option><option>農電共生</option><option>BIPV</option></select></div>
+        <div class="form-group"><label class="form-label">設置類型</label><select class="form-select" id="im-type"><option>屋頂型</option><option>地面型</option></select></div>
       </div>
       <div class="form-group"><label class="form-label">地址</label><input type="text" class="form-input" id="im-addr" placeholder="完整地址"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">緯度 (Lat)</label><input type="number" class="form-input" id="im-lat" placeholder="23.0000" step="any"></div>
-        <div class="form-group"><label class="form-label">經度 (Lng)</label><input type="number" class="form-input" id="im-lng" placeholder="120.0000" step="any"></div>
+      <div class="form-group">
+        <label class="form-label">GPS 座標（緯度, 經度）</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="form-input" id="im-gps" placeholder="23.000000, 120.000000" style="flex:1;">
+          <button type="button" onclick="iGetGPS()" style="padding:10px 14px;border:2px solid #667eea;border-radius:8px;background:#f0f2ff;color:#667eea;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;">📍 定位</button>
+        </div>
       </div>
-      <button type="button" onclick="iGetGPS()" style="width:100%;padding:9px;border:2px dashed #dee2e6;border-radius:8px;background:#f8f9fa;color:#667eea;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;font-family:inherit;">📍 取得目前 GPS 座標</button>
       <div class="form-row">
         <div class="form-group"><label class="form-label">容量 (kWp)</label><input type="number" class="form-input" id="im-cap" step="any"></div>
-        <div class="form-group"><label class="form-label">竣工日期</label><input type="date" class="form-input" id="im-complete"></div>
+        <div class="form-group"><label class="form-label">併聯日</label><input type="date" class="form-input" id="im-complete"></div>
       </div>
       <div class="form-group"><label class="form-label">逆變器型號</label><input type="text" class="form-input" id="im-inv" placeholder="如：Delta M80U / Huawei SUN2000-50KTL"></div>
       <div class="form-row">
@@ -1264,6 +1269,10 @@ window.showTab = function(tab) {
     document.getElementById('tabInspection').style.display = 'block';
     document.querySelectorAll('.nav-tab')[2].classList.add('active');
     iRefreshSiteSel();
+    // 每次切換都重建，確保項目顯示
+    iBuildCklist();
+    // 延遲初始化簽名（確保 canvas 已可見）
+    setTimeout(()=>iInitSig(), 50);
   } else if (tab === 'calculator') {
     document.getElementById('tabCalculator').style.display = 'block';
     document.querySelectorAll('.nav-tab')[3].classList.add('active');
@@ -3626,17 +3635,21 @@ let iSigCanvas, iSigCtx, iSigDrawing=false, iSigEmpty=true;
 // ---- 案場資料 ----
 // 同步 i-sites 清單：從 Firebase sites node（若有），否則用 localStorage
 function iLoadSites(){
-  // 若 Firebase 有 sites，則用 Firebase；否則只用 localStorage
   try {
     const sitesRef = ref(db, `workspaces/${ws}/inspSites`);
     onValue(sitesRef, snap => {
       const data = snap.val();
-      if(data) iSites = Object.keys(data).map(k=>({id:k,...data[k]}));
-      localStorage.setItem('insp_sites', JSON.stringify(iSites));
+      if(data){
+        iSites = Object.keys(data).map(k=>({id:k,...data[k]}));
+        localStorage.setItem('insp_sites', JSON.stringify(iSites));
+      }
       iRefreshSiteSel();
-      iRenderSitesList && iRenderSitesList();
+      iRenderAdminSites();
     });
-  } catch(e){}
+  } catch(e){
+    iRefreshSiteSel();
+    iRenderAdminSites();
+  }
 }
 
 async function iSaveSiteToDB(site){
@@ -3677,7 +3690,7 @@ window.iFillSite = function(){
     kv('逆變器型號',s.inv)+
     kv('模組型號',s.mod)+
     (s.modcnt?kv('模組數量',s.modcnt+' 片'):'')+
-    kv('竣工日期',s.complete)+
+    kv('併聯日',s.complete)+
     ((s.lat&&s.lng)?kv('GPS座標',s.lat+', '+s.lng):'');
 };
 
@@ -3977,7 +3990,7 @@ window.iExportPDF = function(id){
 window.iOpenSiteModal = function(id){
   document.getElementById('im-eid').value=id||'';
   document.getElementById('iSiteModalTitle').textContent=id?'編輯案場':'新增案場';
-  ['im-name','im-owner','im-phone','im-addr','im-lat','im-lng','im-cap','im-complete','im-inv','im-mod','im-modcnt'].forEach(i=>document.getElementById(i).value='');
+  ['im-name','im-owner','im-phone','im-addr','im-gps','im-cap','im-complete','im-inv','im-mod','im-modcnt'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('im-type').value='屋頂型';
   if(id){
     const s=iSites.find(x=>x.id===id);
@@ -3986,8 +3999,7 @@ window.iOpenSiteModal = function(id){
       document.getElementById('im-owner').value=s.owner||'';
       document.getElementById('im-phone').value=s.phone||'';
       document.getElementById('im-addr').value=s.addr||'';
-      document.getElementById('im-lat').value=s.lat||'';
-      document.getElementById('im-lng').value=s.lng||'';
+      document.getElementById('im-gps').value=(s.lat&&s.lng)?s.lat+', '+s.lng:'';
       document.getElementById('im-cap').value=s.cap||'';
       document.getElementById('im-type').value=s.type||'屋頂型';
       document.getElementById('im-complete').value=s.complete||'';
@@ -4004,8 +4016,8 @@ window.iCloseSiteModal = function(){ document.getElementById('iSiteModal').class
 window.iGetGPS = function(){
   if(!navigator.geolocation){alert('瀏覽器不支援 GPS');return;}
   navigator.geolocation.getCurrentPosition(pos=>{
-    document.getElementById('im-lat').value=pos.coords.latitude.toFixed(6);
-    document.getElementById('im-lng').value=pos.coords.longitude.toFixed(6);
+    document.getElementById('im-gps').value=
+      pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
   },()=>alert('無法取得 GPS，請手動輸入'));
 };
 
@@ -4013,27 +4025,41 @@ window.iSaveSite = async function(){
   const name=document.getElementById('im-name').value.trim();
   if(!name){alert('請輸入案場名稱');return;}
   const eid=document.getElementById('im-eid').value;
+  // 解析 GPS 欄位 "lat, lng"
+  const gpsTxt=document.getElementById('im-gps').value.trim();
+  let lat='',lng='';
+  if(gpsTxt){
+    const parts=gpsTxt.split(/[,\s]+/);
+    if(parts.length>=2){lat=parts[0].trim();lng=parts[1].trim();}
+  }
   const d={id:eid||Date.now().toString(),name,
     owner:document.getElementById('im-owner').value,
     phone:document.getElementById('im-phone').value,
     addr:document.getElementById('im-addr').value,
-    lat:document.getElementById('im-lat').value,
-    lng:document.getElementById('im-lng').value,
+    lat,lng,
     cap:document.getElementById('im-cap').value,
     type:document.getElementById('im-type').value,
     inv:document.getElementById('im-inv').value,
     mod:document.getElementById('im-mod').value,
     modcnt:document.getElementById('im-modcnt').value,
     complete:document.getElementById('im-complete').value};
+  // 立即更新本地陣列（Firebase onValue 可能有延遲）
+  if(eid){const i=iSites.findIndex(s=>s.id===eid);if(i>=0)iSites[i]=d;else iSites.push(d);}
+  else iSites.push(d);
+  localStorage.setItem('insp_sites',JSON.stringify(iSites));
+  iRefreshSiteSel();
+  iRenderAdminSites();
   await iSaveSiteToDB(d);
   iCloseSiteModal();
-  iRenderAdminSites();
 };
 
 window.iDeleteSite = async function(id){
   if(!confirm('確定刪除此案場？'))return;
-  await iDeleteSiteFromDB(id);
+  iSites=iSites.filter(s=>s.id!==id);
+  localStorage.setItem('insp_sites',JSON.stringify(iSites));
+  iRefreshSiteSel();
   iRenderAdminSites();
+  await iDeleteSiteFromDB(id);
 };
 
 function iRenderAdminSites(){
@@ -4067,8 +4093,6 @@ function iRenderAdminSites(){
 function iInit(){
   const di = document.getElementById('i-chk-date');
   if(di) di.value = today();
-  iBuildCklist();
-  iInitSig();
   iLoadSites();
   iInitDB();
 }
