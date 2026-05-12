@@ -3985,7 +3985,7 @@ window.iExportPDF = function(id){
   const W = 720;
 
   const iframe = document.createElement('iframe');
-  iframe.style.cssText = `position:fixed;top:0;left:0;width:${W}px;height:1px;opacity:0;pointer-events:none;border:none;z-index:-999;`;
+  iframe.style.cssText = `position:fixed;top:-9999px;left:0;width:${W}px;height:2000px;border:none;`;
   document.body.appendChild(iframe);
 
   const idoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -4036,11 +4036,10 @@ ${rows}
   idoc.close();
 
   setTimeout(()=>{
-    // 讓 iframe 高度跟內容一致
     iframe.style.height = idoc.body.scrollHeight + 'px';
 
     window.html2pdf().from(idoc.body).set({
-      margin: [8, 8, 8, 8],
+      margin: [10, 10, 10, 10],
       filename: `維運檢查報告_${(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')}_${r.date||'nodate'}.pdf`,
       image: { type:'jpeg', quality:0.97 },
       html2canvas: {
@@ -4049,7 +4048,17 @@ ${rows}
         logging: false,
         width: W,
         windowWidth: W,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
         backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          clonedDoc.body.style.margin = '0';
+          clonedDoc.body.style.padding = '24px 28px';
+          clonedDoc.body.style.background = 'white';
+          clonedDoc.body.style.width = W + 'px';
+        }
       },
       jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
     }).save().then(()=>{
