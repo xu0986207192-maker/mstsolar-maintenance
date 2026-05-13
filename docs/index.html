@@ -1859,12 +1859,29 @@ function renderKPI() {
     }
   });
 
+  // 檢查紀錄統計
+  const inspTotal   = iRecs.length;
+  const inspPass    = iRecs.filter(r=>r.overall==='pass').length;
+  const inspWarn    = iRecs.filter(r=>r.overall==='warn').length;
+  const inspFail    = iRecs.filter(r=>r.overall==='fail').length;
+  const inspRate    = inspTotal ? Math.round(inspPass/inspTotal*100) : 0;
+
+  // 近6個月檢查趨勢
+  const inspMonthly = {};
+  iRecs.forEach(r=>{
+    const m = r.date?.substring(0,7)||'未知';
+    inspMonthly[m] = (inspMonthly[m]||0)+1;
+  });
+  const inspMonths = Object.keys(inspMonthly).sort().slice(-6);
+  const maxIM = Math.max(...inspMonths.map(m=>inspMonthly[m]),1);
+
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card"><h3>總維修件數</h3><div class="kpi-value">${total}</div><div class="kpi-sub">統計期間紀錄</div></div>
     <div class="kpi-card"><h3>完成率</h3><div class="kpi-value">${rate}%</div><div class="kpi-sub">已完成 ${completed} 件</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${rate}%"></div></div></div>
     <div class="kpi-card"><h3>待處理</h3><div class="kpi-value" style="color:#856404">${pending}</div><div class="kpi-sub">需要跟進</div></div>
     <div class="kpi-card"><h3>進行中</h3><div class="kpi-value" style="color:#004085">${inprogress}</div><div class="kpi-sub">施工中</div></div>
     <div class="kpi-card"><h3>⚡ 逆變器故障</h3><div class="kpi-value" style="color:#dc3545">${inverterFailures}</div><div class="kpi-sub">佔總數 ${total ? Math.round(inverterFailures/total*100) : 0}%</div></div>
+    <div class="kpi-card" style="border-top:3px solid #16a34a;"><h3>✅ 總檢查次數</h3><div class="kpi-value" style="color:#16a34a">${inspTotal}</div><div class="kpi-sub">正常 ${inspPass} ｜ 注意 ${inspWarn} ｜ 異常 ${inspFail}</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${inspRate}%;background:#16a34a"></div></div></div>
   `;
 
   // 產生逆變器品牌故障分佈圖
@@ -1915,6 +1932,36 @@ function renderKPI() {
       <ul class="top-list">
         ${topCusts.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
       </ul>
+    </div>
+    <div class="chart-section" style="border-top:3px solid #16a34a;">
+      <h3>✅ 檢查紀錄趨勢（近 6 個月）</h3>
+      <div class="bar-chart">
+        ${inspMonths.length ? inspMonths.map(m=>`
+          <div class="bar-item">
+            <div class="bar" style="height:${inspMonthly[m]/maxIM*120}px;background:linear-gradient(to top,#16a34a,#4ade80);" data-value="${inspMonthly[m]}次"></div>
+            <div class="bar-label">${m.substring(5)}月</div>
+          </div>`).join('') : '<p style="color:#6c757d;font-size:13px;padding:16px 0;">尚無檢查紀錄</p>'}
+      </div>
+    </div>
+    <div class="chart-section" style="border-top:3px solid #16a34a;">
+      <h3>✅ 檢查結果分佈</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;">
+        <div style="text-align:center;background:#f0fdf4;border-radius:10px;padding:14px;">
+          <div style="font-size:28px;font-weight:700;color:#16a34a;">${inspPass}</div>
+          <div style="font-size:12px;color:#6c757d;margin-top:3px;">✅ 正常</div>
+          <div style="font-size:11px;color:#16a34a;">${inspTotal?Math.round(inspPass/inspTotal*100):0}%</div>
+        </div>
+        <div style="text-align:center;background:#fffbeb;border-radius:10px;padding:14px;">
+          <div style="font-size:28px;font-weight:700;color:#d97706;">${inspWarn}</div>
+          <div style="font-size:12px;color:#6c757d;margin-top:3px;">⚠️ 需注意</div>
+          <div style="font-size:11px;color:#d97706;">${inspTotal?Math.round(inspWarn/inspTotal*100):0}%</div>
+        </div>
+        <div style="text-align:center;background:#fef2f2;border-radius:10px;padding:14px;">
+          <div style="font-size:28px;font-weight:700;color:#dc2626;">${inspFail}</div>
+          <div style="font-size:12px;color:#6c757d;margin-top:3px;">❌ 異常</div>
+          <div style="font-size:11px;color:#dc2626;">${inspTotal?Math.round(inspFail/inspTotal*100):0}%</div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -4317,31 +4364,41 @@ function renderSiteCards(){
     const inspCount   = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).length;
     const lastInsp    = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
     const lastRepair  = allRecords.filter(r=>r.customerName===s.name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate))[0];
+    const gpsLink = (s.lat&&s.lng)
+      ? `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" onclick="event.stopPropagation()"
+           style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#4285f4;text-decoration:none;background:#e8f0fe;padding:3px 10px;border-radius:20px;margin-top:6px;">
+           📍 ${s.lat}, ${s.lng} → Google Maps
+         </a>`
+      : '';
     return `<div onclick="iShowSiteDetail('${s.id}')" style="background:white;border:1px solid #e9ecef;border-radius:14px;padding:20px;margin-bottom:14px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.06);" onmouseover="this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
         <div style="flex:1;">
           <div style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:4px;">🏢 ${s.name}</div>
-          <div style="font-size:13px;color:#6c757d;margin-bottom:10px;">${s.addr||'地址未填寫'}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+          <div style="font-size:13px;color:#6c757d;margin-bottom:6px;">${s.addr||'地址未填寫'}</div>
+          ${gpsLink}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;margin-top:8px;">
             ${s.cap?`<span style="background:#e7f3ff;color:#004085;padding:3px 10px;border-radius:20px;">${s.cap} kWp</span>`:''}
             ${s.type?`<span style="background:#f0f0f0;color:#495057;padding:3px 10px;border-radius:20px;">${s.type}</span>`:''}
             ${s.inv?`<span style="background:#fff3cd;color:#856404;padding:3px 10px;border-radius:20px;">${s.inv}</span>`:''}
+            ${s.mod?`<span style="background:#f3e8ff;color:#6b21a8;padding:3px 10px;border-radius:20px;">${s.mod}</span>`:''}
+            ${s.owner?`<span style="background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;">👤 ${s.owner}</span>`:''}
+            ${s.phone?`<span style="background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;">📞 ${s.phone}</span>`:''}
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
-          <div style="text-align:center;background:#f8f9fa;border-radius:10px;padding:8px 14px;">
+          <div style="text-align:center;background:#f0f2ff;border-radius:10px;padding:8px 14px;">
             <div style="font-size:20px;font-weight:700;color:#667eea;">${repairCount}</div>
             <div style="font-size:10px;color:#6c757d;">維修</div>
           </div>
-          <div style="text-align:center;background:#f8f9fa;border-radius:10px;padding:8px 14px;">
-            <div style="font-size:20px;font-weight:700;color:#28a745;">${inspCount}</div>
+          <div style="text-align:center;background:#f0fdf4;border-radius:10px;padding:8px 14px;">
+            <div style="font-size:20px;font-weight:700;color:#16a34a;">${inspCount}</div>
             <div style="font-size:10px;color:#6c757d;">檢查</div>
           </div>
         </div>
       </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;">
-        <span>最後維修：${lastRepair?.repairDate||'無紀錄'}</span>
-        <span>最後檢查：${lastInsp?.date||'無紀錄'}</span>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;">
+        <span>🔧 最後維修：${lastRepair?.repairDate||'無紀錄'}</span>
+        <span>✅ 最後檢查：${lastInsp?.date||'無紀錄'}</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:6px;" onclick="event.stopPropagation()">
         <button class="btn btn-primary btn-sm" onclick="iShowSiteDetail('${s.id}')">📋 查看紀錄</button>
