@@ -149,7 +149,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
 .kpi-section-label::after{content:'';flex:1;height:1px;background:#e9ecef;}
 .chart-section{background:white;border-radius:14px;padding:20px;border:1px solid #e9ecef;box-shadow:0 2px 8px rgba(0,0,0,.05);}
 .chart-section h3{font-size:14px;font-weight:700;color:#2d3748;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
-.bar-chart{display:flex;align-items:flex-end;gap:8px;height:140px;padding-bottom:22px;border-bottom:2px solid #f3f4f6;position:relative;}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;padding-bottom:4px;position:relative;}
 .bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;}
 .bar{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:6px 6px 0 0;transition:height .5s;min-height:4px;position:relative;}
 .bar:hover::after{content:attr(data-value);position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:#2d3748;color:white;padding:3px 8px;border-radius:4px;font-size:12px;white-space:nowrap;}
@@ -1953,9 +1953,9 @@ function renderKPI() {
       <div id="trendChartContainer">
         <div class="bar-chart">
           ${months.map(m => `
-            <div class="bar-item">
-              <div class="bar" style="height:${monthly[m]/maxM*120}px" data-value="${monthly[m]}件"></div>
-              <div class="bar-label">${m.substring(5)}月</div>
+            <div class="bar-item" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:120px;">
+              <div class="bar" style="width:60%;min-width:20px;height:${Math.max(monthly[m]/maxM*100,6)}px;border-radius:4px 4px 0 0;" data-value="${monthly[m]}件"></div>
+              <div class="bar-label" style="margin-top:4px;font-size:11px;color:#6c757d;">${m.substring(5)}月</div>
             </div>`).join('')}
         </div>
       </div>
@@ -1981,12 +1981,12 @@ function renderKPI() {
     </div>
     <div class="chart-section" style="border-top:3px solid #16a34a;">
       <h3>✅ 檢查趨勢（近 6 個月）</h3>
-      <div class="bar-chart">
+      <div class="bar-chart" style="overflow:hidden;min-height:80px;">
         ${inspMonths.length ? inspMonths.map(m=>`
-          <div class="bar-item">
-            <div class="bar" style="height:${inspMonthly[m]/maxIM*120}px;background:linear-gradient(to top,#16a34a,#4ade80);" data-value="${inspMonthly[m]}次"></div>
-            <div class="bar-label">${m.substring(5)}月</div>
-          </div>`).join('') : '<p style="color:#6c757d;font-size:13px;">尚無檢查紀錄</p>'}
+          <div class="bar-item" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:120px;">
+            <div class="bar" style="width:60%;min-width:20px;height:${Math.max(inspMonthly[m]/maxIM*100,6)}px;background:linear-gradient(to top,#16a34a,#4ade80);border-radius:4px 4px 0 0;transition:height .3s;" data-value="${inspMonthly[m]}次"></div>
+            <div class="bar-label" style="margin-top:4px;font-size:11px;color:#6c757d;">${m.substring(5)}月</div>
+          </div>`).join('') : '<p style="color:#6c757d;font-size:13px;line-height:80px;">尚無檢查紀錄</p>'}
       </div>
     </div>
   `;
