@@ -464,7 +464,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         </div>
         <div class="insp-row2">
           <div class="insp-field"><label>檢查日期</label><input type="date" id="i-chk-date"></div>
-          <div class="insp-field"><label>負責人員</label><input type="text" id="i-inspector" placeholder="姓名" autocomplete="off" list="inspector-list"><datalist id="inspector-list"></datalist></div>
+          <div class="insp-field"><label>負責人員</label><select id="i-inspector" class="insp-field" style="width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;"><option value="">— 選擇人員 —</option></select></div>
         </div>
         <div class="insp-field">
           <label>天氣狀況</label>
@@ -4018,9 +4018,9 @@ window.iEditRec = function(id){
 };
 window.iSaveRec = async function(){
   const date = document.getElementById('i-chk-date').value;
-  const inspector = document.getElementById('i-inspector').value.trim();
+  const inspector = document.getElementById('i-inspector').value;
   if(!date){alert('請選擇檢查日期');return;}
-  if(!inspector){alert('請填寫負責人員');return;}
+  if(!inspector){alert('請選擇負責人員');return;}
   const sid = document.getElementById('i-site-sel').value;
   const site = iSites.find(s=>s.id===sid)||{};
   const sname = site.name||'未命名案場';
@@ -4705,14 +4705,16 @@ window.exportInspReport = function(){
 };
 
 function iUpdateInspectorList(){
-  const dl = document.getElementById('inspector-list');
-  if(!dl) return;
-  // 合併維修系統人員 + 歷史檢查人員，去重排序
+  const sel = document.getElementById('i-inspector');
+  if(!sel) return;
+  const cur = sel.value;
   const names = new Set([
     ...(techniciansList||[]),
     ...iRecs.map(r=>r.inspector).filter(Boolean)
   ]);
-  dl.innerHTML = [...names].sort().map(n=>`<option value="${n}">`).join('');
+  sel.innerHTML = '<option value="">— 選擇人員 —</option>'
+    + [...names].sort().map(n=>`<option value="${n}">${n}</option>`).join('');
+  if(cur) sel.value = cur;
 }
 
 function iInit(){
