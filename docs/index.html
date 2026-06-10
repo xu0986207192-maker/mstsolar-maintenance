@@ -4528,13 +4528,15 @@ window.iExportPDF = function(id){
 
   var el = document.createElement('div');
   el.innerHTML = html;
+  el.style.cssText = 'position:fixed;top:-9999px;left:0;width:680px;background:white;font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;';
   document.body.appendChild(el);
 
   html2pdf().from(el).set({
-    margin: 5,
+    margin: [4, 5, 4, 5],
     filename: '維運檢查報告_'+(r.sname||'unnamed').replace(/[\/\\:*?"<>|]/g,'_')+'_'+(r.date||'nodate')+'.pdf',
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 1, useCORS: true, width: 680, windowWidth: 680, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'avoid-all' }
   }).save().then(function(){ document.body.removeChild(el); });
 };
 // ---- 案場管理 UI ----
