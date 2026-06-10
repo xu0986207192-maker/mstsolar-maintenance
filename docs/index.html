@@ -2787,10 +2787,12 @@ async function loadTechnicians() {
     techniciansList = snap.val() || DEFAULT_TECHNICIANS;
     updateTechnicianCheckboxes();
     renderTechnicianList();
+    iUpdateInspectorList();
   } catch (err) {
     console.error('載入維修人員失敗:', err);
     techniciansList = DEFAULT_TECHNICIANS;
     updateTechnicianCheckboxes();
+    iUpdateInspectorList();
   }
 }
 
@@ -4708,12 +4710,8 @@ function iUpdateInspectorList(){
   const sel = document.getElementById('i-inspector');
   if(!sel) return;
   const cur = sel.value;
-  const names = new Set([
-    ...(techniciansList||[]),
-    ...iRecs.map(r=>r.inspector).filter(Boolean)
-  ]);
   sel.innerHTML = '<option value="">— 選擇人員 —</option>'
-    + [...names].sort().map(n=>`<option value="${n}">${n}</option>`).join('');
+    + (techniciansList||[]).map(n=>`<option value="${n}">${n}</option>`).join('');
   if(cur) sel.value = cur;
 }
 
