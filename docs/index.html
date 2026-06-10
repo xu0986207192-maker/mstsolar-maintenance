@@ -464,7 +464,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
         </div>
         <div class="insp-row2">
           <div class="insp-field"><label>檢查日期</label><input type="date" id="i-chk-date"></div>
-          <div class="insp-field"><label>負責人員</label><input type="text" id="i-inspector" placeholder="姓名"></div>
+          <div class="insp-field"><label>負責人員</label><input type="text" id="i-inspector" placeholder="姓名" autocomplete="off" list="inspector-list"><datalist id="inspector-list"></datalist></div>
         </div>
         <div class="insp-field">
           <label>天氣狀況</label>
@@ -4104,6 +4104,7 @@ function iInitDB(){
       iRecs = [...fbRecs, ...localOnly];
       iRecs.sort((a,b)=>new Date(b.at)-new Date(a.at));
       localStorage.setItem('insp_recs', JSON.stringify(iRecs));
+      iUpdateInspectorList();
       iRenderList();
     });
   } catch(e){}
@@ -4703,11 +4704,23 @@ window.exportInspReport = function(){
   }).save().then(function(){ document.body.removeChild(el); });
 };
 
+function iUpdateInspectorList(){
+  const dl = document.getElementById('inspector-list');
+  if(!dl) return;
+  // 合併維修系統人員 + 歷史檢查人員，去重排序
+  const names = new Set([
+    ...(techniciansList||[]),
+    ...iRecs.map(r=>r.inspector).filter(Boolean)
+  ]);
+  dl.innerHTML = [...names].sort().map(n=>`<option value="${n}">`).join('');
+}
+
 function iInit(){
   const di = document.getElementById('i-chk-date');
   if(di) di.value = today();
   iLoadSites();
   iInitDB();
+  iUpdateInspectorList();
 }
 
 </script>
