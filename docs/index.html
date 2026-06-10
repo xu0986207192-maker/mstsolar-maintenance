@@ -519,6 +519,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
           <option value="warn">⚠️ 需注意</option>
           <option value="fail">❌ 異常</option>
         </select>
+        <button class="btn btn-success btn-sm" onclick="exportInspReport()" style="white-space:nowrap;">📊 匯出報表</button>
       </div>
       <div style="padding:16px 20px 6px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="i-stats-grid"></div>
       <div class="records-table" style="margin:0 20px 20px;">
@@ -739,6 +740,9 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             <button class="btn btn-info" onclick="exportRecordsOnly()">
               📋 僅匯出維修紀錄
             </button>
+            <button class="btn btn-primary" onclick="exportInspBackup()">
+              ✅ 匯出案場+檢查備份
+            </button>
           </div>
         </div>
 
@@ -794,6 +798,14 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
             <div>
               <span style="color:#6c757d">逆變器容量：</span>
               <strong id="backupCapCount">0</strong> 個
+            </div>
+            <div>
+              <span style="color:#6c757d">案場數量：</span>
+              <strong id="backupSiteCount">0</strong> 個
+            </div>
+            <div>
+              <span style="color:#6c757d">檢查紀錄：</span>
+              <strong id="backupInspCount">0</strong> 筆
             </div>
           </div>
         </div>
@@ -3334,6 +3346,10 @@ function updateBackupStats() {
   document.getElementById('backupTechCount').textContent = techniciansList.length;
   document.getElementById('backupItemCount').textContent = repairItemsList.length;
   document.getElementById('backupCapCount').textContent = inverterCapacitiesList.length;
+  const scEl = document.getElementById('backupSiteCount');
+  const icEl = document.getElementById('backupInspCount');
+  if(scEl) scEl.textContent = iSites.length;
+  if(icEl) icEl.textContent = iRecs.length;
   
   // 更新最後備份時間
   const lastBackup = localStorage.getItem('lastBackupTime');
@@ -3343,8 +3359,28 @@ function updateBackupStats() {
   }
 }
 
-// 匯出完整備份
-window.exportBackup = async function() {
+// 匯出案場 + 檢查紀錄備份
+window.exportInspBackup = function(){
+  const data = {
+    version: '1.0',
+    type: 'insp_backup',
+    exportedAt: new Date().toISOString(),
+    sites: iSites,
+    inspRecs: iRecs
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `案場檢查備份_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('lastBackupTime', new Date().toISOString());
+  updateBackupStats();
+  alert('✅ 案場與檢查紀錄備份已下載');
+};
   try {
     console.log('開始匯出完整備份...');
     
@@ -3619,6 +3655,31 @@ window.importBackup = async function(mode) {
     console.log(`開始${modeText}匯入備份...`);
     
     const backupData = currentBackupData;
+
+    // 案場+檢查備份格式
+    if(backupData.type === 'insp_backup'){
+      const importSites = backupData.sites||[];
+      const importInsp  = backupData.inspRecs||[];
+      if(mode==='replace'){
+        iSites = importSites;
+        iRecs  = importInsp;
+      } else {
+        const existSiteIds = new Set(iSites.map(s=>s.id));
+        importSites.forEach(s=>{ if(!existSiteIds.has(s.id)) iSites.push(s); });
+        const existInspIds = new Set(iRecs.map(r=>r.id));
+        importInsp.forEach(r=>{ if(!existInspIds.has(r.id)) iRecs.unshift(r); });
+      }
+      localStorage.setItem('insp_sites', JSON.stringify(iSites));
+      localStorage.setItem('insp_recs',  JSON.stringify(iRecs));
+      // 同步到 Firebase
+      try {
+        iSites.forEach(s=>set(ref(db,`workspaces/${ws}/inspSites/${s.id}`),s));
+        iRecs.forEach(r=>set(ref(db,`workspaces/${ws}/inspRecs/${r.id}`),r));
+      }catch(e){}
+      iRefreshSiteSel(); iRenderList();
+      alert(`✅ 已${modeText}匯入 ${importSites.length} 個案場、${importInsp.length} 筆檢查紀錄`);
+      return;
+    }
     
     // 驗證備份檔案
     if (!backupData.version || !backupData.data) {
@@ -4463,51 +4524,54 @@ function renderSiteCards(){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>尚無案場，請點右上角「➕ 新增案場」</p></div>';
     return;
   }
+  // 2 欄 grid
+  el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;';
   el.innerHTML = iSites.map(s => {
     const repairCount = allRecords.filter(r=>r.customerName===s.name).length;
     const inspCount   = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).length;
     const lastInsp    = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    const lastRepair  = allRecords.filter(r=>r.customerName===s.name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate))[0];
     const gpsLink = (s.lat&&s.lng)
       ? `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" onclick="event.stopPropagation()"
-           style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#4285f4;text-decoration:none;background:#e8f0fe;padding:3px 10px;border-radius:20px;margin-top:6px;">
-           📍 ${s.lat}, ${s.lng} → Google Maps
-         </a>`
-      : '';
-    return `<div onclick="iShowSiteDetail('${s.id}')" style="background:white;border:1px solid #e9ecef;border-radius:14px;padding:20px;margin-bottom:14px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.06);" onmouseover="this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-        <div style="flex:1;">
-          <div style="font-size:16px;font-weight:700;color:#2d3748;margin-bottom:4px;">🏢 ${s.name}</div>
-          <div style="font-size:13px;color:#6c757d;margin-bottom:6px;">${s.addr||'地址未填寫'}</div>
-          ${gpsLink}
-          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;margin-top:8px;">
-            ${s.cap?`<span style="background:#e7f3ff;color:#004085;padding:3px 10px;border-radius:20px;">${s.cap} kWp</span>`:''}
-            ${s.type?`<span style="background:#f0f0f0;color:#495057;padding:3px 10px;border-radius:20px;">${s.type}</span>`:''}
-            ${s.inv?`<span style="background:#fff3cd;color:#856404;padding:3px 10px;border-radius:20px;">${s.inv}</span>`:''}
-            ${s.mod?`<span style="background:#f3e8ff;color:#6b21a8;padding:3px 10px;border-radius:20px;">${s.mod}</span>`:''}
-            ${s.owner?`<span style="background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;">👤 ${s.owner}</span>`:''}
-            ${s.phone?`<span style="background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;">📞 ${s.phone}</span>`:''}
-          </div>
+           style="font-size:11px;color:#4285f4;text-decoration:none;">📍 地圖</a>` : '';
+    return `<div onclick="iShowSiteDetail('${s.id}')"
+      style="background:white;border:1px solid #e9ecef;border-radius:12px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 1px 4px rgba(0,0,0,.06);"
+      onmouseover="this.style.boxShadow='0 4px 14px rgba(102,126,234,.18)'"
+      onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'">
+
+      <!-- 頂列：名稱 + 計數 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:#2d3748;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🏢 ${s.name}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.addr||'地址未填寫'}</div>
         </div>
-        <div style="display:flex;gap:8px;flex-shrink:0;">
-          <div style="text-align:center;background:#f0f2ff;border-radius:10px;padding:8px 14px;">
-            <div style="font-size:20px;font-weight:700;color:#667eea;">${repairCount}</div>
-            <div style="font-size:10px;color:#6c757d;">維修</div>
+        <div style="display:flex;gap:5px;flex-shrink:0;">
+          <div style="text-align:center;background:#f0f2ff;border-radius:8px;padding:4px 10px;">
+            <div style="font-size:15px;font-weight:700;color:#667eea;">${repairCount}</div>
+            <div style="font-size:9px;color:#9ca3af;">維修</div>
           </div>
-          <div style="text-align:center;background:#f0fdf4;border-radius:10px;padding:8px 14px;">
-            <div style="font-size:20px;font-weight:700;color:#16a34a;">${inspCount}</div>
-            <div style="font-size:10px;color:#6c757d;">檢查</div>
+          <div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:4px 10px;">
+            <div style="font-size:15px;font-weight:700;color:#16a34a;">${inspCount}</div>
+            <div style="font-size:9px;color:#9ca3af;">檢查</div>
           </div>
         </div>
       </div>
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;">
-        <span>🔧 最後維修：${lastRepair?.repairDate||'無紀錄'}</span>
-        <span>✅ 最後檢查：${lastInsp?.date||'無紀錄'}</span>
+
+      <!-- tag 列 -->
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+        ${s.cap?`<span style="font-size:10px;background:#e7f3ff;color:#004085;padding:2px 7px;border-radius:10px;">${s.cap} kWp</span>`:''}
+        ${s.type?`<span style="font-size:10px;background:#f0f0f0;color:#495057;padding:2px 7px;border-radius:10px;">${s.type}</span>`:''}
+        ${s.inv?`<span style="font-size:10px;background:#fff3cd;color:#856404;padding:2px 7px;border-radius:10px;">${s.inv}</span>`:''}
+        ${gpsLink}
       </div>
-      <div style="margin-top:10px;display:flex;gap:6px;" onclick="event.stopPropagation()">
-        <button class="btn btn-primary btn-sm" onclick="iShowSiteDetail('${s.id}')">📋 查看紀錄</button>
-        <button class="btn btn-success btn-sm" onclick="iOpenSiteModal('${s.id}')">✏️ 編輯</button>
-        <button class="btn btn-danger btn-sm" onclick="iDeleteSite('${s.id}')">🗑️ 刪除</button>
+
+      <!-- 底列：最後紀錄 + 操作 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f3f4f6;">
+        <span style="font-size:10px;color:#9ca3af;">最後檢查：${lastInsp?.date||'無'}</span>
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+          <button class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iShowSiteDetail('${s.id}')">📋</button>
+          <button class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iOpenSiteModal('${s.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iDeleteSite('${s.id}')">🗑️</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -4521,6 +4585,114 @@ window.iShowSiteDetailByName = function(name){
   iSites.push(fake);
   iShowSiteDetail('__fake__');
   iSites = iSites.filter(x=>x.id!=='__fake__');
+};
+
+// ---- 檢查紀錄報表 ----
+window.exportInspReport = function(){
+  const srch = (document.getElementById('i-srch')?.value||'').toLowerCase();
+  const fil  = document.getElementById('i-filter')?.value||'';
+  const data = iRecs.filter(r=>(!srch||r.sname.toLowerCase().includes(srch))&&(!fil||r.overall===fil))
+                    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  if(!data.length){ alert('沒有符合條件的紀錄'); return; }
+
+  const om={pass:'正常',warn:'需注意',fail:'異常'};
+  const oc={pass:'#166534',warn:'#92400e',fail:'#991b1b'};
+  const obg={pass:'#dcfce7',warn:'#fef9c3',fail:'#fee2e2'};
+  const sm={ok:'✓ 正常',wa:'⚠ 注意',fa:'✗ 異常',none:'—'};
+
+  const rows = data.map(r=>`
+    <tr>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.date||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-weight:600;">${r.sname||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.inspector||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.weather||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;text-align:center;">
+        <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${obg[r.overall]};color:${oc[r.overall]};">${om[r.overall]||'—'}</span>
+      </td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-size:12px;color:#6b7280;">${r.notes||''}</td>
+    </tr>`).join('');
+
+  // 統計
+  const pass=data.filter(r=>r.overall==='pass').length;
+  const warn=data.filter(r=>r.overall==='warn').length;
+  const fail=data.filter(r=>r.overall==='fail').length;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;padding:24px 28px;color:#1f2937;background:white;}
+  @media print{body{padding:0;}@page{margin:12mm;}}
+</style></head><body>
+
+<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <div style="font-size:16px;font-weight:900;color:#3730a3;">太陽光電檢查紀錄報表</div>
+    <div style="font-size:9px;color:#7c7a9e;margin-top:2px;">Solar PV Inspection Report Summary</div>
+  </div>
+  <div style="font-size:11px;color:#4338ca;font-weight:700;">${new Date().toLocaleDateString('zh-TW')} 產製</div>
+</div>
+
+<div style="display:flex;gap:10px;margin-bottom:14px;">
+  <div style="flex:1;text-align:center;background:#f5f3ff;border-radius:8px;padding:10px;">
+    <div style="font-size:22px;font-weight:800;color:#667eea;">${data.length}</div>
+    <div style="font-size:11px;color:#6b7280;">總筆數</div>
+  </div>
+  <div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:10px;">
+    <div style="font-size:22px;font-weight:800;color:#166534;">${pass}</div>
+    <div style="font-size:11px;color:#6b7280;">✅ 正常</div>
+  </div>
+  <div style="flex:1;text-align:center;background:#fef9c3;border-radius:8px;padding:10px;">
+    <div style="font-size:22px;font-weight:800;color:#92400e;">${warn}</div>
+    <div style="font-size:11px;color:#6b7280;">⚠️ 需注意</div>
+  </div>
+  <div style="flex:1;text-align:center;background:#fee2e2;border-radius:8px;padding:10px;">
+    <div style="font-size:22px;font-weight:800;color:#991b1b;">${fail}</div>
+    <div style="font-size:11px;color:#6b7280;">❌ 異常</div>
+  </div>
+</div>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px;">
+  <thead>
+    <tr style="background:#eef2ff;">
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">日期</th>
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">案場名稱</th>
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">負責人員</th>
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">天氣</th>
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:center;color:#3730a3;font-size:11px;">評級</th>
+      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">備註</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+
+<div style="margin-top:14px;padding-top:8px;border-top:1px solid #f3f4f6;font-size:9px;color:#d1d5db;display:flex;justify-content:space-between;">
+  <span>太陽光電維運管理系統 自動產製</span>
+  <span>共 ${data.length} 筆紀錄</span>
+</div>
+
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`檢查紀錄報表_${new Date().toISOString().split('T')[0]}.html`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+
+  // 同時用 html2pdf 直接產 PDF
+  const el=document.createElement('div');
+  el.innerHTML=html.replace(/<script[\s\S]*?<\/script>/gi,'');
+  document.body.appendChild(el);
+  html2pdf().from(el).set({
+    margin:8,
+    filename:`檢查紀錄報表_${new Date().toISOString().split('T')[0]}.pdf`,
+    html2canvas:{scale:2},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).save().then(()=>document.body.removeChild(el));
 };
 
 function iInit(){
