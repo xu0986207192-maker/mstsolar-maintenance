@@ -4354,7 +4354,7 @@ window.iExportSelected = function(){
           +'<div style="border:1px solid #e5e7eb;border-radius:4px;padding:6px;background:white;">'
             +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">🏢 業主</div>'
             +(r.sig?'<img src="'+r.sig+'" style="height:40px;display:block;border-bottom:1px solid #9ca3af;margin-bottom:4px;max-width:100%;">':'<div style="height:40px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>')
-            +'<div style="font-size:9px;color:#374151;">'+(r.owner||'業主確認')+'</div>'
+            +'<div style="font-size:9px;color:#9ca3af;">業主簽名</div>'
           +'</div>'
         +'</div>'
         +'<div style="text-align:right;margin-top:4px;font-size:9px;color:#9ca3af;">確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</div>'
@@ -4513,7 +4513,7 @@ window.iExportPDF = function(id){
             ? '<img src="'+r.sig+'" style="height:50px;display:block;border-bottom:1px solid #9ca3af;margin-bottom:4px;max-width:100%;">'
             : '<div style="height:50px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
           )
-          +'<div style="font-size:9px;color:#374151;">'+(r.owner||'業主確認')+'</div>'
+          +'<div style="font-size:9px;color:#9ca3af;">業主簽名</div>'
         +'</div>'
 
       +'</div>'
