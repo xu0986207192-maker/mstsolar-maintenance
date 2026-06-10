@@ -517,7 +517,9 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div id="ipanel-list" style="display:none;">
       <div style="padding:16px 20px;background:#f8f9fa;border-bottom:2px solid #e9ecef;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div style="position:relative;flex:1;min-width:180px;">
-          <input type="text" id="i-srch" placeholder="🔍 搜尋案場…" oninput="iRenderList()" style="width:100%;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+          <select id="i-srch" onchange="window.iRenderList()" style="width:100%;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+            <option value="">🏢 全部案場</option>
+          </select>
         </div>
         <select id="i-filter" onchange="iRenderList()" style="padding:9px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
           <option value="">全部狀態</option>
@@ -3816,6 +3818,7 @@ function iLoadSites(){
       }
       iRefreshSiteSel();
       iRenderAdminSites();
+      iUpdateSrchSelect();
     });
   } catch(e){
     iRefreshSiteSel();
@@ -4127,11 +4130,11 @@ function iInitDB(){
 }
 
 // ---- Render List ----
-function iRenderList(){
-  const srch=(document.getElementById('i-srch')?.value||'').toLowerCase();
+window.iRenderList = function iRenderList(){
+  const srch=(document.getElementById('i-srch')?.value||'');
   const fil=document.getElementById('i-filter')?.value||'';
   const mode=document.getElementById('i-view-mode')?.value||'site';
-  const filtered=iRecs.filter(r=>(!srch||r.sname.toLowerCase().includes(srch))&&(!fil||r.overall===fil));
+  const filtered=iRecs.filter(r=>(!srch||r.sname===srch)&&(!fil||r.overall===fil));
 
   const pass=iRecs.filter(r=>r.overall==='pass').length;
   const warn=iRecs.filter(r=>r.overall==='warn').length;
@@ -4896,6 +4899,15 @@ window.exportInspReport = function(){
   }).save().then(function(){ document.body.removeChild(el); });
 };
 
+function iUpdateSrchSelect(){
+  const sel = document.getElementById('i-srch');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">🏢 全部案場</option>'
+    + iSites.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+
 function iUpdateInspectorList(){
   const sel = document.getElementById('i-inspector');
   if(!sel) return;
@@ -4911,6 +4923,7 @@ function iInit(){
   iLoadSites();
   iInitDB();
   iUpdateInspectorList();
+  iUpdateSrchSelect();
 }
 
 </script>
