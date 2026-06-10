@@ -525,7 +525,21 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
           <option value="warn">⚠️ 需注意</option>
           <option value="fail">❌ 異常</option>
         </select>
+        <select id="i-view-mode" onchange="iRenderList()" style="padding:9px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+          <option value="site">依案場分組</option>
+          <option value="date">依日期排列</option>
+        </select>
         <button class="btn btn-success btn-sm" onclick="exportInspReport()" style="white-space:nowrap;padding:9px 14px;">📊 匯出報表</button>
+      </div>
+      <!-- 批次操作列 -->
+      <div id="i-batch-bar" style="display:none;padding:10px 20px;background:#fff3cd;border-bottom:2px solid #ffc107;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
+          <input type="checkbox" id="i-select-all" onchange="iToggleSelectAll(this)" style="width:16px;height:16px;">
+          全選
+        </label>
+        <span id="i-selected-count" style="font-size:13px;color:#856404;">已選 0 筆</span>
+        <button class="btn btn-primary btn-sm" onclick="iExportSelected()">📄 匯出已選 PDF</button>
+        <button class="btn btn-sm" style="background:white;color:#6c757d;" onclick="iClearSelection()">取消選取</button>
       </div>
       <div style="padding:16px 20px 6px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="i-stats-grid"></div>
       <div class="records-table" style="margin:0 20px 20px;">
@@ -4116,7 +4130,9 @@ function iInitDB(){
 function iRenderList(){
   const srch=(document.getElementById('i-srch')?.value||'').toLowerCase();
   const fil=document.getElementById('i-filter')?.value||'';
+  const mode=document.getElementById('i-view-mode')?.value||'site';
   const filtered=iRecs.filter(r=>(!srch||r.sname.toLowerCase().includes(srch))&&(!fil||r.overall===fil));
+
   const pass=iRecs.filter(r=>r.overall==='pass').length;
   const warn=iRecs.filter(r=>r.overall==='warn').length;
   const fail=iRecs.filter(r=>r.overall==='fail').length;
@@ -4127,30 +4143,204 @@ function iRenderList(){
     <div class="stat-card pending" style="cursor:default;"><div class="stat-number" style="color:#856404;">${warn}</div><div class="stat-label">需注意</div></div>
     <div class="stat-card" style="cursor:default;background:linear-gradient(135deg,#f8d7da,#f5c6cb);"><div class="stat-number" style="color:#721c24;">${fail}</div><div class="stat-label">異常</div></div>
   `;
+  // 顯示批次操作列
+  const batchBar = document.getElementById('i-batch-bar');
+  if(batchBar) batchBar.style.display = filtered.length ? 'flex' : 'none';
+
   const el=document.getElementById('i-rec-list');
   if(!el) return;
   if(!filtered.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>尚無檢查紀錄</p></div>';return;}
+
   const bc={pass:'insp-b-pass',warn:'insp-b-warn',fail:'insp-b-fail'};
   const bt={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
-  el.innerHTML=filtered.map(r=>`
-    <div class="insp-rec-item" onclick="iShowDet('${r.id}')">
+
+  function recItem(r){
+    return `<div class="insp-rec-item" style="position:relative;">
       <div class="insp-rec-top">
-        <div style="width:40px;height:40px;border-radius:10px;background:#f0f2ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌'}</div>
-        <div class="insp-rec-info">
-          <strong>${r.sname}</strong>
-          <span>${r.date} ｜ ${r.weather} ｜ ${r.inspector}</span>
+        <label style="display:flex;align-items:center;margin-right:8px;cursor:pointer;" onclick="event.stopPropagation()">
+          <input type="checkbox" class="i-rec-chk" data-id="${r.id}"
+            style="width:16px;height:16px;cursor:pointer;"
+            onchange="iUpdateSelCount()">
+        </label>
+        <div style="width:36px;height:36px;border-radius:10px;background:#f0f2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;" onclick="iShowDet('${r.id}')">${r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌'}</div>
+        <div class="insp-rec-info" style="cursor:pointer;" onclick="iShowDet('${r.id}')">
+          <strong>${r.date}</strong>
+          <span>${r.weather} ｜ ${r.inspector}</span>
         </div>
         <span class="insp-rec-badge ${bc[r.overall]}">${bt[r.overall]}</span>
       </div>
-      <div style="display:flex;gap:6px;margin-top:10px;" onclick="event.stopPropagation()">
-        <button class="btn btn-warning btn-sm" onclick="iShowSiteDetailByName('${r.sname}')">🏢 案場</button>
-        <button class="btn btn-success btn-sm" onclick="iEditRec('${r.id}')">✏️ 編輯</button>
-        <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄 PDF</button>
-        <button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️ 刪除</button>
+      <div style="display:flex;gap:5px;margin-top:8px;padding-left:60px;" onclick="event.stopPropagation()">
+        <button class="btn btn-success btn-sm" onclick="iEditRec('${r.id}')">✏️</button>
+        <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄</button>
+        <button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }
+
+  if(mode==='site'){
+    // 依案場分組
+    const groups={};
+    filtered.forEach(r=>{ if(!groups[r.sname]) groups[r.sname]=[]; groups[r.sname].push(r); });
+    el.innerHTML = Object.entries(groups).map(([sname, recs])=>{
+      const recs_sorted = recs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const passC=recs.filter(r=>r.overall==='pass').length;
+      const warnC=recs.filter(r=>r.overall==='warn').length;
+      const failC=recs.filter(r=>r.overall==='fail').length;
+      const gid = 'sg_'+sname.replace(/\W/g,'_');
+      return `<div style="margin-bottom:12px;border:1px solid #e9ecef;border-radius:10px;overflow:hidden;">
+        <!-- 案場標題列 -->
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f0f2ff;cursor:pointer;"
+          onclick="iToggleSiteGroup('${gid}')">
+          <label style="display:flex;align-items:center;cursor:pointer;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="i-site-chk" data-site="${sname}"
+              style="width:16px;height:16px;" onchange="iToggleSiteCheck(this,'${sname}')">
+          </label>
+          <span style="font-size:15px;font-weight:700;color:#3730a3;flex:1;">🏢 ${sname}</span>
+          <div style="display:flex;gap:6px;font-size:11px;">
+            ${passC?`<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;">✅ ${passC}</span>`:''}
+            ${warnC?`<span style="background:#fef9c3;color:#92400e;padding:2px 8px;border-radius:10px;">⚠️ ${warnC}</span>`:''}
+            ${failC?`<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;">❌ ${failC}</span>`:''}
+          </div>
+          <span style="font-size:12px;color:#9ca3af;">${recs.length} 筆</span>
+          <span id="${gid}_arrow" style="font-size:14px;color:#667eea;">▼</span>
+        </div>
+        <!-- 該案場紀錄 -->
+        <div id="${gid}" style="display:block;">
+          ${recs_sorted.map(r=>recItem(r)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    // 依日期排列
+    const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    el.innerHTML = sorted.map(r=>`
+      <div class="insp-rec-item" style="position:relative;">
+        <div class="insp-rec-top">
+          <label style="display:flex;align-items:center;margin-right:8px;cursor:pointer;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="i-rec-chk" data-id="${r.id}"
+              style="width:16px;height:16px;cursor:pointer;" onchange="iUpdateSelCount()">
+          </label>
+          <div style="width:36px;height:36px;border-radius:10px;background:#f0f2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;" onclick="iShowDet('${r.id}')">${r.overall==='pass'?'✅':r.overall==='warn'?'⚠️':'❌'}</div>
+          <div class="insp-rec-info" style="cursor:pointer;" onclick="iShowDet('${r.id}')">
+            <strong>${r.sname}</strong>
+            <span>${r.date} ｜ ${r.weather} ｜ ${r.inspector}</span>
+          </div>
+          <span class="insp-rec-badge ${bc[r.overall]}">${bt[r.overall]}</span>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:8px;padding-left:60px;" onclick="event.stopPropagation()">
+          <button class="btn btn-success btn-sm" onclick="iEditRec('${r.id}')">✏️</button>
+          <button class="btn btn-info btn-sm" onclick="iExportPDF('${r.id}')">📄</button>
+          <button class="btn btn-danger btn-sm" onclick="iDelRec('${r.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
 }
+
+window.iToggleSiteGroup = function(gid){
+  const el = document.getElementById(gid);
+  const arrow = document.getElementById(gid+'_arrow');
+  if(!el) return;
+  const open = el.style.display!=='none';
+  el.style.display = open?'none':'block';
+  if(arrow) arrow.textContent = open?'▶':'▼';
+};
+
+window.iToggleSiteCheck = function(cb, sname){
+  // 勾選/取消該案場所有紀錄
+  document.querySelectorAll('.i-rec-chk').forEach(c=>{
+    const r = iRecs.find(x=>x.id===c.dataset.id);
+    if(r && r.sname===sname) c.checked = cb.checked;
+  });
+  iUpdateSelCount();
+};
+
+window.iToggleSelectAll = function(cb){
+  document.querySelectorAll('.i-rec-chk').forEach(c=>c.checked=cb.checked);
+  document.querySelectorAll('.i-site-chk').forEach(c=>c.checked=cb.checked);
+  iUpdateSelCount();
+};
+
+window.iUpdateSelCount = function(){
+  const sel = document.querySelectorAll('.i-rec-chk:checked').length;
+  const span = document.getElementById('i-selected-count');
+  if(span) span.textContent = `已選 ${sel} 筆`;
+  // 同步全選框狀態
+  const all = document.querySelectorAll('.i-rec-chk').length;
+  const sa = document.getElementById('i-select-all');
+  if(sa) sa.indeterminate = sel>0 && sel<all;
+  if(sa) sa.checked = sel>0 && sel===all;
+};
+
+window.iClearSelection = function(){
+  document.querySelectorAll('.i-rec-chk').forEach(c=>c.checked=false);
+  document.querySelectorAll('.i-site-chk').forEach(c=>c.checked=false);
+  const sa = document.getElementById('i-select-all');
+  if(sa){ sa.checked=false; sa.indeterminate=false; }
+  iUpdateSelCount();
+};
+
+window.iExportSelected = function(){
+  const ids = [...document.querySelectorAll('.i-rec-chk:checked')].map(c=>c.dataset.id);
+  if(!ids.length){ alert('請先勾選要匯出的紀錄'); return; }
+  if(ids.length===1){ iExportPDF(ids[0]); return; }
+
+  const om={pass:'正常',warn:'需注意',fail:'異常'};
+  const oc={pass:'#166534',warn:'#92400e',fail:'#991b1b'};
+  const obg={pass:'#dcfce7',warn:'#fef9c3',fail:'#fee2e2'};
+  const sm={ok:'✓ 正常',wa:'⚠ 注意',fa:'✗ 異常',none:'—'};
+  const sc={ok:'#166534',wa:'#92400e',fa:'#991b1b',none:'#6b7280'};
+  const sbg={ok:'#dcfce7',wa:'#fef9c3',fa:'#fee2e2',none:'#f3f4f6'};
+
+  function singleHtml(r){
+    var ckRows = INSP_CK.map(function(g){
+      var icon=(g.sec.match(/^(\S+)/)||['',''])[1];
+      var name=g.sec.replace(/^\S+\s*/,'');
+      var rows=g.items.map(function(it,i){
+        var res=(r.cr&&r.cr[it.id])||{};
+        var st=res.status||'none';
+        return '<tr style="background:'+(i%2?'#f9fafb':'#fff')+';">'
+          +'<td style="padding:5px 10px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+it.t+(res.note?'<span style="font-size:10px;color:#9ca3af;margin-left:5px;">'+res.note+'</span>':'')+'</td>'
+          +'<td style="padding:5px 10px;text-align:right;border-bottom:1px solid #f3f4f6;white-space:nowrap;">'
+          +'<span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:700;background:'+(sbg[st])+';color:'+(sc[st])+';">'+(sm[st])+'</span>'
+          +'</td></tr>';
+      }).join('');
+      return '<tr style="background:#eef2ff;"><td colspan="2" style="padding:6px 10px;font-size:11px;font-weight:700;color:#3730a3;border-bottom:1px solid #e0e7ff;">'+icon+' '+name+'</td></tr>'+rows;
+    }).join('');
+
+    return '<div style="page-break-after:always;padding:20px 0;">'
+      +'<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">'
+        +'<div><div style="font-size:15px;font-weight:900;color:#3730a3;">太陽光電維運檢查報告</div>'
+        +'<div style="font-size:9px;color:#7c7a9e;">Solar PV Maintenance Inspection Report</div></div>'
+        +'<div style="font-size:10px;color:#4338ca;font-weight:700;">'+(r.date||'')+'</div></div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">'
+        +'<tr><td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">案場名稱</td><td style="padding:4px 8px;font-weight:700;border:1px solid #e5e7eb;">'+(r.sname||'—')+'</td>'
+            +'<td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">日期</td><td style="padding:4px 8px;border:1px solid #e5e7eb;">'+(r.date||'—')+'</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">地址</td><td colspan="3" style="padding:4px 8px;border:1px solid #e5e7eb;">'+(r.addr||'—')+'</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">天氣</td><td style="padding:4px 8px;border:1px solid #e5e7eb;">'+(r.weather||'—')+'</td>'
+            +'<td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">負責人員</td><td style="padding:4px 8px;border:1px solid #e5e7eb;">'+(r.inspector||'—')+'</td></tr>'
+        +'<tr><td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">整體評級</td><td colspan="3" style="padding:4px 8px;font-weight:700;color:'+(oc[r.overall]||'#333')+';border:1px solid #e5e7eb;">'+(om[r.overall]||'—')+'</td></tr>'
+        +(r.notes?'<tr><td style="padding:4px 8px;color:#6b7280;border:1px solid #e5e7eb;">備註</td><td colspan="3" style="padding:4px 8px;border:1px solid #e5e7eb;">'+r.notes+'</td></tr>':'')
+      +'</table>'
+      +'<table style="width:100%;border-collapse:collapse;"><colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>'
+        +ckRows
+      +'</table>'
+      +(r.sig?'<div style="margin-top:10px;"><div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:4px;">客戶簽名</div><img src="'+r.sig+'" style="height:55px;border:1px solid #e5e7eb;border-radius:4px;"></div>':'')
+    +'</div>';
+  }
+
+  var recs = ids.map(id=>iRecs.find(x=>x.id===id)).filter(Boolean);
+  var html = recs.map(r=>singleHtml(r)).join('');
+
+  var el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  html2pdf().from(el).set({
+    margin: 8,
+    filename: '檢查紀錄_'+recs[0].sname+'_共'+recs.length+'筆_'+new Date().toISOString().split('T')[0]+'.pdf',
+    html2canvas: {scale:2},
+    jsPDF: {unit:'mm', format:'a4', orientation:'portrait'}
+  }).save().then(function(){ document.body.removeChild(el); });
+};
 
 window.iDelRec = async function(id){
   if(!confirm('確定刪除此檢查紀錄？'))return;
