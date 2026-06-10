@@ -349,7 +349,13 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       </div>
       
       <div class="kpi-grid" id="kpiGrid"></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;" id="kpiCharts"></div>
+
+      <!-- 圖表區 -->
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0 14px;">
+        <span style="font-size:11px;font-weight:700;color:#495057;letter-spacing:.8px;text-transform:uppercase;">📈 圖表分析</span>
+        <div style="flex:1;height:1px;background:#e9ecef;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;" id="kpiCharts"></div>
     </div>
   </div>
 
@@ -539,7 +545,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="content">
       <!-- 搜尋列 -->
       <div style="margin-bottom:16px;">
-        <input type="text" id="site-search" placeholder="🔍 搜尋案場名稱…" oninput="iSitePage=1;window.renderSiteCards()"
+        <input type="text" id="site-search" placeholder="🔍 搜尋名稱、地址、業主、逆變器…" oninput="iSitePage=1;window.renderSiteCards()"
           style="width:100%;max-width:340px;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
       </div>
       <div id="sites-card-list"></div>
@@ -1898,7 +1904,11 @@ function renderKPI() {
   const maxIM = Math.max(...inspMonths.map(m=>inspMonthly[m]),1);
 
   document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-section-label" style="grid-column:1/-1;">🔧 維修統計</div>
+    <!-- 維修統計 -->
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:4px 0 2px;">
+      <span style="font-size:11px;font-weight:700;color:#667eea;letter-spacing:.8px;text-transform:uppercase;">🔧 維修統計</span>
+      <div style="flex:1;height:1px;background:#e9ecef;"></div>
+    </div>
     <div class="kpi-card" style="border-top:3px solid #667eea;">
       <h3>總維修件數</h3>
       <div class="kpi-value" style="color:#667eea;">${total}</div>
@@ -1913,7 +1923,7 @@ function renderKPI() {
     <div class="kpi-card" style="border-top:3px solid #ffc107;">
       <h3>待處理</h3>
       <div class="kpi-value" style="color:#856404;">${pending}</div>
-      <div class="kpi-sub">需要跟進處理</div>
+      <div class="kpi-sub">需要跟進</div>
     </div>
     <div class="kpi-card" style="border-top:3px solid #17a2b8;">
       <h3>進行中</h3>
@@ -1921,11 +1931,15 @@ function renderKPI() {
       <div class="kpi-sub">施工中</div>
     </div>
     <div class="kpi-card" style="border-top:3px solid #dc3545;">
-      <h3>⚡ 逆變器故障</h3>
+      <h3>逆變器故障</h3>
       <div class="kpi-value" style="color:#dc3545;">${inverterFailures}</div>
-      <div class="kpi-sub">佔總數 ${total ? Math.round(inverterFailures/total*100) : 0}%</div>
+      <div class="kpi-sub">佔 ${total ? Math.round(inverterFailures/total*100) : 0}%</div>
     </div>
-    <div class="kpi-section-label" style="grid-column:1/-1;">✅ 檢查統計</div>
+    <!-- 檢查統計 -->
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:8px 0 2px;">
+      <span style="font-size:11px;font-weight:700;color:#16a34a;letter-spacing:.8px;text-transform:uppercase;">✅ 檢查統計</span>
+      <div style="flex:1;height:1px;background:#e9ecef;"></div>
+    </div>
     <div class="kpi-card" style="border-top:3px solid #16a34a;">
       <h3>總檢查次數</h3>
       <div class="kpi-value" style="color:#16a34a;">${inspTotal}</div>
@@ -1935,17 +1949,17 @@ function renderKPI() {
     <div class="kpi-card" style="border-top:3px solid #16a34a;">
       <h3>✅ 正常</h3>
       <div class="kpi-value" style="color:#16a34a;">${inspPass}</div>
-      <div class="kpi-sub">${inspTotal?Math.round(inspPass/inspTotal*100):0}% 佔比</div>
+      <div class="kpi-sub">${inspTotal?Math.round(inspPass/inspTotal*100):0}%</div>
     </div>
     <div class="kpi-card" style="border-top:3px solid #d97706;">
       <h3>⚠️ 需注意</h3>
       <div class="kpi-value" style="color:#d97706;">${inspWarn}</div>
-      <div class="kpi-sub">${inspTotal?Math.round(inspWarn/inspTotal*100):0}% 佔比</div>
+      <div class="kpi-sub">${inspTotal?Math.round(inspWarn/inspTotal*100):0}%</div>
     </div>
     <div class="kpi-card" style="border-top:3px solid #dc2626;">
       <h3>❌ 異常</h3>
       <div class="kpi-value" style="color:#dc2626;">${inspFail}</div>
-      <div class="kpi-sub">${inspTotal?Math.round(inspFail/inspTotal*100):0}% 佔比</div>
+      <div class="kpi-sub">${inspTotal?Math.round(inspFail/inspTotal*100):0}%</div>
     </div>
   `;
 
@@ -1960,9 +1974,9 @@ function renderKPI() {
   ` : '';
 
   document.getElementById('kpiCharts').innerHTML = `
-    <div class="chart-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-        <h3>📅 維修趨勢圖</h3>
+    <div class="chart-section" style="border-top:3px solid #667eea;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3>📅 維修趨勢</h3>
         <select class="form-select" style="width:auto;padding:5px 10px;font-size:13px" id="trendRange" onchange="updateTrendChart()">
           <option value="6">近 6 個月</option>
           <option value="12">近 12 個月</option>
@@ -1979,35 +1993,46 @@ function renderKPI() {
         </div>
       </div>
     </div>
-    <div class="chart-section">
-      <h3>🔧 技師維修件數 TOP 5</h3>
-      <ul class="top-list">
-        ${topTechs.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
-      </ul>
-    </div>
-    ${inverterChart}
-    <div class="chart-section">
-      <h3>⚡ 常見故障 TOP 5</h3>
-      <ul class="top-list">
-        ${topItems.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
-      </ul>
-    </div>
-    <div class="chart-section">
-      <h3>🏢 維修次數最多客戶 TOP 5</h3>
-      <ul class="top-list">
-        ${topCusts.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
-      </ul>
-    </div>
+
     <div class="chart-section" style="border-top:3px solid #16a34a;">
       <h3>✅ 檢查趨勢（近 6 個月）</h3>
       <div class="bar-chart" style="overflow:hidden;min-height:80px;">
         ${inspMonths.length ? inspMonths.map(m=>`
           <div class="bar-item" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:120px;">
-            <div class="bar" style="width:60%;min-width:20px;height:${Math.max(inspMonthly[m]/maxIM*100,6)}px;background:linear-gradient(to top,#16a34a,#4ade80);border-radius:4px 4px 0 0;transition:height .3s;" data-value="${inspMonthly[m]}次"></div>
+            <div class="bar" style="width:60%;min-width:20px;height:${Math.max(inspMonthly[m]/maxIM*100,6)}px;background:linear-gradient(to top,#16a34a,#4ade80);border-radius:4px 4px 0 0;" data-value="${inspMonthly[m]}次"></div>
             <div class="bar-label" style="margin-top:4px;font-size:11px;color:#6c757d;">${m.substring(5)}月</div>
-          </div>`).join('') : '<p style="color:#6c757d;font-size:13px;line-height:80px;">尚無檢查紀錄</p>'}
+          </div>`).join('') : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:30px 0;">尚無檢查紀錄</p>'}
       </div>
     </div>
+
+    <div class="chart-section">
+      <h3>🔧 技師維修 TOP 5</h3>
+      <ul class="top-list">
+        ${topTechs.length ? topTechs.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('') : '<li style="color:#9ca3af;font-size:13px;">暫無資料</li>'}
+      </ul>
+    </div>
+
+    <div class="chart-section">
+      <h3>⚡ 常見故障 TOP 5</h3>
+      <ul class="top-list">
+        ${topItems.length ? topItems.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('') : '<li style="color:#9ca3af;font-size:13px;">暫無資料</li>'}
+      </ul>
+    </div>
+
+    <div class="chart-section">
+      <h3>🏢 維修最多案場 TOP 5</h3>
+      <ul class="top-list">
+        ${topCusts.length ? topCusts.map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('') : '<li style="color:#9ca3af;font-size:13px;">暫無資料</li>'}
+      </ul>
+    </div>
+
+    ${Object.keys(inverterBrands).length ? `
+    <div class="chart-section">
+      <h3>🔌 逆變器故障品牌</h3>
+      <ul class="top-list">
+        ${Object.entries(inverterBrands).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([n,c],i)=>`<li><span class="rank">${i+1}</span><span class="name">${n}</span><span class="count">${c} 件</span></li>`).join('')}
+      </ul>
+    </div>` : ''}
   `;
 }
 
@@ -4488,7 +4513,7 @@ window.renderSiteCards = function renderSiteCards(){
   if(!el) return;
 
   const q = (document.getElementById('site-search')?.value||'').toLowerCase();
-  const filtered = iSites.filter(s => !q || s.name.toLowerCase().includes(q));
+  const filtered = iSites.filter(s => !q || [s.name, s.addr, s.owner, s.phone, s.inv, s.mod, s.type].some(v => v && v.toLowerCase().includes(q)));
 
   if(!filtered.length){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>'+(q?'找不到符合的案場':'尚無案場，請點右上角「➕ 新增案場」')+'</p></div>';
