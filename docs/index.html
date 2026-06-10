@@ -4192,12 +4192,12 @@ window.iRenderList = function iRenderList(){
     // 依案場分組
     const groups={};
     filtered.forEach(r=>{ if(!groups[r.sname]) groups[r.sname]=[]; groups[r.sname].push(r); });
-    el.innerHTML = Object.entries(groups).map(([sname, recs])=>{
+    el.innerHTML = Object.entries(groups).map(([sname, recs], idx)=>{
       const recs_sorted = recs.sort((a,b)=>new Date(b.date)-new Date(a.date));
       const passC=recs.filter(r=>r.overall==='pass').length;
       const warnC=recs.filter(r=>r.overall==='warn').length;
       const failC=recs.filter(r=>r.overall==='fail').length;
-      const gid = 'sg_'+sname.replace(/\W/g,'_');
+      const gid = 'sg_' + idx;
       return `<div style="margin-bottom:12px;border:1px solid #e9ecef;border-radius:10px;overflow:hidden;">
         <!-- 案場標題列 -->
         <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f0f2ff;cursor:pointer;"
