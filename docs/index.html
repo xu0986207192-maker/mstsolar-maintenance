@@ -4338,7 +4338,27 @@ window.iExportSelected = function(){
       +'<table style="width:100%;border-collapse:collapse;"><colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>'
         +ckRows
       +'</table>'
-      +(r.sig?'<div style="margin-top:10px;"><div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:4px;">客戶簽名</div><img src="'+r.sig+'" style="height:55px;border:1px solid #e5e7eb;border-radius:4px;"></div>':'')
+      +'<div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:#fafafa;">'
+        +'<div style="font-size:10px;font-weight:bold;color:#374151;margin-bottom:6px;">✍️ 簽名確認</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
+          +'<div style="border:1px solid #e5e7eb;border-radius:4px;padding:6px;background:white;">'
+            +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">📋 檢查員</div>'
+            +'<div style="height:40px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
+            +'<div style="font-size:9px;color:#374151;">'+(r.inspector||'')+'</div>'
+          +'</div>'
+          +'<div style="border:1px solid #e5e7eb;border-radius:4px;padding:6px;background:white;">'
+            +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">👤 主管</div>'
+            +'<div style="height:40px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
+            +'<div style="font-size:9px;color:#9ca3af;">主管確認</div>'
+          +'</div>'
+          +'<div style="border:1px solid #e5e7eb;border-radius:4px;padding:6px;background:white;">'
+            +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">🏢 業主</div>'
+            +(r.sig?'<img src="'+r.sig+'" style="height:40px;display:block;border-bottom:1px solid #9ca3af;margin-bottom:4px;max-width:100%;">':'<div style="height:40px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>')
+            +'<div style="font-size:9px;color:#374151;">'+(r.owner||'業主確認')+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div style="text-align:right;margin-top:4px;font-size:9px;color:#9ca3af;">確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</div>'
+      +'</div>'
     +'</div>';
   }
 
@@ -4469,10 +4489,36 @@ window.iExportPDF = function(id){
       +'<table style="width:100%;border-collapse:collapse;"><colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>'
       +ckRows+'</table></div>'
     +'<div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 12px;background:#fafafa;">'
-      +'<div style="font-size:10px;font-weight:bold;color:#374151;margin-bottom:3px;">✍️ 客戶簽名確認</div>'
-      +sigBlock
-      +'<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:10px;color:#9ca3af;">'
-      +'<span>業主 / 客戶簽名</span><span>確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</span></div></div>'
+      +'<div style="font-size:10px;font-weight:bold;color:#374151;margin-bottom:8px;">✍️ 簽名確認</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">'
+
+        // 檢查員簽名
+        +'<div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:white;">'
+          +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">📋 檢查員簽名</div>'
+          +'<div style="height:50px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
+          +'<div style="font-size:9px;color:#374151;font-weight:600;">'+(r.inspector||'')+'</div>'
+        +'</div>'
+
+        // 主管簽名
+        +'<div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:white;">'
+          +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">👤 主管簽名</div>'
+          +'<div style="height:50px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
+          +'<div style="font-size:9px;color:#9ca3af;">主管確認</div>'
+        +'</div>'
+
+        // 業主/客戶簽名
+        +'<div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:white;">'
+          +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">🏢 業主簽名</div>'
+          +(r.sig
+            ? '<img src="'+r.sig+'" style="height:50px;display:block;border-bottom:1px solid #9ca3af;margin-bottom:4px;max-width:100%;">'
+            : '<div style="height:50px;border-bottom:1px solid #9ca3af;margin-bottom:4px;"></div>'
+          )
+          +'<div style="font-size:9px;color:#374151;">'+(r.owner||'業主確認')+'</div>'
+        +'</div>'
+
+      +'</div>'
+      +'<div style="text-align:right;margin-top:6px;font-size:9px;color:#9ca3af;">確認日期：＿＿＿ 年 ＿＿ 月 ＿＿ 日</div>'
+    +'</div>'
     +'<div style="margin-top:7px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;font-size:9px;color:#d1d5db;">'
     +'<span>太陽光電維運管理系統 自動產製</span><span>'+(r.sname||'')+' · '+(r.date||'')+'</span></div>';
 
