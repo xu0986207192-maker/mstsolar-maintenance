@@ -1346,6 +1346,7 @@ window.showTab = function(tab) {
     document.getElementById('tabInspection').style.display = 'block';
     document.querySelectorAll('.nav-tab')[2].classList.add('active');
     iRefreshSiteSel();
+    iUpdateSrchSelect();
     iBuildCklist();
     setTimeout(()=>iInitSig(), 50);
   } else if (tab === 'sites') {
@@ -3808,6 +3809,12 @@ let iSigCanvas, iSigCtx, iSigDrawing=false, iSigEmpty=true;
 // ---- 案場資料 ----
 // 同步 i-sites 清單：從 Firebase sites node（若有），否則用 localStorage
 function iLoadSites(){
+  // 先從 localStorage 載入，讓選單立即有東西
+  const cached = localStorage.getItem('insp_sites');
+  if(cached){ try{ iSites = JSON.parse(cached); }catch(e){} }
+  iRefreshSiteSel();
+  iUpdateSrchSelect();
+
   try {
     const sitesRef = ref(db, `workspaces/${ws}/inspSites`);
     onValue(sitesRef, snap => {
@@ -3823,6 +3830,7 @@ function iLoadSites(){
   } catch(e){
     iRefreshSiteSel();
     iRenderAdminSites();
+    iUpdateSrchSelect();
   }
 }
 
