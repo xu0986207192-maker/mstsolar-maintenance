@@ -3346,6 +3346,10 @@ function updateBackupStats() {
   document.getElementById('backupTechCount').textContent = techniciansList.length;
   document.getElementById('backupItemCount').textContent = repairItemsList.length;
   document.getElementById('backupCapCount').textContent = inverterCapacitiesList.length;
+  const scEl = document.getElementById('backupSiteCount');
+  const icEl = document.getElementById('backupInspCount');
+  if(scEl) scEl.textContent = iSites.length;
+  if(icEl) icEl.textContent = iRecs.length;
   
   // 更新最後備份時間
   const lastBackup = localStorage.getItem('lastBackupTime');
@@ -4536,16 +4540,6 @@ function iInit(){
   if(di) di.value = today();
   iLoadSites();
   iInitDB();
-}
-
-// ---- updateBackupStats 擴充版 ----
-const _origUpdateBackupStats = typeof updateBackupStats === 'function' ? updateBackupStats : null;
-function updateBackupStats(){
-  if(_origUpdateBackupStats) _origUpdateBackupStats();
-  var scEl = document.getElementById('backupSiteCount');
-  var icEl = document.getElementById('backupInspCount');
-  if(scEl) scEl.textContent = iSites.length;
-  if(icEl) icEl.textContent = iRecs.length;
 }
 
 // ---- 匯出案場+檢查備份 ----
