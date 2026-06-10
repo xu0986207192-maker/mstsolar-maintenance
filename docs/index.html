@@ -537,7 +537,14 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       </div>
     </div>
     <div class="content">
+      <!-- 搜尋列 -->
+      <div style="margin-bottom:16px;">
+        <input type="text" id="site-search" placeholder="🔍 搜尋案場名稱…" oninput="renderSiteCards()"
+          style="width:100%;max-width:340px;padding:9px 14px;border:2px solid #dee2e6;border-radius:8px;font-size:14px;font-family:inherit;">
+      </div>
       <div id="sites-card-list"></div>
+      <!-- 分頁 -->
+      <div id="sites-pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;flex-wrap:wrap;"></div>
     </div>
   </div>
 
@@ -3350,7 +3357,6 @@ function updateBackupStats() {
   const icEl = document.getElementById('backupInspCount');
   if(scEl) scEl.textContent = iSites.length;
   if(icEl) icEl.textContent = iRecs.length;
-  
   // 更新最後備份時間
   const lastBackup = localStorage.getItem('lastBackupTime');
   if (lastBackup) {
@@ -4472,59 +4478,101 @@ window.sdSwitch = function(tab){
   it.style.borderBottomColor = tab==='insp'?'#667eea':'transparent';
 };
 // ---- 案場卡片頁面 ----
+let iSitePage = 1;
+const SITES_PER_PAGE = 12;
+
 function renderSiteCards(){
   const el = document.getElementById('sites-card-list');
+  const pgEl = document.getElementById('sites-pagination');
   if(!el) return;
-  if(!iSites.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>尚無案場，請點右上角「➕ 新增案場」</p></div>';
+
+  const q = (document.getElementById('site-search')?.value||'').toLowerCase();
+  const filtered = iSites.filter(s => !q || s.name.toLowerCase().includes(q));
+
+  if(!filtered.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>'+(q?'找不到符合的案場':'尚無案場，請點右上角「➕ 新增案場」')+'</p></div>';
+    if(pgEl) pgEl.innerHTML='';
     return;
   }
-  el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;';
-  el.innerHTML = iSites.map(function(s){
-    var repairCount = allRecords.filter(function(r){return r.customerName===s.name;}).length;
-    var inspCount   = iRecs.filter(function(r){return r.sid===s.id||r.sname===s.name;}).length;
-    var lastInspArr = iRecs.filter(function(r){return r.sid===s.id||r.sname===s.name;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-    var lastInsp    = lastInspArr[0];
-    var gpsLink = (s.lat&&s.lng)
-      ? '<a href="https://www.google.com/maps?q='+s.lat+','+s.lng+'" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#4285f4;text-decoration:none;">📍 地圖</a>'
-      : '';
-    var tags = '';
-    if(s.cap) tags += '<span style="font-size:10px;background:#e7f3ff;color:#004085;padding:2px 7px;border-radius:10px;">'+s.cap+' kWp</span>';
-    if(s.type) tags += '<span style="font-size:10px;background:#f0f0f0;color:#495057;padding:2px 7px;border-radius:10px;">'+s.type+'</span>';
-    if(s.inv) tags += '<span style="font-size:10px;background:#fff3cd;color:#856404;padding:2px 7px;border-radius:10px;">'+s.inv+'</span>';
-    if(gpsLink) tags += gpsLink;
-    return '<div onclick="iShowSiteDetail(\''+s.id+'\')"'
-      +' style="background:white;border:1px solid #e9ecef;border-radius:12px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 1px 4px rgba(0,0,0,.06);"'
-      +' onmouseover="this.style.boxShadow=\'0 4px 14px rgba(102,126,234,.18)\'"'
-      +' onmouseout="this.style.boxShadow=\'0 1px 4px rgba(0,0,0,.06)\'">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
-        +'<div style="flex:1;min-width:0;">'
-          +'<div style="font-size:14px;font-weight:700;color:#2d3748;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🏢 '+s.name+'</div>'
-          +'<div style="font-size:11px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(s.addr||'地址未填寫')+'</div>'
-        +'</div>'
-        +'<div style="display:flex;gap:5px;flex-shrink:0;">'
-          +'<div style="text-align:center;background:#f0f2ff;border-radius:8px;padding:4px 10px;">'
-            +'<div style="font-size:15px;font-weight:700;color:#667eea;">'+repairCount+'</div>'
-            +'<div style="font-size:9px;color:#9ca3af;">維修</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:4px 10px;">'
-            +'<div style="font-size:15px;font-weight:700;color:#16a34a;">'+inspCount+'</div>'
-            +'<div style="font-size:9px;color:#9ca3af;">檢查</div>'
-          +'</div>'
-        +'</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">'+tags+'</div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f3f4f6;">'
-        +'<span style="font-size:10px;color:#9ca3af;">最後檢查：'+(lastInsp?lastInsp.date:'無')+'</span>'
-        +'<div style="display:flex;gap:4px;" onclick="event.stopPropagation()">'
-          +'<button class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iShowSiteDetail(\''+s.id+'\')">📋</button>'
-          +'<button class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iOpenSiteModal(\''+s.id+'\')">✏️</button>'
-          +'<button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iDeleteSite(\''+s.id+'\')">🗑️</button>'
-        +'</div>'
-      +'</div>'
-    +'</div>';
+
+  const totalPages = Math.ceil(filtered.length / SITES_PER_PAGE);
+  if(iSitePage > totalPages) iSitePage = totalPages;
+
+  const pageData = filtered.slice((iSitePage-1)*SITES_PER_PAGE, iSitePage*SITES_PER_PAGE);
+
+  el.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;';
+  el.innerHTML = pageData.map(s => {
+    const repairCount = allRecords.filter(r=>r.customerName===s.name).length;
+    const inspCount   = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).length;
+    const lastInspArr = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const lastInsp    = lastInspArr[0];
+
+    return `<div onclick="iShowSiteDetail('${s.id}')"
+      style="background:white;border:1px solid #e9ecef;border-radius:14px;padding:18px 16px;cursor:pointer;
+             transition:box-shadow .15s,transform .15s;box-shadow:0 2px 8px rgba(0,0,0,.06);
+             display:flex;flex-direction:column;gap:10px;"
+      onmouseover="this.style.boxShadow='0 6px 20px rgba(102,126,234,.22)';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)';this.style.transform='none'">
+
+      <!-- 案場名稱 -->
+      <div style="font-size:16px;font-weight:800;color:#2d3748;line-height:1.3;word-break:break-all;">
+        🏢 ${s.name}
+      </div>
+
+      <!-- 容量 -->
+      <div style="font-size:22px;font-weight:900;color:#667eea;line-height:1;">
+        ${s.cap ? s.cap+' <span style="font-size:13px;font-weight:600;color:#9ca3af;">kWp</span>' : '<span style="font-size:14px;color:#d1d5db;">容量未填</span>'}
+      </div>
+
+      <!-- 維修/檢查計數 -->
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;text-align:center;background:#f0f2ff;border-radius:8px;padding:6px 4px;">
+          <div style="font-size:18px;font-weight:800;color:#667eea;">${repairCount}</div>
+          <div style="font-size:10px;color:#9ca3af;">維修</div>
+        </div>
+        <div style="flex:1;text-align:center;background:#f0fdf4;border-radius:8px;padding:6px 4px;">
+          <div style="font-size:18px;font-weight:800;color:#16a34a;">${inspCount}</div>
+          <div style="font-size:10px;color:#9ca3af;">檢查</div>
+        </div>
+      </div>
+
+      <!-- 最後檢查 + 操作 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f3f4f6;margin-top:auto;">
+        <span style="font-size:10px;color:#9ca3af;">${lastInsp?lastInsp.date:'尚未檢查'}</span>
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+          <button class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iOpenSiteModal('${s.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iDeleteSite('${s.id}')">🗑️</button>
+        </div>
+      </div>
+    </div>`;
   }).join('');
+
+  // 分頁控制
+  if(pgEl){
+    if(totalPages <= 1){ pgEl.innerHTML=''; return; }
+    let html = '';
+    // 上一頁
+    html += `<button onclick="iSitePage=${iSitePage-1};renderSiteCards()"
+      style="padding:7px 14px;border:2px solid ${iSitePage===1?'#e9ecef':'#667eea'};border-radius:8px;background:white;color:${iSitePage===1?'#ced4da':'#667eea'};font-size:13px;font-weight:600;cursor:${iSitePage===1?'default':'pointer'};"
+      ${iSitePage===1?'disabled':''}>‹ 上頁</button>`;
+    // 頁碼
+    for(let p=1; p<=totalPages; p++){
+      const active = p===iSitePage;
+      html += `<button onclick="iSitePage=${p};renderSiteCards()"
+        style="width:36px;height:36px;border:2px solid ${active?'#667eea':'#e9ecef'};border-radius:8px;
+               background:${active?'#667eea':'white'};color:${active?'white':'#6c757d'};
+               font-size:13px;font-weight:${active?'700':'400'};cursor:pointer;">${p}</button>`;
+    }
+    // 下一頁
+    html += `<button onclick="iSitePage=${iSitePage+1};renderSiteCards()"
+      style="padding:7px 14px;border:2px solid ${iSitePage===totalPages?'#e9ecef':'#667eea'};border-radius:8px;background:white;color:${iSitePage===totalPages?'#ced4da':'#667eea'};font-size:13px;font-weight:600;cursor:${iSitePage===totalPages?'default':'pointer'};"
+      ${iSitePage===totalPages?'disabled':''}>下頁 ›</button>`;
+    // 頁數說明
+    html += `<span style="font-size:12px;color:#9ca3af;margin-left:4px;">${filtered.length} 個案場 / 第 ${iSitePage}/${totalPages} 頁</span>`;
+    pgEl.innerHTML = html;
+  }
 }
+
 window.iShowSiteDetailByName = function(name){
   const s = iSites.find(x=>x.name===name);
   if(s){ iShowSiteDetail(s.id); return; }
@@ -4535,14 +4583,6 @@ window.iShowSiteDetailByName = function(name){
   iSites = iSites.filter(x=>x.id!=='__fake__');
 };
 
-function iInit(){
-  const di = document.getElementById('i-chk-date');
-  if(di) di.value = today();
-  iLoadSites();
-  iInitDB();
-}
-
-// ---- 匯出案場+檢查備份 ----
 window.exportInspBackup = function(){
   var data = {
     version: '1.0',
@@ -4565,19 +4605,17 @@ window.exportInspBackup = function(){
   alert('✅ 案場與檢查紀錄備份已下載');
 };
 
-// ---- 匯出檢查紀錄報表 (PDF) ----
 window.exportInspReport = function(){
   var srch = (document.getElementById('i-srch') ? document.getElementById('i-srch').value : '').toLowerCase();
   var fil  = document.getElementById('i-filter') ? document.getElementById('i-filter').value : '';
   var data = iRecs.filter(function(r){
     return (!srch || r.sname.toLowerCase().indexOf(srch)>=0) && (!fil || r.overall===fil);
   }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
-
   if(!data.length){ alert('沒有符合條件的紀錄'); return; }
 
-  var om = {pass:'正常', warn:'需注意', fail:'異常'};
-  var oc = {pass:'#166534', warn:'#92400e', fail:'#991b1b'};
-  var obg= {pass:'#dcfce7', warn:'#fef9c3', fail:'#fee2e2'};
+  var om  = {pass:'正常', warn:'需注意', fail:'異常'};
+  var oc  = {pass:'#166534', warn:'#92400e', fail:'#991b1b'};
+  var obg = {pass:'#dcfce7', warn:'#fef9c3', fail:'#fee2e2'};
 
   var rows = data.map(function(r){
     var st = r.overall||'pass';
@@ -4596,7 +4634,7 @@ window.exportInspReport = function(){
   var pass = data.filter(function(r){return r.overall==='pass';}).length;
   var warn = data.filter(function(r){return r.overall==='warn';}).length;
   var fail = data.filter(function(r){return r.overall==='fail';}).length;
-  var today = new Date().toLocaleDateString('zh-TW');
+  var tod  = new Date().toLocaleDateString('zh-TW');
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
     +'<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;padding:24px 28px;color:#1f2937;background:white;}@media print{body{padding:0;}@page{margin:12mm;}}</style>'
@@ -4604,7 +4642,7 @@ window.exportInspReport = function(){
     +'<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div><div style="font-size:16px;font-weight:900;color:#3730a3;">太陽光電檢查紀錄報表</div>'
       +'<div style="font-size:9px;color:#7c7a9e;margin-top:2px;">Solar PV Inspection Report Summary</div></div>'
-      +'<div style="font-size:11px;color:#4338ca;font-weight:700;">'+today+' 產製</div></div>'
+      +'<div style="font-size:11px;color:#4338ca;font-weight:700;">'+tod+' 產製</div></div>'
     +'<div style="display:flex;gap:10px;margin-bottom:14px;">'
       +'<div style="flex:1;text-align:center;background:#f5f3ff;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#667eea;">'+data.length+'</div><div style="font-size:11px;color:#6b7280;">總筆數</div></div>'
       +'<div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#166534;">'+pass+'</div><div style="font-size:11px;color:#6b7280;">✅ 正常</div></div>'
@@ -4637,6 +4675,13 @@ window.exportInspReport = function(){
     jsPDF: {unit:'mm', format:'a4', orientation:'portrait'}
   }).save().then(function(){ document.body.removeChild(el); });
 };
+
+function iInit(){
+  const di = document.getElementById('i-chk-date');
+  if(di) di.value = today();
+  iLoadSites();
+  iInitDB();
+}
 
 </script>
 </body>
