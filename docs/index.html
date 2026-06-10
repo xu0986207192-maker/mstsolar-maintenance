@@ -4588,112 +4588,77 @@ window.iShowSiteDetailByName = function(name){
 };
 
 // ---- 檢查紀錄報表 ----
+// ---- 檢查紀錄報表 ----
 window.exportInspReport = function(){
   const srch = (document.getElementById('i-srch')?.value||'').toLowerCase();
   const fil  = document.getElementById('i-filter')?.value||'';
   const data = iRecs.filter(r=>(!srch||r.sname.toLowerCase().includes(srch))&&(!fil||r.overall===fil))
                     .sort((a,b)=>new Date(b.date)-new Date(a.date));
-
   if(!data.length){ alert('沒有符合條件的紀錄'); return; }
 
   const om={pass:'正常',warn:'需注意',fail:'異常'};
   const oc={pass:'#166534',warn:'#92400e',fail:'#991b1b'};
   const obg={pass:'#dcfce7',warn:'#fef9c3',fail:'#fee2e2'};
-  const sm={ok:'✓ 正常',wa:'⚠ 注意',fa:'✗ 異常',none:'—'};
 
-  const rows = data.map(r=>`
-    <tr>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.date||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-weight:600;">${r.sname||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.inspector||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.weather||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;text-align:center;">
-        <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${obg[r.overall]};color:${oc[r.overall]};">${om[r.overall]||'—'}</span>
-      </td>
-      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-size:12px;color:#6b7280;">${r.notes||''}</td>
-    </tr>`).join('');
+  const rows = data.map(function(r){
+    var st = r.overall||'pass';
+    return '<tr>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-size:12px;">'+( r.date||'—')+'</td>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-size:12px;font-weight:600;">'+(r.sname||'—')+'</td>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-size:12px;">'+(r.inspector||'—')+'</td>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-size:12px;">'+(r.weather||'—')+'</td>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:center;">'
+        +'<span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;background:'+obg[st]+';color:'+oc[st]+';">'+(om[st]||'—')+'</span>'
+      +'</td>'
+      +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-size:11px;color:#6b7280;">'+(r.notes||'')+'</td>'
+      +'</tr>';
+  }).join('');
 
-  // 統計
-  const pass=data.filter(r=>r.overall==='pass').length;
-  const warn=data.filter(r=>r.overall==='warn').length;
-  const fail=data.filter(r=>r.overall==='fail').length;
+  var pass=data.filter(function(r){return r.overall==='pass';}).length;
+  var warn=data.filter(function(r){return r.overall==='warn';}).length;
+  var fail=data.filter(function(r){return r.overall==='fail';}).length;
+  var today=new Date().toLocaleDateString('zh-TW');
 
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;padding:24px 28px;color:#1f2937;background:white;}
-  @media print{body{padding:0;}@page{margin:12mm;}}
-</style></head><body>
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;padding:24px 28px;color:#1f2937;background:white;}@media print{body{padding:0;}@page{margin:12mm;}}</style>'
+    +'</head><body>'
+    +'<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:16px;font-weight:900;color:#3730a3;">太陽光電檢查紀錄報表</div>'
+      +'<div style="font-size:9px;color:#7c7a9e;margin-top:2px;">Solar PV Inspection Report Summary</div></div>'
+      +'<div style="font-size:11px;color:#4338ca;font-weight:700;">'+today+' 產製</div></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:14px;">'
+      +'<div style="flex:1;text-align:center;background:#f5f3ff;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#667eea;">'+data.length+'</div><div style="font-size:11px;color:#6b7280;">總筆數</div></div>'
+      +'<div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#166534;">'+pass+'</div><div style="font-size:11px;color:#6b7280;">✅ 正常</div></div>'
+      +'<div style="flex:1;text-align:center;background:#fef9c3;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#92400e;">'+warn+'</div><div style="font-size:11px;color:#6b7280;">⚠️ 需注意</div></div>'
+      +'<div style="flex:1;text-align:center;background:#fee2e2;border-radius:8px;padding:10px;"><div style="font-size:22px;font-weight:800;color:#991b1b;">'+fail+'</div><div style="font-size:11px;color:#6b7280;">❌ 異常</div></div>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;">'
+      +'<thead><tr style="background:#eef2ff;">'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">日期</th>'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">案場名稱</th>'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">負責人員</th>'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">天氣</th>'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:center;color:#3730a3;font-size:11px;">評級</th>'
+        +'<th style="padding:8px 9px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">備註</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+    +'</table>'
+    +'<div style="margin-top:12px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;font-size:9px;color:#d1d5db;">'
+      +'<span>太陽光電維運管理系統 自動產製</span><span>共 '+data.length+' 筆紀錄</span>'
+    +'</div>'
+    +'</body></html>';
 
-<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
-  <div>
-    <div style="font-size:16px;font-weight:900;color:#3730a3;">太陽光電檢查紀錄報表</div>
-    <div style="font-size:9px;color:#7c7a9e;margin-top:2px;">Solar PV Inspection Report Summary</div>
-  </div>
-  <div style="font-size:11px;color:#4338ca;font-weight:700;">${new Date().toLocaleDateString('zh-TW')} 產製</div>
-</div>
-
-<div style="display:flex;gap:10px;margin-bottom:14px;">
-  <div style="flex:1;text-align:center;background:#f5f3ff;border-radius:8px;padding:10px;">
-    <div style="font-size:22px;font-weight:800;color:#667eea;">${data.length}</div>
-    <div style="font-size:11px;color:#6b7280;">總筆數</div>
-  </div>
-  <div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:10px;">
-    <div style="font-size:22px;font-weight:800;color:#166534;">${pass}</div>
-    <div style="font-size:11px;color:#6b7280;">✅ 正常</div>
-  </div>
-  <div style="flex:1;text-align:center;background:#fef9c3;border-radius:8px;padding:10px;">
-    <div style="font-size:22px;font-weight:800;color:#92400e;">${warn}</div>
-    <div style="font-size:11px;color:#6b7280;">⚠️ 需注意</div>
-  </div>
-  <div style="flex:1;text-align:center;background:#fee2e2;border-radius:8px;padding:10px;">
-    <div style="font-size:22px;font-weight:800;color:#991b1b;">${fail}</div>
-    <div style="font-size:11px;color:#6b7280;">❌ 異常</div>
-  </div>
-</div>
-
-<table style="width:100%;border-collapse:collapse;font-size:12px;">
-  <thead>
-    <tr style="background:#eef2ff;">
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">日期</th>
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">案場名稱</th>
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">負責人員</th>
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">天氣</th>
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:center;color:#3730a3;font-size:11px;">評級</th>
-      <th style="padding:8px 10px;border:1px solid #e5e7eb;text-align:left;color:#3730a3;font-size:11px;">備註</th>
-    </tr>
-  </thead>
-  <tbody>${rows}</tbody>
-</table>
-
-<div style="margin-top:14px;padding-top:8px;border-top:1px solid #f3f4f6;font-size:9px;color:#d1d5db;display:flex;justify-content:space-between;">
-  <span>太陽光電維運管理系統 自動產製</span>
-  <span>共 ${data.length} 筆紀錄</span>
-</div>
-
-<script>window.onload=function(){window.print();}<\/script>
-</body></html>`;
-
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`檢查紀錄報表_${new Date().toISOString().split('T')[0]}.html`;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-
-  // 同時用 html2pdf 直接產 PDF
-  const el=document.createElement('div');
-  el.innerHTML=html.replace(/<script[\s\S]*?<\/script>/gi,'');
+  var el=document.createElement('div');
+  el.innerHTML=html;
   document.body.appendChild(el);
   html2pdf().from(el).set({
     margin:8,
-    filename:`檢查紀錄報表_${new Date().toISOString().split('T')[0]}.pdf`,
+    filename:'檢查紀錄報表_'+new Date().toISOString().split('T')[0]+'.pdf',
     html2canvas:{scale:2},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).save().then(()=>document.body.removeChild(el));
+  }).save().then(function(){ document.body.removeChild(el); });
 };
+
 
 function iInit(){
   const di = document.getElementById('i-chk-date');
