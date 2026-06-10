@@ -4125,16 +4125,19 @@ function iInitDB(){
     onValue(recRef, snap=>{
       const data = snap.val();
       const fbRecs = data ? Object.keys(data).map(k=>({...data[k], id:k})) : [];
-      // 合併：把本地有但 Firebase 還沒同步的也保留
-      const fbIds = new Set(fbRecs.map(r=>r.id));
-      const localOnly = iRecs.filter(r=>!fbIds.has(r.id));
-      iRecs = [...fbRecs, ...localOnly];
-      iRecs.sort((a,b)=>new Date(b.at)-new Date(a.at));
+      fbRecs.sort((a,b)=>new Date(b.at)-new Date(a.at));
+      // Firebase 是唯一來源，直接覆蓋（本地剛存的也已在 Firebase 裡）
+      iRecs = fbRecs;
       localStorage.setItem('insp_recs', JSON.stringify(iRecs));
       iUpdateInspectorList();
       iRenderList();
     });
-  } catch(e){}
+  } catch(e){
+    // Firebase 失敗時從 localStorage 讀取
+    const cached = localStorage.getItem('insp_recs');
+    if(cached){ try{ iRecs = JSON.parse(cached); }catch(e2){} }
+    iRenderList();
+  }
 }
 
 // ---- Render List ----
