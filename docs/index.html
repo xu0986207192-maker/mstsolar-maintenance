@@ -4469,7 +4469,7 @@ function buildAndExportPDF(recs, filename){
     +'</div>';
   }
 
-  var W = 720;
+  var W = 794;  // A4 @96dpi
   var iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;top:-9999px;left:0;width:'+W+'px;height:2000px;border:none;';
   document.body.appendChild(iframe);
@@ -4479,7 +4479,7 @@ function buildAndExportPDF(recs, filename){
   idoc.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'
     +'<style>*{margin:0;padding:0;box-sizing:border-box;}'
     +'body{font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;'
-    +'width:'+W+'px;padding:18px 22px;background:white;}</style>'
+    +'width:'+W+'px;padding:20px 24px;background:white;}</style>'
     +'</head><body>'
     + recs.map(function(r){ return makeHtml(r); }).join('')
     +'</body></html>');
@@ -4488,17 +4488,16 @@ function buildAndExportPDF(recs, filename){
   setTimeout(function(){
     iframe.style.height = idoc.body.scrollHeight + 'px';
     html2pdf().from(idoc.body).set({
-      margin: [8, 8, 8, 8],
+      margin: [0, 0, 0, 0],
       filename: filename,
       html2canvas: {
-        scale: 2,
+        scale: 1,
         useCORS: true,
         width: W,
         windowWidth: W,
         scrollX: 0,
         scrollY: 0,
-        backgroundColor: '#ffffff',
-        onclone: function(d){ d.body.style.margin='0'; d.body.style.width=W+'px'; }
+        backgroundColor: '#ffffff'
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).save().then(function(){
