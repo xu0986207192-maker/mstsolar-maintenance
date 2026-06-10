@@ -4213,10 +4213,10 @@ window.iRenderList = function iRenderList(){
             ${failC?`<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;">❌ ${failC}</span>`:''}
           </div>
           <span style="font-size:12px;color:#9ca3af;">${recs.length} 筆</span>
-          <span id="${gid}_arrow" style="font-size:14px;color:#667eea;">▼</span>
+          <span id="${gid}_arrow" style="font-size:14px;color:#667eea;">▶</span>
         </div>
         <!-- 該案場紀錄 -->
-        <div id="${gid}" style="display:block;">
+        <div id="${gid}" style="display:none;">
           ${recs_sorted.map(r=>recItem(r)).join('')}
         </div>
       </div>`;
