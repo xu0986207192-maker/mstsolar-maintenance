@@ -4313,19 +4313,19 @@ window.iExportSelected = function(){
         var res=(r.cr&&r.cr[it.id])||{};
         var st=res.status||'none';
         return '<tr style="background:'+(i%2?'#f9fafb':'#fff')+';">'
-          +'<td style="padding:5px 10px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+it.t+(res.note?'<span style="font-size:10px;color:#9ca3af;margin-left:5px;">'+res.note+'</span>':'')+'</td>'
-          +'<td style="padding:5px 10px;text-align:right;border-bottom:1px solid #f3f4f6;white-space:nowrap;">'
-          +'<span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:700;background:'+(sbg[st])+';color:'+(sc[st])+';">'+(sm[st])+'</span>'
+          +'<td style="padding:2px 8px;font-size:9px;color:#374151;border-bottom:1px solid #f3f4f6;">'+it.t+(res.note?'<span style="font-size:8px;color:#9ca3af;margin-left:4px;">'+res.note+'</span>':'')+'</td>'
+          +'<td style="padding:2px 8px;text-align:right;border-bottom:1px solid #f3f4f6;white-space:nowrap;">'
+          +'<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:8px;font-weight:700;background:'+(sbg[st])+';color:'+(sc[st])+';">'+(sm[st])+'</span>'
           +'</td></tr>';
       }).join('');
-      return '<tr style="background:#eef2ff;"><td colspan="2" style="padding:6px 10px;font-size:11px;font-weight:700;color:#3730a3;border-bottom:1px solid #e0e7ff;">'+icon+' '+name+'</td></tr>'+rows;
+      return '<tr style="background:#eef2ff;"><td colspan="2" style="padding:2px 8px;font-size:9px;font-weight:700;color:#3730a3;border-bottom:1px solid #e0e7ff;">'+icon+' '+name+'</td></tr>'+rows;
     }).join('');
 
-    return '<div style="page-break-after:always;padding:20px 0;">'
-      +'<div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">'
-        +'<div><div style="font-size:15px;font-weight:900;color:#3730a3;">太陽光電維運檢查報告</div>'
-        +'<div style="font-size:9px;color:#7c7a9e;">Solar PV Maintenance Inspection Report</div></div>'
-        +'<div style="font-size:10px;color:#4338ca;font-weight:700;">'+(r.date||'')+'</div></div>'
+    return '<div style="page-break-after:always;padding:4px 0;">'
+      +'<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:5px 10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;">'
+        +'<div><div style="font-size:12px;font-weight:900;color:#3730a3;">太陽光電維運檢查報告</div>'
+        +'<div style="font-size:8px;color:#7c7a9e;">Solar PV Maintenance Inspection Report</div></div>'
+        +'<div style="font-size:9px;color:#4338ca;font-weight:700;">'+(r.date||'')+'</div></div>'
       +'<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">'
         +'<tr><td style="padding:2px 6px;color:#6b7280;font-size:9px;border:1px solid #e5e7eb;">案場名稱</td><td style="padding:2px 6px;font-weight:700;font-size:9px;border:1px solid #e5e7eb;">'+(r.sname||'—')+'</td>'
             +'<td style="padding:2px 6px;color:#6b7280;font-size:9px;border:1px solid #e5e7eb;">日期</td><td style="padding:2px 6px;font-size:9px;border:1px solid #e5e7eb;">'+(r.date||'—')+'</td></tr>'
@@ -4346,8 +4346,8 @@ window.iExportSelected = function(){
       +'<table style="width:100%;border-collapse:collapse;"><colgroup><col style="width:75%;"><col style="width:25%;"></colgroup>'
         +ckRows
       +'</table>'
-      +'<div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:#fafafa;">'
-        +'<div style="font-size:10px;font-weight:bold;color:#374151;margin-bottom:6px;">✍️ 簽名確認</div>'
+      +'<div style="margin-top:4px;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;background:#fafafa;">'
+        +'<div style="font-size:9px;font-weight:bold;color:#374151;margin-bottom:4px;">✍️ 簽名確認</div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
           +'<div style="border:1px solid #e5e7eb;border-radius:4px;padding:4px;background:white;">'
             +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:2px;">📋 檢查員</div>'
