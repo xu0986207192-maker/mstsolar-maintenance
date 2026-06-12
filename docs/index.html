@@ -4424,11 +4424,12 @@ window.iExportSelected = function(){
 
     html2pdf().from(htmlStr).set({
       margin: 0,
+      image: { type: 'jpeg', quality: 1.0 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).outputImg().then(function(imgData){
       if(idx > 0) mergedPdf.addPage();
-      mergedPdf.addImage(imgData.src, 'JPEG', 0, 0, 210, 297);
+      mergedPdf.addImage(imgData.src, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
       idx++;
       processNext();
     });
