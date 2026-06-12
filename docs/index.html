@@ -4468,10 +4468,10 @@ function buildAndExportPDF(recs, filename){
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   }).toPdf().get('pdf').then(function(pdf){
     var n = pdf.internal.getNumberOfPages();
-    for(var i = n; i > 1; i--){
-      // 檢查是否為空白頁（最後一頁）
-      pdf.deletePage(i);
-      break;
+    var expected = recs.length;
+    // 刪掉多餘的空白頁，從最後一頁往前刪
+    while(pdf.internal.getNumberOfPages() > expected){
+      pdf.deletePage(pdf.internal.getNumberOfPages());
     }
     pdf.save(filename);
   });
