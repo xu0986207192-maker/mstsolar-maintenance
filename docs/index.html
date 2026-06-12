@@ -4298,7 +4298,54 @@ window.iExportSelected = function(){
   if(!ids.length){ alert('請先勾選要匯出的紀錄'); return; }
   const recs = ids.map(id=>iRecs.find(x=>x.id===id)).filter(Boolean);
   if(recs.length===1){ iExportPDF(recs[0].id); return; }
-  buildAndExportPDF(recs, '檢查紀錄_'+recs[0].sname+'_共'+recs.length+'筆_'+new Date().toISOString().split('T')[0]+'.pdf');
+
+  // 每筆分別產生 PDF，再合併
+  var filename = '檢查紀錄_'+recs[0].sname+'_共'+recs.length+'筆_'+new Date().toISOString().split('T')[0]+'.pdf';
+  
+  function makeHtmlStr(r){
+    return '<div style="width:790px;background:white;padding:10px 20px;box-sizing:border-box;font-family:\'Microsoft JhengHei\',\'PingFang TC\',Arial,sans-serif;">'
+      + makeHtml(r)
+      + '</div>';
+  }
+
+  // 逐筆產生，收集 jsPDF，最後合併
+  var mergedPdf = null;
+  var idx = 0;
+
+  function processNext(){
+    if(idx >= recs.length){
+      mergedPdf.save(filename);
+      return;
+    }
+    var r = recs[idx];
+    html2pdf().from(makeHtmlStr(r)).set({
+      margin: 0,
+      html2canvas: { scale: 1, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).toPdf().get('pdf').then(function(pdf){
+      // 刪空白頁
+      while(pdf.internal.getNumberOfPages() > 1){
+        pdf.deletePage(pdf.internal.getNumberOfPages());
+      }
+      if(!mergedPdf){
+        mergedPdf = pdf;
+      } else {
+        // 把這一頁加到 mergedPdf
+        var srcData = pdf.output('arraybuffer');
+        // 用 addPage + setPage 方式複製頁面
+        mergedPdf.addPage();
+        var pageCount = mergedPdf.internal.getNumberOfPages();
+        mergedPdf.setPage(pageCount);
+        // 取得當前頁面的圖像資料
+        var imgData = pdf.output('datauristring');
+        mergedPdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+      }
+      idx++;
+      processNext();
+    });
+  }
+
+  processNext();
 };
 
 
