@@ -4457,21 +4457,16 @@ function buildAndExportPDF(recs, filename){
    }
 
 
-  var htmlStr = '<div style="width:750px;background:white;padding:20px 24px;box-sizing:border-box;font-family:Arial,sans-serif;">'
+  var htmlStr = '<div style="width:750px;background:white;padding:10px 20px;box-sizing:border-box;font-family:\'Microsoft JhengHei\',\'PingFang TC\',\'Noto Sans CJK TC\',Arial,sans-serif;">'
     + recs.map(function(r){ return makeHtml(r); }).join('')
     + '</div>';
 
   html2pdf().from(htmlStr).set({
-    margin: [15, 0, 15, 0],
+    margin: 0,
     filename: filename,
-    html2canvas: { scale: 1, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  }).toPdf().get('pdf').then(function(pdf){
-    var pageCount = pdf.internal.getNumberOfPages();
-    if(pageCount > 1) pdf.deletePage(pageCount);
-    pdf.save(filename);
-  });
+    html2canvas: { scale: 1, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save();
 }
 
 
