@@ -4462,8 +4462,16 @@ function buildAndExportPDF(recs, filename){
     margin: 0,
     filename: filename,
     html2canvas: { scale: 1, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save();
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  }).toPdf().get('pdf').then(function(pdf){
+    // 移除最後一頁如果是空白的
+    var pageCount = pdf.internal.getNumberOfPages();
+    if(pageCount > 1){
+      pdf.deletePage(pageCount);
+    }
+    pdf.save(filename);
+  });
 }
 
 
