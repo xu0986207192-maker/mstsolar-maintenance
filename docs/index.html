@@ -4390,7 +4390,7 @@ function buildAndExportPDF(recs, filename){
        return '<tr><td colspan="2" style="padding:3px 10px;background:#eff6ff;color:#1e40af;font-size:11px;font-weight:700;border-bottom:1px solid #dbeafe;border-top:1px solid #dbeafe;">'+icon+' '+name+'</td></tr>'+rows;
      }).join('');
 
-     return '<div style="page-break-after:always;">'
+     return '<div style="page-break-after:always;display:flex;flex-direction:column;height:100%;">'
        +'<div style="border:2px solid #1e40af;border-radius:8px;padding:7px 16px;margin-bottom:6px;display:flex;align-items:center;background:#eff6ff;">'
          +'<div>'
            +'<div style="font-size:14px;font-weight:900;color:#1e3a8a;">太陽光電維運檢查報告</div>'
@@ -4430,20 +4430,20 @@ function buildAndExportPDF(recs, filename){
          +ckRows
          +'</table>'
        +'</div>'
-       +'<div style="border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;background:#f9fafb;">'
+       +'<div style="border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;background:#f9fafb;flex:1;display:flex;flex-direction:column;">'
          +'<div style="font-size:10px;font-weight:800;color:#374151;margin-bottom:6px;">✍️ 簽名確認</div>'
-         +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
-           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;">'
+         +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:1;">'
+           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;display:flex;flex-direction:column;">'
              +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">📋 檢查員</div>'
-             +'<div style="height:36px;border-bottom:1.5px solid #9ca3af;"></div>'
+             +'<div style="flex:1;border-bottom:1.5px solid #9ca3af;min-height:60px;"></div>'
            +'</div>'
-           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;">'
+           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;display:flex;flex-direction:column;">'
              +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">👤 主管</div>'
-             +'<div style="height:36px;border-bottom:1.5px solid #9ca3af;"></div>'
+             +'<div style="flex:1;border-bottom:1.5px solid #9ca3af;min-height:60px;"></div>'
            +'</div>'
-           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;">'
+           +'<div style="border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;background:white;display:flex;flex-direction:column;">'
              +'<div style="font-size:9px;color:#6b7280;font-weight:700;margin-bottom:4px;">🏢 業主</div>'
-             +(r.sig?'<img src="'+r.sig+'" style="height:36px;display:block;max-width:100%;object-fit:contain;">':'<div style="height:36px;border-bottom:1.5px solid #9ca3af;"></div>')
+             +(r.sig?'<img src="'+r.sig+'" style="max-height:80px;display:block;max-width:100%;object-fit:contain;">':'<div style="flex:1;border-bottom:1.5px solid #9ca3af;min-height:60px;"></div>')
            +'</div>'
          +'</div>'
        +'</div>'
@@ -4454,7 +4454,7 @@ function buildAndExportPDF(recs, filename){
    }
 
 
-  var htmlStr = '<div style="width:750px;background:white;padding:20px 24px;box-sizing:border-box;font-family:Arial,sans-serif;">'
+  var htmlStr = '<div style="width:750px;height:1056px;background:white;padding:20px 24px;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;">'
     + recs.map(function(r){ return makeHtml(r); }).join('')
     + '</div>';
 
