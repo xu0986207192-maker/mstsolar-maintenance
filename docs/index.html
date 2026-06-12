@@ -4466,7 +4466,15 @@ function buildAndExportPDF(recs, filename){
     filename: filename,
     html2canvas: { scale: 1, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save();
+  }).toPdf().get('pdf').then(function(pdf){
+    var n = pdf.internal.getNumberOfPages();
+    for(var i = n; i > 1; i--){
+      // 檢查是否為空白頁（最後一頁）
+      pdf.deletePage(i);
+      break;
+    }
+    pdf.save(filename);
+  });
 }
 
 
