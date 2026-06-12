@@ -4409,7 +4409,8 @@ window.iExportSelected = function(){
   if(recs.length===1){ iExportPDF(recs[0].id); return; }
 
   var filename = '檢查紀錄_'+recs[0].sname+'_共'+recs.length+'筆_'+new Date().toISOString().split('T')[0]+'.pdf';
-  var mergedPdf = null;
+  var {jsPDF} = window.jspdf;
+  var mergedPdf = new jsPDF({unit:'mm', format:'a4', orientation:'portrait'});
   var idx = 0;
 
   function processNext(){
@@ -4420,19 +4421,14 @@ window.iExportSelected = function(){
     var r = recs[idx];
     var htmlStr = '<div style="width:790px;background:white;padding:10px 20px;box-sizing:border-box;font-family:\'Microsoft JhengHei\',\'PingFang TC\',Arial,sans-serif;">'
       + makeHtml(r) + '</div>';
+
     html2pdf().from(htmlStr).set({
       margin: 0,
       html2canvas: { scale: 1, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).toPdf().get('pdf').then(function(pdf){
-      while(pdf.internal.getNumberOfPages() > 1) pdf.deletePage(pdf.internal.getNumberOfPages());
-      if(!mergedPdf){
-        mergedPdf = pdf;
-      } else {
-        var imgData = pdf.output('datauristring');
-        mergedPdf.addPage();
-        mergedPdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-      }
+    }).outputImg().then(function(imgData){
+      if(idx > 0) mergedPdf.addPage();
+      mergedPdf.addImage(imgData.src, 'JPEG', 0, 0, 210, 297);
       idx++;
       processNext();
     });
