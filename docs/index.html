@@ -4454,34 +4454,16 @@ function buildAndExportPDF(recs, filename){
    }
 
 
-  var el = document.createElement('div');
-  el.style.cssText = 'width:750px;background:white;padding:20px 24px;box-sizing:border-box;font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;';
-  el.innerHTML = recs.map(function(r){ return makeHtml(r); }).join('');
-  document.body.appendChild(el);
+  var htmlStr = '<div style="width:750px;background:white;padding:20px 24px;box-sizing:border-box;font-family:Arial,sans-serif;">'
+    + recs.map(function(r){ return makeHtml(r); }).join('')
+    + '</div>';
 
-  var rect = el.getBoundingClientRect();
-  requestAnimationFrame(function(){
-    html2pdf().from(el).set({
-      margin: 0,
-      filename: filename,
-      html2canvas: {
-        scale: 1,
-        useCORS: true,
-        width: 750,
-        windowWidth: 750,
-        x: rect.left,
-        y: rect.top + window.scrollY,
-        scrollX: 0,
-        scrollY: 0
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).save().then(function(){
-      document.body.removeChild(el);
-    }).catch(function(err){
-      document.body.removeChild(el);
-      alert('PDF 匯出失敗：'+err.message);
-    });
-  });
+  html2pdf().from(htmlStr).set({
+    margin: 0,
+    filename: filename,
+    html2canvas: { scale: 1, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save();
 }
 
 
