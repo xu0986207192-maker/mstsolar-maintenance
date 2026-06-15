@@ -559,6 +559,13 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
       </div>
     </div>
     <div class="content">
+      <!-- 分類切換 -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="site-cat-customer" onclick="iSwitchSiteCategory('customer')"
+          style="padding:8px 18px;border:2px solid #667eea;border-radius:8px;background:#667eea;color:white;font-size:13px;font-weight:700;cursor:pointer;">👥 客戶案場</button>
+        <button id="site-cat-own" onclick="iSwitchSiteCategory('own')"
+          style="padding:8px 18px;border:2px solid #e9ecef;border-radius:8px;background:white;color:#6c757d;font-size:13px;font-weight:700;cursor:pointer;">🏠 自有案場</button>
+      </div>
       <!-- 搜尋列 -->
       <div style="margin-bottom:16px;">
         <input type="text" id="site-search" placeholder="🔍 搜尋案場名稱…" oninput="iSitePage=1;window.renderSiteCards()"
@@ -1051,10 +1058,13 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group"><label class="form-label">案場名稱 *</label><input type="text" class="form-input" id="im-name" placeholder="如：台南仁德案場"></div>
-        <div class="form-group"><label class="form-label">業主/聯絡人</label><input type="text" class="form-input" id="im-owner" placeholder="姓名"></div>
+        <div class="form-group"><label class="form-label">案場分類</label><select class="form-select" id="im-category"><option value="customer">客戶案場</option><option value="own">自有案場</option></select></div>
       </div>
       <div class="form-row">
+        <div class="form-group"><label class="form-label">業主/聯絡人</label><input type="text" class="form-input" id="im-owner" placeholder="姓名"></div>
         <div class="form-group"><label class="form-label">電話</label><input type="tel" class="form-input" id="im-phone" placeholder="0912-000-000"></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label class="form-label">設置類型</label><select class="form-select" id="im-type"><option>屋頂型</option><option>地面型</option></select></div>
       </div>
       <div class="form-group"><label class="form-label">地址</label><input type="text" class="form-input" id="im-addr" placeholder="完整地址"></div>
@@ -4492,6 +4502,7 @@ window.iOpenSiteModal = function(id){
   document.getElementById('iSiteModalTitle').textContent=id?'編輯案場':'新增案場';
   ['im-name','im-owner','im-phone','im-addr','im-gps','im-cap','im-complete','im-inv','im-mod','im-modcnt'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('im-type').value='屋頂型';
+  document.getElementById('im-category').value='customer';
   if(id){
     const s=iSites.find(x=>x.id===id);
     if(s){
@@ -4502,6 +4513,7 @@ window.iOpenSiteModal = function(id){
       document.getElementById('im-gps').value=(s.lat&&s.lng)?s.lat+', '+s.lng:'';
       document.getElementById('im-cap').value=s.cap||'';
       document.getElementById('im-type').value=s.type||'屋頂型';
+      document.getElementById('im-category').value=s.category||'customer';
       document.getElementById('im-complete').value=s.complete||'';
       document.getElementById('im-inv').value=s.inv||'';
       document.getElementById('im-mod').value=s.mod||'';
@@ -4539,6 +4551,7 @@ window.iSaveSite = async function(){
     lat,lng,
     cap:document.getElementById('im-cap').value,
     type:document.getElementById('im-type').value,
+    category:document.getElementById('im-category').value,
     inv:document.getElementById('im-inv').value,
     mod:document.getElementById('im-mod').value,
     modcnt:document.getElementById('im-modcnt').value,
@@ -4691,6 +4704,23 @@ window.sdSwitch = function(tab){
 let iSitePage = 1;
 window.iSitePage = iSitePage;
 const SITES_PER_PAGE = 12;
+let iSiteCategory = 'customer';
+window.iSiteCategory = iSiteCategory;
+
+window.iSwitchSiteCategory = function(cat){
+  iSiteCategory = cat;
+  iSitePage = 1;
+  const cBtn = document.getElementById('site-cat-customer');
+  const oBtn = document.getElementById('site-cat-own');
+  if(cat==='customer'){
+    cBtn.style.background='#667eea'; cBtn.style.borderColor='#667eea'; cBtn.style.color='white';
+    oBtn.style.background='white'; oBtn.style.borderColor='#e9ecef'; oBtn.style.color='#6c757d';
+  } else {
+    oBtn.style.background='#667eea'; oBtn.style.borderColor='#667eea'; oBtn.style.color='white';
+    cBtn.style.background='white'; cBtn.style.borderColor='#e9ecef'; cBtn.style.color='#6c757d';
+  }
+  window.renderSiteCards();
+};
 
 window.renderSiteCards = function renderSiteCards(){
   const el = document.getElementById('sites-card-list');
@@ -4698,10 +4728,14 @@ window.renderSiteCards = function renderSiteCards(){
   if(!el) return;
 
   const q = (document.getElementById('site-search')?.value||'').toLowerCase();
-  const filtered = iSites.filter(s => !q || s.name.toLowerCase().includes(q));
+  const filtered = iSites.filter(s =>
+    (s.category||'customer') === iSiteCategory
+    && (!q || s.name.toLowerCase().includes(q))
+  );
 
   if(!filtered.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>'+(q?'找不到符合的案場':'尚無案場，請點右上角「➕ 新增案場」')+'</p></div>';
+    const catLabel = iSiteCategory==='customer' ? '客戶案場' : '自有案場';
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>'+(q?'找不到符合的案場':'尚無'+catLabel+'，請點右上角「➕ 新增案場」')+'</p></div>';
     if(pgEl) pgEl.innerHTML='';
     return;
   }
@@ -4726,8 +4760,9 @@ window.renderSiteCards = function renderSiteCards(){
       onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)';this.style.transform='none'">
 
       <!-- 案場名稱 -->
-      <div style="font-size:16px;font-weight:800;color:#2d3748;line-height:1.3;word-break:break-all;">
+      <div style="font-size:16px;font-weight:800;color:#2d3748;line-height:1.3;word-break:break-all;display:flex;align-items:center;gap:6px;">
         🏢 ${s.name}
+        ${s.category==='own'?'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:10px;font-weight:700;white-space:nowrap;">自有</span>':''}
       </div>
 
       <!-- 容量 -->
