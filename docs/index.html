@@ -1028,7 +1028,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
   <div class="modal-content" style="max-width:700px;">
     <div class="modal-header">
       <h2 id="iSiteDetailTitle">案場紀錄</h2>
-      <button class="close-btn" onclick="document.getElementById('iSiteDetailModal').classList.remove('active')">&times;</button>
+      <button class="close-btn" onclick="document.getElementById('iSiteDetailModal').classList.remove('active');document.getElementById('sdtab-insp').style.display=''">&times;</button>
     </div>
     <div class="modal-body" style="padding:0;">
       <!-- 案場基本資訊 -->
@@ -4887,15 +4887,25 @@ window.iShowCustCard = function(name){
   const recs = allRecords.filter(r=>r.customerName===name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
   const modal = document.getElementById('iSiteDetailModal');
   if(!modal) return;
-  document.getElementById('sd-site-name').textContent = '👤 '+name;
-  const infoEl = document.getElementById('sd-site-info');
-  if(infoEl) infoEl.innerHTML = '<div style="padding:10px 0;font-size:13px;color:#6b7280;">維修紀錄數：<strong>'+recs.length+'</strong>&emsp;最後維修：<strong>'+(recs[0]?recs[0].repairDate:'無')+'</strong></div>';
-  const repEl = document.getElementById('sd-repair-list');
-  if(repEl) repEl.innerHTML = recs.length ? recs.map(r=>`
-    <div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">
-      <div style="font-size:13px;font-weight:600;color:#2d3748;">${r.repairDate} — ${r.repairType||''}</div>
-      <div style="font-size:12px;color:#6b7280;">${r.repairItem||''} ${r.technician?'・'+r.technician:''}</div>
-    </div>`).join('') : '<div style="padding:20px;text-align:center;color:#9ca3af;">尚無維修紀錄</div>';
+
+  document.getElementById('iSiteDetailTitle').textContent = '👤 '+name;
+  document.getElementById('iSiteDetailInfo').innerHTML =
+    '<strong>客戶案場</strong>　維修紀錄：<strong>'+recs.length+'</strong> 筆　最後維修：<strong>'+(recs[0]?recs[0].repairDate:'無')+'</strong>';
+
+  // 顯示維修紀錄，隱藏檢查tab
+  document.getElementById('sdpanel-repair').style.display='block';
+  document.getElementById('sdpanel-insp').style.display='none';
+  document.getElementById('sdtab-insp').style.display='none';
+
+  document.getElementById('sd-repair-list').innerHTML = recs.length
+    ? recs.map(r=>`
+      <div style="padding:10px 16px;border-bottom:1px solid #f3f4f6;">
+        <div style="font-size:13px;font-weight:600;color:#2d3748;">${r.repairDate||''} — ${r.repairType||''}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.repairItem||''} ${r.technician?'・'+r.technician:''}</div>
+        ${r.repairNote?'<div style="font-size:11px;color:#9ca3af;margin-top:2px;">'+r.repairNote+'</div>':''}
+      </div>`).join('')
+    : '<div style="padding:20px;text-align:center;color:#9ca3af;">尚無維修紀錄</div>';
+
   modal.classList.add('active');
 };
 
