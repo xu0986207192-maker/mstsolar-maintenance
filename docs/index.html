@@ -561,8 +561,10 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="content">
       <!-- 分類切換 -->
       <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="site-cat-contract" onclick="iSwitchSiteCategory('contract')"
+          style="padding:8px 18px;border:2px solid #667eea;border-radius:8px;background:#667eea;color:white;font-size:13px;font-weight:700;cursor:pointer;">📋 維運合約案場</button>
         <button id="site-cat-customer" onclick="iSwitchSiteCategory('customer')"
-          style="padding:8px 18px;border:2px solid #667eea;border-radius:8px;background:#667eea;color:white;font-size:13px;font-weight:700;cursor:pointer;">👥 客戶案場</button>
+          style="padding:8px 18px;border:2px solid #e9ecef;border-radius:8px;background:white;color:#6c757d;font-size:13px;font-weight:700;cursor:pointer;">👥 客戶案場</button>
         <button id="site-cat-own" onclick="iSwitchSiteCategory('own')"
           style="padding:8px 18px;border:2px solid #e9ecef;border-radius:8px;background:white;color:#6c757d;font-size:13px;font-weight:700;cursor:pointer;">🏠 自有案場</button>
       </div>
@@ -1058,7 +1060,7 @@ body{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;background:linear
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group"><label class="form-label">案場名稱 *</label><input type="text" class="form-input" id="im-name" placeholder="如：台南仁德案場"></div>
-        <div class="form-group"><label class="form-label">案場分類</label><select class="form-select" id="im-category"><option value="customer">客戶案場</option><option value="own">自有案場</option></select></div>
+        <div class="form-group"><label class="form-label">案場分類</label><select class="form-select" id="im-category"><option value="contract">維運合約案場</option><option value="customer">客戶案場</option><option value="own">自有案場</option></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">業主/聯絡人</label><input type="text" class="form-input" id="im-owner" placeholder="姓名"></div>
@@ -1500,7 +1502,7 @@ function recordHTML(r) {
     <div class="record-grid">
       <div class="record-field">
         <div class="label">客戶名稱</div>
-        <div class="value link" onclick="showHistory('customer','${custName}')">${r.customerName}</div>
+        <div class="value link" onclick="iOpenSiteOrCust('${custName}')">${r.customerName}</div>
       </div>
       <div class="record-field">
         <div class="label">維修項目</div>
@@ -4502,7 +4504,7 @@ window.iOpenSiteModal = function(id){
   document.getElementById('iSiteModalTitle').textContent=id?'編輯案場':'新增案場';
   ['im-name','im-owner','im-phone','im-addr','im-gps','im-cap','im-complete','im-inv','im-mod','im-modcnt'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('im-type').value='屋頂型';
-  document.getElementById('im-category').value='customer';
+  document.getElementById('im-category').value='contract';
   if(id){
     const s=iSites.find(x=>x.id===id);
     if(s){
@@ -4513,7 +4515,7 @@ window.iOpenSiteModal = function(id){
       document.getElementById('im-gps').value=(s.lat&&s.lng)?s.lat+', '+s.lng:'';
       document.getElementById('im-cap').value=s.cap||'';
       document.getElementById('im-type').value=s.type||'屋頂型';
-      document.getElementById('im-category').value=s.category||'customer';
+      document.getElementById('im-category').value=s.category||'contract';
       document.getElementById('im-complete').value=s.complete||'';
       document.getElementById('im-inv').value=s.inv||'';
       document.getElementById('im-mod').value=s.mod||'';
@@ -4704,21 +4706,22 @@ window.sdSwitch = function(tab){
 let iSitePage = 1;
 window.iSitePage = iSitePage;
 const SITES_PER_PAGE = 12;
-let iSiteCategory = 'customer';
+let iSiteCategory = 'contract';
 window.iSiteCategory = iSiteCategory;
 
 window.iSwitchSiteCategory = function(cat){
   iSiteCategory = cat;
   iSitePage = 1;
-  const cBtn = document.getElementById('site-cat-customer');
-  const oBtn = document.getElementById('site-cat-own');
-  if(cat==='customer'){
-    cBtn.style.background='#667eea'; cBtn.style.borderColor='#667eea'; cBtn.style.color='white';
-    oBtn.style.background='white'; oBtn.style.borderColor='#e9ecef'; oBtn.style.color='#6c757d';
-  } else {
-    oBtn.style.background='#667eea'; oBtn.style.borderColor='#667eea'; oBtn.style.color='white';
-    cBtn.style.background='white'; cBtn.style.borderColor='#e9ecef'; cBtn.style.color='#6c757d';
-  }
+  const cats = ['contract','customer','own'];
+  cats.forEach(function(c){
+    const btn = document.getElementById('site-cat-'+c);
+    if(!btn) return;
+    if(c===cat){
+      btn.style.background='#667eea'; btn.style.borderColor='#667eea'; btn.style.color='white';
+    } else {
+      btn.style.background='white'; btn.style.borderColor='#e9ecef'; btn.style.color='#6c757d';
+    }
+  });
   window.renderSiteCards();
 };
 
@@ -4728,16 +4731,58 @@ window.renderSiteCards = function renderSiteCards(){
   if(!el) return;
 
   const q = (document.getElementById('site-search')?.value||'').toLowerCase();
+
+  // 客戶案場：從維修紀錄抓出尚未建檔的客戶
+  if(iSiteCategory === 'customer'){
+    const siteNames = new Set(iSites.map(s=>s.name));
+    // 取出所有維修紀錄的客戶名稱，去除已建檔案場
+    const custMap = {};
+    allRecords.forEach(function(r){
+      if(!r.customerName) return;
+      if(siteNames.has(r.customerName)) return; // 已建檔不顯示
+      if(!custMap[r.customerName]) custMap[r.customerName] = [];
+      custMap[r.customerName].push(r);
+    });
+    const custList = Object.keys(custMap).filter(n=>!q||n.toLowerCase().includes(q)).sort();
+    if(!custList.length){
+      el.style.cssText='';
+      el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>'+(q?'找不到符合的客戶':'所有維修紀錄的客戶都已建檔，或尚無維修紀錄')+'</p></div>';
+      if(pgEl) pgEl.innerHTML=''; return;
+    }
+    el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;';
+    el.innerHTML = custList.map(function(name){
+      var recs = custMap[name];
+      var lastR = recs.sort(function(a,b){return new Date(b.repairDate)-new Date(a.repairDate);})[0];
+      return '<div onclick="iShowCustCard(\''+name.replace(/'/g,"\\'")+'\')"'
+        +' style="background:white;border:1.5px dashed #d1d5db;border-radius:14px;padding:16px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.04);"'
+        +' onmouseover="this.style.boxShadow=\'0 6px 20px rgba(102,126,234,.2)\'"'
+        +' onmouseout="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.04)\'">'
+        +'<div style="font-size:15px;font-weight:800;color:#2d3748;margin-bottom:8px;">👤 '+name+'</div>'
+        +'<div style="text-align:center;background:#f0f2ff;border-radius:8px;padding:8px;margin-bottom:8px;">'
+          +'<div style="font-size:22px;font-weight:800;color:#667eea;">'+recs.length+'</div>'
+          +'<div style="font-size:10px;color:#9ca3af;">維修紀錄</div>'
+        +'</div>'
+        +'<div style="font-size:10px;color:#9ca3af;margin-bottom:10px;">最後維修：'+(lastR?lastR.repairDate:'無')+'</div>'
+        +'<div style="text-align:center;">'
+          +'<button class="btn btn-primary btn-sm" style="font-size:11px;padding:5px 12px;width:100%;" onclick="event.stopPropagation();iAddSiteFromCust(\''+name.replace(/'/g,"\\'")+'\')" >➕ 建立案場</button>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+    if(pgEl) pgEl.innerHTML='';
+    return;
+  }
+
+  // 維運合約 / 自有案場
   const filtered = iSites.filter(s =>
-    (s.category||'customer') === iSiteCategory
+    (s.category||'contract') === iSiteCategory
     && (!q || s.name.toLowerCase().includes(q))
   );
 
   if(!filtered.length){
-    const catLabel = iSiteCategory==='customer' ? '客戶案場' : '自有案場';
+    const catLabel = iSiteCategory==='contract' ? '維運合約案場' : '自有案場';
+    el.style.cssText='';
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><p>'+(q?'找不到符合的案場':'尚無'+catLabel+'，請點右上角「➕ 新增案場」')+'</p></div>';
-    if(pgEl) pgEl.innerHTML='';
-    return;
+    if(pgEl) pgEl.innerHTML=''; return;
   }
 
   const totalPages = Math.ceil(filtered.length / SITES_PER_PAGE);
@@ -4814,6 +4859,39 @@ window.renderSiteCards = function renderSiteCards(){
       pgEl.innerHTML = html;
     }
   }
+
+// 客戶案場小卡 Modal（維修紀錄客戶）
+window.iOpenSiteOrCust = function(name){
+  // 如果已建檔案場，開案場詳情；否則開客戶小卡
+  const site = iSites.find(s=>s.name===name);
+  if(site){ iShowSiteDetail(site.id); }
+  else { showTab('sites'); setTimeout(function(){ iSwitchSiteCategory('customer'); iShowCustCard(name); }, 100); }
+};
+  const recs = allRecords.filter(r=>r.customerName===name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
+  const modal = document.getElementById('iSiteDetailModal');
+  if(!modal) return;
+  // 借用案場 detail modal 顯示
+  document.getElementById('sd-site-name').textContent = '👤 '+name;
+  const infoEl = document.getElementById('sd-site-info');
+  if(infoEl) infoEl.innerHTML = '<div style="padding:10px 0;font-size:13px;color:#6b7280;">維修紀錄數：<strong>'+recs.length+'</strong>&emsp;最後維修：<strong>'+(recs[0]?recs[0].repairDate:'無')+'</strong></div>';
+  // 顯示維修紀錄列表
+  const repEl = document.getElementById('sd-repair-list');
+  if(repEl) repEl.innerHTML = recs.length ? recs.map(r=>`
+    <div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">
+      <div style="font-size:13px;font-weight:600;color:#2d3748;">${r.repairDate} — ${r.repairType||''}</div>
+      <div style="font-size:12px;color:#6b7280;">${r.repairItem||''} ${r.technician?'・'+r.technician:''}</div>
+    </div>`).join('') : '<div style="padding:20px;text-align:center;color:#9ca3af;">尚無維修紀錄</div>';
+  modal.classList.add('active');
+};
+
+// 從維修紀錄客戶快速建立案場
+window.iAddSiteFromCust = function(name){
+  iOpenSiteModal();
+  setTimeout(function(){
+    document.getElementById('im-name').value = name;
+    document.getElementById('im-category').value = 'contract';
+  }, 50);
+};
 
 window.iGoSitePage = function(p){
   iSitePage = p;
