@@ -4732,28 +4732,79 @@ window.renderSiteCards = function renderSiteCards(){
 
   const q = (document.getElementById('site-search')?.value||'').toLowerCase();
 
-  // 客戶案場：從維修紀錄抓出尚未建檔的客戶
+  // 客戶案場：未建檔客戶（維修紀錄）+ 已建檔 category=customer 案場
   if(iSiteCategory === 'customer'){
-    const siteNames = new Set(iSites.map(s=>s.name));
+    const filedSites = iSites.filter(s=>(s.category||'contract')==='customer');
+    const filedNames = new Set(filedSites.map(s=>s.name));
+    const allSiteNames = new Set(iSites.map(s=>s.name));
+
+    // 未建檔客戶
     const custMap = {};
     allRecords.forEach(function(r){
       if(!r.customerName) return;
-      if(siteNames.has(r.customerName)) return;
+      if(allSiteNames.has(r.customerName)) return;
       if(!custMap[r.customerName]) custMap[r.customerName] = [];
       custMap[r.customerName].push(r);
     });
-    const custList = Object.keys(custMap).filter(n=>!q||n.toLowerCase().includes(q)).sort();
-    if(!custList.length){
+    const unfiledList = Object.keys(custMap).filter(n=>!q||n.toLowerCase().includes(q)).sort();
+
+    // 已建檔 customer 案場小卡（複用標準案場 card）
+    function siteCard(s){
+      const repairCount = allRecords.filter(r=>r.customerName===s.name).length;
+      const inspCount   = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).length;
+      const lastInspArr = iRecs.filter(r=>r.sid===s.id||r.sname===s.name).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const lastInsp    = lastInspArr[0];
+      return `<div onclick="iShowSiteDetail('${s.id}')"
+        style="background:white;border:1px solid #e9ecef;border-radius:14px;padding:18px 16px;cursor:pointer;
+               transition:box-shadow .15s,transform .15s;box-shadow:0 2px 8px rgba(0,0,0,.06);
+               display:flex;flex-direction:column;gap:10px;"
+        onmouseover="this.style.boxShadow='0 6px 20px rgba(102,126,234,.22)';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)';this.style.transform='none'">
+        <div style="font-size:16px;font-weight:800;color:#2d3748;line-height:1.3;word-break:break-all;display:flex;align-items:center;gap:6px;">
+          🏢 ${s.name}
+        </div>
+        <div style="font-size:22px;font-weight:900;color:#667eea;line-height:1;">
+          ${s.cap ? s.cap+' <span style="font-size:13px;font-weight:600;color:#9ca3af;">kWp</span>' : '<span style="font-size:14px;color:#d1d5db;">容量未填</span>'}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;text-align:center;background:#f0f2ff;border-radius:8px;padding:6px 4px;">
+            <div style="font-size:18px;font-weight:800;color:#667eea;">${repairCount}</div>
+            <div style="font-size:10px;color:#9ca3af;">維修</div>
+          </div>
+          <div style="flex:1;text-align:center;background:#f0fdf4;border-radius:8px;padding:6px 4px;">
+            <div style="font-size:18px;font-weight:800;color:#16a34a;">${inspCount}</div>
+            <div style="font-size:10px;color:#9ca3af;">檢查</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f3f4f6;margin-top:auto;">
+          <span style="font-size:10px;color:#9ca3af;">${lastInsp?lastInsp.date:'尚未檢查'}</span>
+          <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+            <button class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iOpenSiteModal('${s.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px;" onclick="iDeleteSite('${s.id}')">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    const allItems = [
+      ...filedSites.filter(s=>!q||s.name.toLowerCase().includes(q)).map(s=>({type:'filed',s})),
+      ...unfiledList.map(n=>({type:'unfiled',n}))
+    ];
+
+    if(!allItems.length){
       el.style.cssText='';
-      el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>'+(q?'找不到符合的客戶':'所有維修紀錄的客戶都已建檔，或尚無維修紀錄')+'</p></div>';
+      el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>'+(q?'找不到符合的客戶':'尚無客戶案場')+'</p></div>';
       if(pgEl) pgEl.innerHTML=''; return;
     }
-    const totalPagesCust = Math.ceil(custList.length / SITES_PER_PAGE);
+
+    const totalPagesCust = Math.ceil(allItems.length / SITES_PER_PAGE);
     if(iSitePage > totalPagesCust) iSitePage = totalPagesCust;
-    const pageDataCust = custList.slice((iSitePage-1)*SITES_PER_PAGE, iSitePage*SITES_PER_PAGE);
+    const pageDataCust = allItems.slice((iSitePage-1)*SITES_PER_PAGE, iSitePage*SITES_PER_PAGE);
 
     el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;';
-    el.innerHTML = pageDataCust.map(function(name){
+    el.innerHTML = pageDataCust.map(function(item){
+      if(item.type==='filed') return siteCard(item.s);
+      var name = item.n;
       var recs = custMap[name].sort(function(a,b){return new Date(b.repairDate)-new Date(a.repairDate);});
       return '<div onclick="iShowCustCard(\''+name.replace(/'/g,"\\'")+'\')"'
         +' style="background:white;border:1.5px dashed #d1d5db;border-radius:14px;padding:16px;cursor:pointer;transition:box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.04);"'
@@ -4766,7 +4817,7 @@ window.renderSiteCards = function renderSiteCards(){
         +'</div>'
         +'<div style="font-size:10px;color:#9ca3af;margin-bottom:10px;">最後維修：'+(recs[0]?recs[0].repairDate:'無')+'</div>'
         +'<div style="text-align:center;" onclick="event.stopPropagation()">'
-          +'<button class="btn btn-primary btn-sm" style="font-size:11px;padding:5px 12px;width:100%;" onclick="iAddSiteFromCust(\''+name.replace(/'/g,"\\'")+'\')" >➕ 建立案場</button>'
+          +'<button class="btn btn-primary btn-sm" style="font-size:11px;padding:5px 12px;width:100%;" onclick="iAddSiteFromCust(\''+name.replace(/'/g,"\\'")+'\')">➕ 建立案場</button>'
         +'</div>'
       +'</div>';
     }).join('');
@@ -4774,17 +4825,18 @@ window.renderSiteCards = function renderSiteCards(){
     if(pgEl){
       if(totalPagesCust <= 1){ pgEl.innerHTML=''; return; }
       let html = '';
-      html += '<button onclick="iGoSitePage('+(iSitePage-1)+')" style="padding:7px 14px;border:2px solid '+(iSitePage===1?'#e9ecef':'#667eea')+';border-radius:8px;background:white;color:'+(iSitePage===1?'#ced4da':'#667eea')+';font-size:13px;font-weight:600;" '+(iSitePage===1?'disabled':'')+'>‹ 上頁</button>';
+      html += `<button onclick="iGoSitePage(${iSitePage-1})" style="padding:7px 14px;border:2px solid ${iSitePage===1?'#e9ecef':'#667eea'};border-radius:8px;background:white;color:${iSitePage===1?'#ced4da':'#667eea'};font-size:13px;font-weight:600;" ${iSitePage===1?'disabled':''}>‹ 上頁</button>`;
       for(let p=1; p<=totalPagesCust; p++){
         const active = p===iSitePage;
-        html += '<button onclick="iGoSitePage('+p+')" style="width:36px;height:36px;border:2px solid '+(active?'#667eea':'#e9ecef')+';border-radius:8px;background:'+(active?'#667eea':'white')+';color:'+(active?'white':'#6c757d')+';font-size:13px;font-weight:'+(active?'700':'400')+';cursor:pointer;">'+p+'</button>';
+        html += `<button onclick="iGoSitePage(${p})" style="width:36px;height:36px;border:2px solid ${active?'#667eea':'#e9ecef'};border-radius:8px;background:${active?'#667eea':'white'};color:${active?'white':'#6c757d'};font-size:13px;font-weight:${active?'700':'400'};cursor:pointer;">${p}</button>`;
       }
-      html += '<button onclick="iGoSitePage('+(iSitePage+1)+')" style="padding:7px 14px;border:2px solid '+(iSitePage===totalPagesCust?'#e9ecef':'#667eea')+';border-radius:8px;background:white;color:'+(iSitePage===totalPagesCust?'#ced4da':'#667eea')+';font-size:13px;font-weight:600;" '+(iSitePage===totalPagesCust?'disabled':'')+'>下頁 ›</button>';
-      html += '<span style="font-size:12px;color:#9ca3af;margin-left:4px;">'+custList.length+' 個客戶 / 第 '+iSitePage+'/'+totalPagesCust+' 頁</span>';
+      html += `<button onclick="iGoSitePage(${iSitePage+1})" style="padding:7px 14px;border:2px solid ${iSitePage===totalPagesCust?'#e9ecef':'#667eea'};border-radius:8px;background:white;color:${iSitePage===totalPagesCust?'#ced4da':'#667eea'};font-size:13px;font-weight:600;" ${iSitePage===totalPagesCust?'disabled':''}>下頁 ›</button>`;
+      html += `<span style="font-size:12px;color:#9ca3af;margin-left:4px;">${allItems.length} 個 / 第 ${iSitePage}/${totalPagesCust} 頁</span>`;
       pgEl.innerHTML = html;
     }
     return;
   }
+
 
 
 
@@ -4963,7 +5015,7 @@ window.iAddSiteFromCust = function(name){
   iOpenSiteModal();
   setTimeout(function(){
     document.getElementById('im-name').value = name;
-    document.getElementById('im-category').value = 'contract';
+    document.getElementById('im-category').value = 'customer';
   }, 50);
 };
 
