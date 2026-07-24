@@ -4862,19 +4862,18 @@ window.renderSiteCards = function renderSiteCards(){
 
 // 客戶案場小卡 Modal（維修紀錄客戶）
 window.iOpenSiteOrCust = function(name){
-  // 如果已建檔案場，開案場詳情；否則開客戶小卡
   const site = iSites.find(s=>s.name===name);
   if(site){ iShowSiteDetail(site.id); }
   else { showTab('sites'); setTimeout(function(){ iSwitchSiteCategory('customer'); iShowCustCard(name); }, 100); }
 };
+
+window.iShowCustCard = function(name){
   const recs = allRecords.filter(r=>r.customerName===name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
   const modal = document.getElementById('iSiteDetailModal');
   if(!modal) return;
-  // 借用案場 detail modal 顯示
   document.getElementById('sd-site-name').textContent = '👤 '+name;
   const infoEl = document.getElementById('sd-site-info');
   if(infoEl) infoEl.innerHTML = '<div style="padding:10px 0;font-size:13px;color:#6b7280;">維修紀錄數：<strong>'+recs.length+'</strong>&emsp;最後維修：<strong>'+(recs[0]?recs[0].repairDate:'無')+'</strong></div>';
-  // 顯示維修紀錄列表
   const repEl = document.getElementById('sd-repair-list');
   if(repEl) repEl.innerHTML = recs.length ? recs.map(r=>`
     <div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">
