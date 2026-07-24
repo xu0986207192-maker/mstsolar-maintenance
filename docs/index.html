@@ -4884,29 +4884,78 @@ window.iOpenSiteOrCust = function(name){
 };
 
 window.iShowCustCard = function(name){
-  const recs = allRecords.filter(r=>r.customerName===name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
-  const modal = document.getElementById('iSiteDetailModal');
-  if(!modal) return;
+  // 建立虛擬 site 物件，只有名稱，其他欄位空白
+  const s = { id: null, name: name, addr:'', owner:'', phone:'', cap:'', type:'', inv:'', mod:'', complete:'' };
 
-  document.getElementById('iSiteDetailTitle').textContent = '👤 '+name;
-  document.getElementById('iSiteDetailInfo').innerHTML =
-    '<strong>客戶案場</strong>　維修紀錄：<strong>'+recs.length+'</strong> 筆　最後維修：<strong>'+(recs[0]?recs[0].repairDate:'無')+'</strong>';
+  document.getElementById('iSiteDetailTitle').textContent = '👤 ' + name;
+  document.getElementById('iSiteDetailInfo').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 16px;">
+      <div><span style="color:#6c757d;">地址：</span></div>
+      <div><span style="color:#6c757d;">業主：</span></div>
+      <div><span style="color:#6c757d;">電話：</span></div>
+    </div>`;
 
-  // 顯示維修紀錄，隱藏檢查tab
-  document.getElementById('sdpanel-repair').style.display='block';
-  document.getElementById('sdpanel-insp').style.display='none';
-  document.getElementById('sdtab-insp').style.display='none';
+  // 維修紀錄
+  const repairRecs = allRecords.filter(r=>r.customerName===name).sort((a,b)=>new Date(b.repairDate)-new Date(a.repairDate));
+  const repairEl = document.getElementById('sd-repair-list');
+  if(!repairRecs.length){
+    repairEl.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="empty-icon">🔧</div><p>此客戶尚無維修紀錄</p></div>';
+  } else {
+    const bClass={待處理:'badge-pending',進行中:'badge-inprogress',已完成:'badge-completed'};
+    repairEl.innerHTML = repairRecs.map(r=>`
+      <div class="record-item">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="record-field" style="flex:2;min-width:120px;">
+            <div class="label">維修項目</div>
+            <div class="value" style="font-size:13px;">${r.repairItem||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">維修人員</div>
+            <div class="value" style="font-size:13px;">${r.technician||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">維修日期</div>
+            <div class="value" style="font-size:13px;">${r.repairDate||'—'}</div>
+          </div>
+          <span class="status-badge ${bClass[r.status]||''}">${r.status||'—'}</span>
+        </div>
+        ${r.notes?`<div class="record-meta">📝 ${r.notes}</div>`:''}
+      </div>`).join('');
+  }
 
-  document.getElementById('sd-repair-list').innerHTML = recs.length
-    ? recs.map(r=>`
-      <div style="padding:10px 16px;border-bottom:1px solid #f3f4f6;">
-        <div style="font-size:13px;font-weight:600;color:#2d3748;">${r.repairDate||''} — ${r.repairType||''}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.repairItem||''} ${r.technician?'・'+r.technician:''}</div>
-        ${r.repairNote?'<div style="font-size:11px;color:#9ca3af;margin-top:2px;">'+r.repairNote+'</div>':''}
-      </div>`).join('')
-    : '<div style="padding:20px;text-align:center;color:#9ca3af;">尚無維修紀錄</div>';
+  // 檢查紀錄（依名稱比對）
+  const inspRecs = iRecs.filter(r=>r.sname===name).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const inspEl = document.getElementById('sd-insp-list');
+  const bc={pass:'badge-completed',warn:'badge-pending',fail:'badge-inprogress'};
+  const bt={pass:'✅ 正常',warn:'⚠️ 需注意',fail:'❌ 異常'};
+  if(!inspRecs.length){
+    inspEl.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="empty-icon">✅</div><p>此客戶尚無檢查紀錄</p></div>';
+  } else {
+    inspEl.innerHTML = inspRecs.map(r=>`
+      <div class="record-item" style="cursor:pointer;" onclick="iShowDet('${r.id}')">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">檢查日期</div>
+            <div class="value" style="font-size:13px;">${r.date||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">天氣</div>
+            <div class="value" style="font-size:13px;">${r.weather||'—'}</div>
+          </div>
+          <div class="record-field" style="flex:1;min-width:80px;">
+            <div class="label">負責人員</div>
+            <div class="value" style="font-size:13px;">${r.inspector||'—'}</div>
+          </div>
+          <span class="status-badge ${bc[r.overall]||''}">${bt[r.overall]||'—'}</span>
+        </div>
+        ${r.notes?`<div class="record-meta">📝 ${r.notes}</div>`:''}
+      </div>`).join('');
+  }
 
-  modal.classList.add('active');
+  // 還原 tab 顯示
+  document.getElementById('sdtab-insp').style.display='';
+  sdSwitch('repair');
+  document.getElementById('iSiteDetailModal').classList.add('active');
 };
 
 // 從維修紀錄客戶快速建立案場
