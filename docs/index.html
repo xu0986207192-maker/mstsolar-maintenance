@@ -1833,6 +1833,23 @@ window.saveRecord = async function(e) {
       data.createdAt = serverTimestamp();
     }
     await set(ref(db, `workspaces/${ws}/records/${key}`), data);
+
+    // 自動新增客戶案場（若尚未建檔）
+    const custName = data.customerName.trim();
+    if(custName && !iSites.find(s=>s.name===custName)){
+      const newSite = {
+        id: push(ref(db, `workspaces/${ws}/inspSites`)).key,
+        name: custName,
+        category: 'customer',
+        addr:'', owner:'', phone:'', cap:'', type:'', inv:'', mod:'', modcnt:'', complete:'', lat:'', lng:''
+      };
+      iSites.push(newSite);
+      localStorage.setItem('insp_sites', JSON.stringify(iSites));
+      await set(ref(db, `workspaces/${ws}/inspSites/${newSite.id}`), newSite);
+      iRefreshSiteSel();
+      iUpdateSrchSelect();
+    }
+
     syncStatus('online');
     closeModal();
   } catch (err) {
@@ -4855,6 +4872,17 @@ window.renderSiteCards = function renderSiteCards(){
 
   const totalPages = Math.ceil(filtered.length / SITES_PER_PAGE);
   if(iSitePage > totalPages) iSitePage = totalPages;
+
+  // 依最新維修或檢查日期排序（最新的在最前）
+  filtered.sort(function(a, b){
+    const aRepair = allRecords.filter(r=>r.customerName===a.name).sort((x,y)=>new Date(y.repairDate)-new Date(x.repairDate))[0]?.repairDate||'';
+    const bRepair = allRecords.filter(r=>r.customerName===b.name).sort((x,y)=>new Date(y.repairDate)-new Date(x.repairDate))[0]?.repairDate||'';
+    const aInsp   = iRecs.filter(r=>r.sid===a.id||r.sname===a.name).sort((x,y)=>new Date(y.date)-new Date(x.date))[0]?.date||'';
+    const bInsp   = iRecs.filter(r=>r.sid===b.id||r.sname===b.name).sort((x,y)=>new Date(y.date)-new Date(x.date))[0]?.date||'';
+    const aLast = aRepair > aInsp ? aRepair : aInsp;
+    const bLast = bRepair > bInsp ? bRepair : bInsp;
+    return bLast > aLast ? 1 : bLast < aLast ? -1 : 0;
+  });
 
   const pageData = filtered.slice((iSitePage-1)*SITES_PER_PAGE, iSitePage*SITES_PER_PAGE);
 
